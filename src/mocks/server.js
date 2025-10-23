@@ -4,11 +4,406 @@ import poApprovalData from './poApprovalData.json';
 
 // Mock data for suppliers
 const suppliersData = [
-  { id: 1, name: 'Sushil Corporation', code: 'SUP001', contact: '+1-555-0101', email: 'info@sushilcorp.com' },
-  { id: 2, name: 'Moorthy Industries', code: 'SUP002', contact: '+1-555-0102', email: 'contact@moorthyind.com' },
-  { id: 3, name: 'Global Tech Solutions', code: 'SUP003', contact: '+1-555-0103', email: 'sales@globaltech.com' },
-  { id: 4, name: 'Premium Parts Ltd', code: 'SUP004', contact: '+1-555-0104', email: 'orders@premiumparts.com' },
-  { id: 5, name: 'Industrial Supplies Co', code: 'SUP005', contact: '+1-555-0105', email: 'info@industrialsupplies.com' }
+  {
+    id: 1,
+    name: 'Sushil Corporation',
+    address: '123 Main St',
+    city: 'Mumbai',
+    pincode: '400001',
+    state: 'Maharashtra',
+    country: 'India',
+    pan: 'ABCDE1234F',
+    gst: '22AAAAA0000A1Z5',
+    email: 'info@sushilcorp.com',
+    phone: '+1-555-0101',
+    fabric: true,
+    trims: false,
+    createdDate: '2024-01-15'
+  },
+  {
+    id: 2,
+    name: 'Moorthy Industries',
+    address: '456 Industrial Ave',
+    city: 'Bangalore',
+    pincode: '560001',
+    state: 'Karnataka',
+    country: 'India',
+    pan: 'FGHIJ5678K',
+    gst: '29BBBBB0000B1Z6',
+    email: 'contact@moorthyind.com',
+    phone: '+1-555-0102',
+    fabric: false,
+    trims: true,
+    createdDate: '2024-02-20'
+  },
+  {
+    id: 3,
+    name: 'Global Tech Solutions',
+    address: '789 Tech Park',
+    city: 'Delhi',
+    pincode: '110001',
+    state: 'Delhi',
+    country: 'India',
+    pan: 'KLMNO9012L',
+    gst: '07CCCCCC0000C1Z7',
+    email: 'sales@globaltech.com',
+    phone: '+1-555-0103',
+    fabric: true,
+    trims: true,
+    createdDate: '2024-03-10'
+  },
+  {
+    id: 4,
+    name: 'Premium Parts Ltd',
+    address: '321 Parts Blvd',
+    city: 'Chennai',
+    pincode: '600001',
+    state: 'Tamil Nadu',
+    country: 'India',
+    pan: 'PQRST3456M',
+    gst: '33DDDDDD0000D1Z8',
+    email: 'orders@premiumparts.com',
+    phone: '+1-555-0104',
+    fabric: false,
+    trims: false,
+    createdDate: '2024-04-05'
+  },
+  {
+    id: 5,
+    name: 'Industrial Supplies Co',
+    address: '654 Supply Rd',
+    city: 'Kolkata',
+    pincode: '700001',
+    state: 'West Bengal',
+    country: 'India',
+    pan: 'UVWXY7890N',
+    gst: '19EEEEEE0000E1Z9',
+    email: 'info@industrialsupplies.com',
+    phone: '+1-555-0105',
+    fabric: true,
+    trims: false,
+    createdDate: '2024-05-12'
+  },
+  {
+    id: 6,
+    name: 'Textile Hub Pvt Ltd',
+    address: '789 Textile Market',
+    city: 'Surat',
+    pincode: '395002',
+    state: 'Gujarat',
+    country: 'India',
+    pan: 'ZABCD1234G',
+    gst: '24FFFFF0000F1Z0',
+    email: 'contact@textilehub.com',
+    phone: '+1-555-0106',
+    fabric: true,
+    trims: false,
+    createdDate: '2024-06-18'
+  },
+  {
+    id: 7,
+    name: 'Fashion Accessories Inc',
+    address: '456 Fashion Street',
+    city: 'Hyderabad',
+    pincode: '500001',
+    state: 'Telangana',
+    country: 'India',
+    pan: 'HIJKL5678P',
+    gst: '36GGGGG0000G1Z1',
+    email: 'sales@fashionacc.com',
+    phone: '+1-555-0107',
+    fabric: false,
+    trims: true,
+    createdDate: '2024-07-22'
+  },
+  {
+    id: 8,
+    name: 'Quality Fabrics Ltd',
+    address: '321 Quality Lane',
+    city: 'Pune',
+    pincode: '411001',
+    state: 'Maharashtra',
+    country: 'India',
+    pan: 'MNOPQ9012R',
+    gst: '27HHHHH0000H1Z2',
+    email: 'info@qualityfabrics.com',
+    phone: '+1-555-0108',
+    fabric: true,
+    trims: false,
+    createdDate: '2024-08-14'
+  },
+  {
+    id: 9,
+    name: 'Modern Trims Co',
+    address: '654 Modern Plaza',
+    city: 'Ahmedabad',
+    pincode: '380001',
+    state: 'Gujarat',
+    country: 'India',
+    pan: 'RSTUV3456S',
+    gst: '24IIIII0000I1Z3',
+    email: 'orders@moderntrims.com',
+    phone: '+1-555-0109',
+    fabric: false,
+    trims: true,
+    createdDate: '2024-09-08'
+  },
+  {
+    id: 10,
+    name: 'Elite Textiles',
+    address: '987 Elite Tower',
+    city: 'Jaipur',
+    pincode: '302001',
+    state: 'Rajasthan',
+    country: 'India',
+    pan: 'WXYZA7890T',
+    gst: '08JJJJJ0000J1Z4',
+    email: 'contact@elitetextiles.com',
+    phone: '+1-555-0110',
+    fabric: true,
+    trims: true,
+    createdDate: '2024-10-25'
+  },
+  {
+    id: 11,
+    name: 'Budget Materials',
+    address: '147 Budget Street',
+    city: 'Lucknow',
+    pincode: '226001',
+    state: 'Uttar Pradesh',
+    country: 'India',
+    pan: 'BCDEF1234U',
+    gst: '09KKKKK0000K1Z5',
+    email: 'info@budgetmaterials.com',
+    phone: '+1-555-0111',
+    fabric: false,
+    trims: false,
+    createdDate: '2024-11-03'
+  },
+  {
+    id: 12,
+    name: 'Premium Threads Ltd',
+    address: '258 Thread Avenue',
+    city: 'Indore',
+    pincode: '452001',
+    state: 'Madhya Pradesh',
+    country: 'India',
+    pan: 'GHIJK5678V',
+    gst: '23LLLLL0000L1Z6',
+    email: 'sales@premiumthreads.com',
+    phone: '+1-555-0112',
+    fabric: true,
+    trims: false,
+    createdDate: '2024-12-11'
+  },
+  {
+    id: 13,
+    name: 'Classic Buttons Co',
+    address: '369 Button Market',
+    city: 'Chandigarh',
+    pincode: '160001',
+    state: 'Chandigarh',
+    country: 'India',
+    pan: 'LMNOP9012W',
+    gst: '04MMMMM0000M1Z7',
+    email: 'contact@classicbuttons.com',
+    phone: '+1-555-0113',
+    fabric: false,
+    trims: true,
+    createdDate: '2024-01-28'
+  },
+  {
+    id: 14,
+    name: 'Designer Fabrics',
+    address: '741 Designer Plaza',
+    city: 'Kochi',
+    pincode: '682001',
+    state: 'Kerala',
+    country: 'India',
+    pan: 'QRSTU3456X',
+    gst: '32NNNNN0000N1Z8',
+    email: 'info@designerfabrics.com',
+    phone: '+1-555-0114',
+    fabric: true,
+    trims: false,
+    createdDate: '2024-02-16'
+  },
+  {
+    id: 15,
+    name: 'Wholesale Trims',
+    address: '852 Wholesale Hub',
+    city: 'Patna',
+    pincode: '800001',
+    state: 'Bihar',
+    country: 'India',
+    pan: 'VWXYZ7890Y',
+    gst: '10OOOOO0000O1Z9',
+    email: 'orders@wholesaletrims.com',
+    phone: '+1-555-0115',
+    fabric: false,
+    trims: true,
+    createdDate: '2024-03-29'
+  },
+  {
+    id: 16,
+    name: 'Luxury Textiles Inc',
+    address: '963 Luxury Lane',
+    city: 'Bhubaneswar',
+    pincode: '751001',
+    state: 'Odisha',
+    country: 'India',
+    pan: 'ABCDE1234Z',
+    gst: '21PPPPP0000P1Z0',
+    email: 'contact@luxurytextiles.com',
+    phone: '+1-555-0116',
+    fabric: true,
+    trims: true,
+    createdDate: '2024-04-17'
+  },
+  {
+    id: 17,
+    name: 'Basic Supplies Ltd',
+    address: '159 Basic Street',
+    city: 'Raipur',
+    pincode: '492001',
+    state: 'Chhattisgarh',
+    country: 'India',
+    pan: 'FGHIJ5678A',
+    gst: '22QQQQQ0000Q1Z1',
+    email: 'info@basicsupplies.com',
+    phone: '+1-555-0117',
+    fabric: false,
+    trims: false,
+    createdDate: '2024-05-21'
+  },
+  {
+    id: 18,
+    name: 'Advanced Materials',
+    address: '357 Advanced Plaza',
+    city: 'Ranchi',
+    pincode: '834001',
+    state: 'Jharkhand',
+    country: 'India',
+    pan: 'KLMNO9012B',
+    gst: '20RRRRR0000R1Z2',
+    email: 'sales@advancedmaterials.com',
+    phone: '+1-555-0118',
+    fabric: true,
+    trims: false,
+    createdDate: '2024-06-09'
+  },
+  {
+    id: 19,
+    name: 'Specialty Trims Co',
+    address: '468 Specialty Market',
+    city: 'Guwahati',
+    pincode: '781001',
+    state: 'Assam',
+    country: 'India',
+    pan: 'PQRST3456C',
+    gst: '18SSSSS0000S1Z3',
+    email: 'contact@specialtytrims.com',
+    phone: '+1-555-0119',
+    fabric: false,
+    trims: true,
+    createdDate: '2024-07-14'
+  },
+  {
+    id: 20,
+    name: 'Complete Solutions',
+    address: '579 Complete Tower',
+    city: 'Shimla',
+    pincode: '171001',
+    state: 'Himachal Pradesh',
+    country: 'India',
+    pan: 'UVWXY7890D',
+    gst: '02TTTTT0000T1Z4',
+    email: 'info@completesolutions.com',
+    phone: '+1-555-0120',
+    fabric: true,
+    trims: true,
+    createdDate: '2024-08-26'
+  },
+  {
+    id: 21,
+    name: 'Eco-Friendly Fabrics',
+    address: '681 Eco Plaza',
+    city: 'Dehradun',
+    pincode: '248001',
+    state: 'Uttarakhand',
+    country: 'India',
+    pan: 'ZABCD1234E',
+    gst: '05UUUUU0000U1Z5',
+    email: 'contact@ecofabrics.com',
+    phone: '+1-555-0121',
+    fabric: true,
+    trims: false,
+    createdDate: '2024-09-13'
+  },
+  {
+    id: 22,
+    name: 'Premium Accessories',
+    address: '792 Premium Street',
+    city: 'Srinagar',
+    pincode: '190001',
+    state: 'Jammu and Kashmir',
+    country: 'India',
+    pan: 'HIJKL5678F',
+    gst: '01VVVVV0000V1Z6',
+    email: 'sales@premiumacc.com',
+    phone: '+1-555-0122',
+    fabric: false,
+    trims: true,
+    createdDate: '2024-10-07'
+  },
+  {
+    id: 23,
+    name: 'Smart Textiles Ltd',
+    address: '813 Smart Tower',
+    city: 'Panaji',
+    pincode: '403001',
+    state: 'Goa',
+    country: 'India',
+    pan: 'MNOPQ9012G',
+    gst: '30WWWWW0000W1Z7',
+    email: 'info@smarttextiles.com',
+    phone: '+1-555-0123',
+    fabric: true,
+    trims: false,
+    createdDate: '2024-11-19'
+  },
+  {
+    id: 24,
+    name: 'Bulk Trims Supplier',
+    address: '924 Bulk Market',
+    city: 'Port Blair',
+    pincode: '744101',
+    state: 'Andaman and Nicobar',
+    country: 'India',
+    pan: 'RSTUV3456H',
+    gst: '35XXXXX0000X1Z8',
+    email: 'orders@bulktrims.com',
+    phone: '+1-555-0124',
+    fabric: false,
+    trims: true,
+    createdDate: '2024-12-02'
+  },
+  {
+    id: 25,
+    name: 'All-in-One Materials',
+    address: '135 All-in-One Plaza',
+    city: 'Silvassa',
+    pincode: '396230',
+    state: 'Dadra and Nagar Haveli',
+    country: 'India',
+    pan: 'WXYZA7890I',
+    gst: '26YYYYY0000Y1Z9',
+    email: 'contact@AllinOne.com',
+    phone: '+1-555-0125',
+    fabric: true,
+    trims: true,
+    createdDate: '2024-01-30'
+  }
 ];
 
 // Mock data for items
@@ -61,23 +456,66 @@ class MockServer {
   }
 
   // Handle requests
-  async handleRequest(method, path) {
+  async handleRequest(method, path, data = null) {
     const routeKey = `${method} ${path}`;
-    const handler = this.routes.get(routeKey);
+    let handler = this.routes.get(routeKey);
 
     if (!handler) {
+      // Check for parameterized routes
+      const pathParts = path.split('/');
+      const methodRoutes = Array.from(this.routes.keys()).filter(key => key.startsWith(`${method} /`));
+      for (const route of methodRoutes) {
+        const routeParts = route.split('/').slice(1);
+        if (routeParts.length === pathParts.length) {
+          const params = {};
+          let match = true;
+          for (let i = 0; i < routeParts.length; i++) {
+            if (routeParts[i].startsWith(':')) {
+              params[routeParts[i].slice(1)] = pathParts[i];
+            } else if (routeParts[i] !== pathParts[i]) {
+              match = false;
+              break;
+            }
+          }
+          if (match) {
+            handler = this.routes.get(route);
+            return handler(data, params);
+          }
+        }
+      }
       throw new Error(`Route ${routeKey} not found`);
     }
 
     // Add delay to simulate network request
     await new Promise(resolve => setTimeout(resolve, this.timing));
 
-    return handler();
+    return handler(data);
   }
 }
 
 // Create server instance
 const server = new MockServer();
+
+// Start the mock server by overriding fetch
+server.start = () => {
+  const originalFetch = window.fetch;
+  window.fetch = async (url, options = {}) => {
+    const method = options.method || 'GET';
+    const path = url.replace(window.location.origin, '').replace('/api', '');
+    if (server.routes.has(`${method} ${path}`) || server.routes.has(`${method} /${path}`)) {
+      try {
+        const response = await server.handleRequest(method, path, options.body ? JSON.parse(options.body) : null);
+        return new Response(JSON.stringify(response), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      } catch (error) {
+        return new Response(JSON.stringify({ error: error.message }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+      }
+    }
+    return originalFetch(url, options);
+  };
+};
+
+// Start the server
+server.start();
 
 // Define routes
 server.get('/po-list', () => {
@@ -93,6 +531,74 @@ server.get('/suppliers', () => {
   return {
     data: suppliersData,
     total: suppliersData.length
+  };
+});
+
+server.post('/suppliers', (data) => {
+  const newSupplier = {
+    id: Math.max(...suppliersData.map(s => s.id)) + 1,
+    name: data.name,
+    address: data.address,
+    city: data.city,
+    pincode: data.pincode,
+    state: data.state,
+    country: data.country,
+    pan: data.pan,
+    gst: data.gst,
+    email: data.email,
+    phone: data.phone,
+    fabric: data.fabric || false,
+    trims: data.trims || false,
+    createdDate: new Date().toISOString().split('T')[0]
+  };
+  suppliersData.push(newSupplier);
+  return {
+    success: true,
+    data: newSupplier,
+    message: 'Supplier created successfully'
+  };
+});
+
+server.put('/suppliers/:id', (data, params) => {
+  const supplierId = parseInt(params.id);
+  const supplierIndex = suppliersData.findIndex(s => s.id === supplierId);
+  if (supplierIndex === -1) {
+    throw new Error('Supplier not found');
+  }
+  const updatedSupplier = {
+    ...suppliersData[supplierIndex],
+    name: data.name,
+    address: data.address,
+    city: data.city,
+    pincode: data.pincode,
+    state: data.state,
+    country: data.country,
+    pan: data.pan,
+    gst: data.gst,
+    email: data.email,
+    phone: data.phone,
+    fabric: data.fabric || false,
+    trims: data.trims || false
+  };
+  suppliersData[supplierIndex] = updatedSupplier;
+  return {
+    success: true,
+    data: updatedSupplier,
+    message: 'Supplier updated successfully'
+  };
+});
+
+server.delete('/suppliers/:id', (data, params) => {
+  const supplierId = parseInt(params.id);
+  const supplierIndex = suppliersData.findIndex(s => s.id === supplierId);
+  if (supplierIndex === -1) {
+    throw new Error('Supplier not found');
+  }
+  const deletedSupplier = suppliersData.splice(supplierIndex, 1)[0];
+  return {
+    success: true,
+    data: deletedSupplier,
+    message: 'Supplier deleted successfully'
   };
 });
 
@@ -146,7 +652,7 @@ server.get('/po-approval-list', () => {
   };
 });
 
-server.get('/po/:id', (params) => {
+server.get('/po/:id', (data, params) => {
   const poId = parseInt(params.id);
   const po = poApprovalData.find(p => p.id === poId);
   if (!po) {
@@ -325,10 +831,20 @@ server.get('/po/export', (params) => {
 export default server;
 
 // Export convenience function for making requests
-export const makeRequest = async (method, path) => {
+export const makeRequest = async (method, path, data = null) => {
   try {
-    const response = await server.handleRequest(method, path);
-    return response;
+    const options = {
+      method,
+      headers: { 'Content-Type': 'application/json' }
+    };
+    if (data) {
+      options.body = JSON.stringify(data);
+    }
+    const response = await fetch(`/api${path}`, options);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
   } catch (error) {
     console.error('Mock server error:', error);
     throw error;
@@ -339,9 +855,15 @@ export const makeRequest = async (method, path) => {
 export const getPOList = () => makeRequest('GET', '/po-list');
 export const getPOApprovalList = () => makeRequest('GET', '/po-approval-list');
 export const getPOById = (id) => makeRequest('GET', `/po/${id}`);
-export const approvePO = (id, data) => makeRequest('POST', `/po/${id}/approve`);
-export const rejectPO = (id, data) => makeRequest('POST', `/po/${id}/reject`);
-export const bulkApprovePOs = (data) => makeRequest('POST', '/po/bulk-approve');
-export const bulkRejectPOs = (data) => makeRequest('POST', '/po/bulk-reject');
-export const addPOComment = (id, data) => makeRequest('POST', `/po/${id}/comments`);
+export const approvePO = (id, data) => makeRequest('POST', `/po/${id}/approve`, data);
+export const rejectPO = (id, data) => makeRequest('POST', `/po/${id}/reject`, data);
+export const bulkApprovePOs = (data) => makeRequest('POST', '/po/bulk-approve', data);
+export const bulkRejectPOs = (data) => makeRequest('POST', '/po/bulk-reject', data);
+export const addPOComment = (id, data) => makeRequest('POST', `/po/${id}/comments`, data);
 export const exportPOList = (format) => makeRequest('GET', `/po/export?format=${format}`);
+
+// Supplier API functions
+export const getSuppliers = () => makeRequest('GET', '/suppliers');
+export const createSupplier = (data) => makeRequest('POST', '/suppliers', data);
+export const updateSupplier = (id, data) => makeRequest('PUT', `/suppliers/${id}`, data);
+export const deleteSupplier = (id) => makeRequest('DELETE', `/suppliers/${id}`);

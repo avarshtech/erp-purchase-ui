@@ -174,6 +174,19 @@ const MasterLayout = ({ children }) => {
                     PO Approval
                   </NavLink>
                 </li>
+                <li>
+                  <NavLink
+                    to='/supplier-info'
+                    
+                    className={(navData) =>
+                      navData.isActive ? "active-page" : ""
+                    }
+                  >
+                    <Icon icon='mingcute:shop' className='menu-icon' />
+                    <i className='text-primary-600 w-auto' />{" "}
+                    Supplier Info
+                  </NavLink>
+                </li>
           </ul>
         </div>
       </aside>
@@ -770,10 +783,20 @@ const MasterLayout = ({ children }) => {
                     data-bs-toggle='dropdown'
                   >
                     <img
-                      src='assets/images/user.png'
-                      alt='image_user'
+                      src='assets/images/users/user2.png'
+                      alt='User Avatar'
                       className='w-40-px h-40-px object-fit-cover rounded-circle'
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
                     />
+                    <div
+                      className='w-40-px h-40-px bg-primary-600 text-white rounded-circle d-none justify-content-center align-items-center'
+                      style={{ display: 'none' }}
+                    >
+                      <Icon icon='solar:user-linear' className='text-xl' />
+                    </div>
                   </button>
                   <div className='dropdown-menu to-top dropdown-menu-sm'>
                     <div className='py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2'>
