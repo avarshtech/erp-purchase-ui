@@ -277,7 +277,7 @@ const SupplierModalLayer = () => {
                 break;
             case 'address':
                 // Characters, numbers, spaces, and specific special chars (-, /)
-                newValue = value.replace(/[^a-zA-Z0-9\s\-\/]/g, '');
+                newValue = value.replace(/[^a-zA-Z0-9\s\-/]/g, '');
                 break;
             case 'city':
                 // Only characters, no numbers or special chars
