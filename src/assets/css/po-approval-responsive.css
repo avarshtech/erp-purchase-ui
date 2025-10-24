@@ -339,56 +339,17 @@
     border-color: #2b6cb0;
     color: #bee3f8;
   }
+
+
+  .btn-close {
+    filter: invert(1);
+  }
+
+
+
 }
 
-/* Theme-based logo switching */
-[data-theme="light"] .light-logo {
-  display: block !important;
-}
 
-[data-theme="light"] .dark-logo {
-  display: none !important;
-}
-
-[data-theme="light"] .logo-icon {
-  display: none !important;
-}
-
-[data-theme="dark"] .light-logo {
-  display: none !important;
-}
-
-[data-theme="dark"] .dark-logo {
-  display: block !important;
-}
-
-[data-theme="dark"] .logo-icon {
-  display: none !important;
-}
-
-/* Default to light theme */
-:root .light-logo {
-  display: block !important;
-}
-
-:root .dark-logo {
-  display: none !important;
-}
-
-:root .logo-icon {
-  display: none !important;
-}
-
-/* User avatar fallback */
-.user-avatar-fallback {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 16px;
-}
 
 /* Theme-based form styling */
 [data-theme="dark"] .form-control,
@@ -500,6 +461,54 @@
 [data-theme="light"] .text-neutral-900 {
   color: #212529 !important;
 }
+
+/* Fix z-index for dropdowns to show over table headers and sticky columns */
+.dropdown-menu {
+  z-index: 20 !important;
+}
+
+.dropdown {
+  position: relative;
+  z-index: 20;
+}
+
+/* Ensure dropdowns appear above sticky table elements */
+.table-responsive .table thead th {
+  z-index: 15;
+}
+
+.sticky-actions {
+  z-index: 10;
+}
+
+
+/* Table stripes for better readability */
+.table-responsive .table tbody tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.table-responsive .table tbody tr:nth-child(odd) {
+  background-color: transparent;
+}
+
+/* Dark mode table stripes */
+[data-theme="dark"] .table-responsive .table tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="dark"] .table-responsive .table tbody tr:nth-child(odd) {
+  background-color: transparent;
+}
+
+/* Light mode table stripes */
+[data-theme="light"] .table-responsive .table tbody tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .table-responsive .table tbody tr:nth-child(odd) {
+  background-color: transparent;
+}
+
 
 /* Center align table headers */
 .table-responsive .table thead th {

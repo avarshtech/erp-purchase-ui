@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
+import "../assets/css/master-layout.css";
 
 const MasterLayout = ({ children }) => {
   let [sidebarActive, seSidebarActive] = useState(false);
@@ -138,53 +139,49 @@ const MasterLayout = ({ children }) => {
             <li>
                   <NavLink
                     to='/po-list'
-                    
+
                     className={(navData) =>
                       navData.isActive ? "active-page" : ""
                     }
                   >
                     <Icon icon='mingcute:storage-line' className='menu-icon' />
-                    <i className='text-primary-600 w-auto' />{" "}
-                    PO List
+                    <span>PO List</span>
                   </NavLink>
                 </li>
                 <li>
                   <NavLink
                     to='/addeditpo'
-                    
+
                     className={(navData) =>
                       navData.isActive ? "active-page" : ""
                     }
                   >
                     <Icon icon='mingcute:storage-line' className='menu-icon' />
-                    <i className='text-primary-600 w-auto' />{" "}
-                    Add/Edit PO
+                    <span>Add/Edit PO</span>
                   </NavLink>
                 </li>
                 <li>
                   <NavLink
                     to='/po-approval'
-                    
+
                     className={(navData) =>
                       navData.isActive ? "active-page" : ""
                     }
                   >
-                    <Icon icon='mingcute:storage-line' className='menu-icon' />
-                    <i className='text-primary-600 w-auto' />{" "}
-                    PO Approval
+                    <Icon icon='mingcute:department-line' className='menu-icon' />
+                    <span>PO Approval</span>
                   </NavLink>
                 </li>
                 <li>
                   <NavLink
                     to='/supplier-info'
-                    
+
                     className={(navData) =>
                       navData.isActive ? "active-page" : ""
                     }
                   >
-                    <Icon icon='mingcute:shop' className='menu-icon' />
-                    <i className='text-primary-600 w-auto' />{" "}
-                    Supplier Info
+                    <Icon icon='mingcute:shop-line' className='menu-icon' />
+                    <span>Supplier Info</span>
                   </NavLink>
                 </li>
           </ul>
@@ -782,19 +779,7 @@ const MasterLayout = ({ children }) => {
                     type='button'
                     data-bs-toggle='dropdown'
                   >
-                    <img
-                      src='assets/images/users/user2.png'
-                      alt='User Avatar'
-                      className='w-40-px h-40-px object-fit-cover rounded-circle'
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
-                    />
-                    <div
-                      className='w-40-px h-40-px bg-primary-600 text-white rounded-circle d-none justify-content-center align-items-center'
-                      style={{ display: 'none' }}
-                    >
+                    <div className='w-40-px h-40-px bg-primary-600 text-white rounded-circle d-flex justify-content-center align-items-center'>
                       <Icon icon='solar:user-linear' className='text-xl' />
                     </div>
                   </button>

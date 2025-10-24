@@ -6,7 +6,6 @@ const SupplierModalLayer = () => {
     const [allSuppliers, setAllSuppliers] = useState([]);
     const [filteredSuppliers, setFilteredSuppliers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -15,29 +14,46 @@ const SupplierModalLayer = () => {
     const [isEdit, setIsEdit] = useState(false);
     const [currentSupplier, setCurrentSupplier] = useState(null);
     const [supplierToDelete, setSupplierToDelete] = useState(null);
+    const [originalSupplier, setOriginalSupplier] = useState(null);
     const [formData, setFormData] = useState({
-        name: '',
-        address: '',
-        city: '',
-        pincode: '',
-        state: '',
-        country: '',
-        pan: '',
-        gst: '',
-        email: '',
-        phone: '',
-        fabric: false,
-        trims: false
-    });
-    const [searchTerm, setSearchTerm] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(10);
-    const [sortField, setSortField] = useState('createdDate');
-    const [sortDirection, setSortDirection] = useState('desc');
+         name: '',
+         address: '',
+         city: '',
+         pincode: '',
+         state: '',
+         country: '',
+         pan: '',
+         gstin: '',
+         email: '',
+         phone: '',
+         fabric: false,
+         trims: false
+     });
+     const [searchTerm, setSearchTerm] = useState('');
+     const [currentPage, setCurrentPage] = useState(1);
+     const [itemsPerPage] = useState(10);
+     const [sortField, setSortField] = useState('createdDate');
+     const [sortDirection, setSortDirection] = useState('desc');
+     const [showToast, setShowToast] = useState(false);
+     const [toastMessage, setToastMessage] = useState('');
+     const [toastType, setToastType] = useState('error');
+     const [hasChanges, setHasChanges] = useState(false);
 
     useEffect(() => {
         fetchSuppliers();
     }, []);
+
+    useEffect(() => {
+        if (isEdit && originalSupplier) {
+            const changed = Object.keys(formData).some(key => {
+                if (key === 'fabric' || key === 'trims') {
+                    return formData[key] !== originalSupplier[key];
+                }
+                return formData[key] !== originalSupplier[key];
+            });
+            setHasChanges(changed);
+        }
+    }, [formData, originalSupplier, isEdit]);
 
     useEffect(() => {
         let filtered = allSuppliers;
@@ -52,7 +68,7 @@ const SupplierModalLayer = () => {
                 supplier.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 supplier.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 supplier.pan.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                supplier.gst.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                supplier.gstin.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 supplier.createdDate.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
@@ -84,12 +100,10 @@ const SupplierModalLayer = () => {
     const fetchSuppliers = async () => {
         try {
             setLoading(true);
-            setError(null);
             const response = await getSuppliers();
             setAllSuppliers(response.data);
             setFilteredSuppliers(response.data);
         } catch (err) {
-            setError('Failed to fetch suppliers. Please try again later.');
             console.error('Error fetching suppliers:', err);
         } finally {
             setLoading(false);
@@ -107,7 +121,7 @@ const SupplierModalLayer = () => {
             state: '',
             country: '',
             pan: '',
-            gst: '',
+            gstin: '',
             email: '',
             phone: '',
             fabric: false,
@@ -119,6 +133,7 @@ const SupplierModalLayer = () => {
     const handleEdit = (supplier) => {
         setIsEdit(true);
         setCurrentSupplier(supplier);
+        setOriginalSupplier(supplier);
         setFormData({
             name: supplier.name,
             address: supplier.address,
@@ -127,7 +142,7 @@ const SupplierModalLayer = () => {
             state: supplier.state,
             country: supplier.country,
             pan: supplier.pan,
-            gst: supplier.gst,
+            gstin: supplier.gstin,
             email: supplier.email,
             phone: supplier.phone,
             fabric: supplier.fabric,
@@ -148,13 +163,91 @@ const SupplierModalLayer = () => {
             setSupplierToDelete(null);
             fetchSuppliers();
         } catch (err) {
-            setError('Failed to delete supplier.');
             console.error('Error deleting supplier:', err);
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        // Field-by-field validation in order
+        if (!formData.name.trim()) {
+            setToastMessage('Supplier Name is required.');
+            setToastType('error');
+            setShowToast(true);
+            return;
+        }
+        if (!formData.address.trim()) {
+            setToastMessage('Address is required.');
+            setToastType('error');
+            setShowToast(true);
+            return;
+        }
+        if (!formData.city.trim()) {
+            setToastMessage('City is required.');
+            setToastType('error');
+            setShowToast(true);
+            return;
+        }
+        if (!formData.pincode.trim()) {
+            setToastMessage('Pincode is required.');
+            setToastType('error');
+            setShowToast(true);
+            return;
+        }
+        if (!formData.state.trim()) {
+            setToastMessage('State is required.');
+            setToastType('error');
+            setShowToast(true);
+            return;
+        }
+        if (!formData.country.trim()) {
+            setToastMessage('Country is required.');
+            setToastType('error');
+            setShowToast(true);
+            return;
+        }
+        if (!formData.pan.trim()) {
+            setToastMessage('PAN is required.');
+            setToastType('error');
+            setShowToast(true);
+            return;
+        }
+        if (!/^[A-Z]{3}[PCAFHTBLJG]{1}[A-Z]{1}[0-9]{4}[A-Z]{1}$/.test(formData.pan)) {
+            setToastMessage('PAN must be in the format: AAAX9999X (e.g., ABCDE1234F)');
+            setToastType('error');
+            setShowToast(true);
+            return;
+        }
+        if (!formData.gstin.trim()) {
+            setToastMessage('GSTIN is required.');
+            setToastType('error');
+            setShowToast(true);
+            return;
+        }
+        if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(formData.gstin)) {
+            setToastMessage('GSTIN must be in the format: 22AAAAA0000A1Z5 (15 digits)');
+            setToastType('error');
+            setShowToast(true);
+            return;
+        }
+        if (!formData.email.trim()) {
+            setToastMessage('Email is required.');
+            setToastType('error');
+            setShowToast(true);
+            return;
+        }
+        if (!formData.phone.trim()) {
+            setToastMessage('Phone Number is required.');
+            setToastType('error');
+            setShowToast(true);
+            return;
+        }
+        if (!formData.fabric && !formData.trims) {
+            setToastMessage('At least one supply product (Fabric or Trims) must be selected.');
+            setToastType('error');
+            setShowToast(true);
+            return;
+        }
         try {
             if (isEdit) {
                 await updateSupplier(currentSupplier.id, formData);
@@ -162,18 +255,69 @@ const SupplierModalLayer = () => {
                 await createSupplier(formData);
             }
             setShowModal(false);
+            setShowToast(false);
             await fetchSuppliers(); // Ensure fresh data is loaded
         } catch (err) {
-            setError(`Failed to ${isEdit ? 'update' : 'create'} supplier. Please try again.`);
+            setToastMessage(`Failed to ${isEdit ? 'update' : 'create'} supplier. Please try again.`);
+            setToastType('error');
+            setShowToast(true);
             console.error(`Error ${isEdit ? 'updating' : 'creating'} supplier:`, err);
         }
     };
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
+        let newValue = type === 'checkbox' ? checked : value;
+
+        // Apply field-specific restrictions
+        switch (name) {
+            case 'name':
+                // Only characters, no numbers or special chars
+                newValue = value.replace(/[^a-zA-Z\s]/g, '');
+                break;
+            case 'address':
+                // Characters, numbers, spaces, and specific special chars (-, /)
+                newValue = value.replace(/[^a-zA-Z0-9\s\-\/]/g, '');
+                break;
+            case 'city':
+                // Only characters, no numbers or special chars
+                newValue = value.replace(/[^a-zA-Z\s]/g, '');
+                break;
+            case 'pincode':
+                // Only numbers, max 6 digits
+                newValue = value.replace(/[^0-9]/g, '').slice(0, 6);
+                break;
+            case 'state':
+                // Only characters, no numbers or special chars
+                newValue = value.replace(/[^a-zA-Z\s]/g, '');
+                break;
+            case 'country':
+                // Only characters, no numbers or special chars
+                newValue = value.replace(/[^a-zA-Z\s]/g, '');
+                break;
+            case 'pan':
+                // PAN format: 10 characters, specific structure
+                newValue = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 10);
+                break;
+            case 'gstin':
+                // GSTIN format: 15 characters, specific structure
+                newValue = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 15);
+                break;
+            case 'email':
+                // Allow standard email characters
+                newValue = value.replace(/[^a-zA-Z0-9@._-]/g, '');
+                break;
+            case 'phone':
+                // Only numbers, max 10 digits
+                newValue = value.replace(/[^0-9]/g, '').slice(0, 10);
+                break;
+            default:
+                break;
+        }
+
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: newValue
         }));
     };
 
@@ -224,11 +368,11 @@ const SupplierModalLayer = () => {
             <div className="card">
                 <div className="card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
                     <div className="d-flex flex-wrap align-items-center gap-3">
-                        <div className="icon-field">
+                        <div className="icon-field position-relative">
                             <input
                                 type="text"
                                 name="search"
-                                className="form-control form-control-sm w-auto"
+                                className="form-control form-control-sm w-auto pe-5"
                                 placeholder="Search"
                                 value={searchTerm}
                                 onChange={handleSearchChange}
@@ -236,6 +380,15 @@ const SupplierModalLayer = () => {
                             <span className="icon">
                                 <Icon icon="ion:search-outline" />
                             </span>
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    className="btn position-absolute top-50 end-0 translate-middle-y me-2"
+                                    onClick={() => setSearchTerm('')}
+                                >
+                                    <Icon icon="mingcute:close-line" />
+                                </button>
+                            )}
                         </div>
                     </div>
                     <button
@@ -249,14 +402,14 @@ const SupplierModalLayer = () => {
                 </div>
                 <div className="card-body">
                     {loading ? (
-                        <div className="text-center py-4">
-                            <div className="spinner-border spinner-border-sm me-2" role="status">
-                                <span className="visually-hidden">Loading...</span>
+                        <div className="d-flex align-items-center justify-content-center py-5" style={{ minHeight: '200px' }}>
+                            <div className="text-center">
+                                <div className="spinner-border text-primary mb-3" style={{ width: '3rem', height: '3rem' }} role="status">
+                                    <span className="visually-hidden">Loading...</span>
+                                </div>
+                                <h6 className="text-muted">Loading suppliers...</h6>
                             </div>
-                            Loading suppliers...
                         </div>
-                    ) : error ? (
-                        <div className="text-center py-4 text-danger">{error}</div>
                     ) : filteredSuppliers.length === 0 ? (
                         <div className="text-center py-4">
                             <div className="card border">
@@ -283,7 +436,7 @@ const SupplierModalLayer = () => {
                                                 scope="col"
                                                 className="cursor-pointer"
                                                 onClick={() => handleSort('name')}
-                                                style={{ minWidth: '280px' }}
+                                                style={{ width: '280px' }}
                                             >
                                                 <div className="d-flex align-items-center gap-1">
                                                     Supplier Name
@@ -292,17 +445,19 @@ const SupplierModalLayer = () => {
                                                     )}
                                                 </div>
                                             </th>
-                                            <th scope="col" style={{ minWidth: '300px' }}>Address</th>
-                                            <th scope="col" style={{ minWidth: '140px' }}>City</th>
-                                            <th scope="col" style={{ minWidth: '140px' }}>State</th>
-                                            <th scope="col" style={{ minWidth: '140px' }}>Country</th>
-                                            <th scope="col" style={{ minWidth: '260px' }}>Email</th>
-                                            <th scope="col" style={{ minWidth: '160px' }}>Phone</th>
+                                            <th scope="col" style={{ width: '300px' }}>Address</th>
+                                            <th scope="col" style={{ width: '140px' }}>City</th>
+                                            <th scope="col" style={{ width: '180px' }}>State</th>
+                                            <th scope="col" style={{ width: '140px' }}>Country</th>
+                                            <th scope="col" style={{ width: '260px' }}>Email</th>
+                                            <th scope="col" style={{ width: '160px' }}>Phone</th>
+                                            <th scope="col" style={{ width: '160px' }}>PAN</th>
+                                            <th scope="col" style={{ width: '200px' }}>GSTIN</th>
                                             <th
                                                 scope="col"
                                                 className="cursor-pointer"
                                                 onClick={() => handleSort('createdDate')}
-                                                style={{ minWidth: '160px' }}
+                                                style={{ width: '200px' }}
                                             >
                                                 <div className="d-flex align-items-center gap-1">
                                                     Created Date
@@ -311,23 +466,25 @@ const SupplierModalLayer = () => {
                                                     )}
                                                 </div>
                                             </th>
-                                            <th scope="col" style={{ minWidth: '180px' }}>Supplies</th>
+                                            <th scope="col" style={{ width: '180px' }}>Supplies</th>
                                             <th scope="col" className="sticky-actions">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {currentSuppliers.map((supplier, index) => (
                                             <tr key={supplier.id}>
-                                                <td style={{ width: '100px' }}>{startIndex + index + 1}</td>
-                                                <td style={{ minWidth: '280px' }}>{supplier.name}</td>
-                                                <td style={{ minWidth: '300px' }}>{supplier.address}</td>
-                                                <td style={{ minWidth: '140px' }}>{supplier.city}</td>
-                                                <td style={{ minWidth: '140px' }}>{supplier.state}</td>
-                                                <td style={{ minWidth: '140px' }}>{supplier.country}</td>
-                                                <td style={{ minWidth: '260px' }}>{supplier.email}</td>
-                                                <td style={{ minWidth: '160px' }}>{supplier.phone}</td>
-                                                <td style={{ minWidth: '160px' }}>{supplier.createdDate}</td>
-                                                <td style={{ minWidth: '180px' }}>{renderSuppliesChips(supplier)}</td>
+                                                <td style={{ width: '100px' }}>{supplier.id}</td>
+                                                <td style={{ width: '280px' }}>{supplier.name}</td>
+                                                <td style={{ width: '300px' }}>{supplier.address}</td>
+                                                <td style={{ width: '140px' }}>{supplier.city}</td>
+                                                <td style={{ width: '180px' }}>{supplier.state}</td>
+                                                <td style={{ width: '140px' }}>{supplier.country}</td>
+                                                <td style={{ width: '260px' }}>{supplier.email}</td>
+                                                <td style={{ width: '160px' }}>{supplier.phone}</td>
+                                                <td style={{ width: '160px' }}>{supplier.pan}</td>
+                                                <td style={{ width: '200px' }}>{supplier.gstin}</td>
+                                                <td style={{ width: '200px' }}>{supplier.createdDate}</td>
+                                                <td style={{ width: '180px' }}>{renderSuppliesChips(supplier)}</td>
                                                 <td className="sticky-actions">
                                                     <button
                                                         type="button"
@@ -394,6 +551,17 @@ const SupplierModalLayer = () => {
             <div className={`modal fade ${showModal ? 'show d-block' : ''}`} style={{ backgroundColor: showModal ? 'rgba(0,0,0,0.5)' : 'transparent' }} data-bs-backdrop="static">
                 <div className="modal-dialog modal-lg modal-dialog-centered">
                     <div className="modal-content radius-16 bg-base" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+                        {/* Toast Notification */}
+                        {showToast && (
+                            <div className="position-absolute top-0 start-50 translate-middle-x mt-3" style={{ zIndex: 10 }}>
+                                <div className={`toast-custom ${toastType === 'error' ? 'toast-error' : 'toast-success'}`}>
+                                    <span>{toastMessage}</span>
+                                    <button type="button" className="toast-close" onClick={() => setShowToast(false)} aria-label="Close">
+                                        &times;
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                         <div className="modal-header py-16 px-24 border border-top-0 border-start-0 border-end-0" style={{ flexShrink: 0 }}>
                             <h1 className="modal-title fs-5" id="supplierModalLabel">
                                 {isEdit ? 'Update Supplier' : 'Add Supplier'}
@@ -401,7 +569,10 @@ const SupplierModalLayer = () => {
                             <button
                                 type="button"
                                 className="btn-close"
-                                onClick={() => setShowModal(false)}
+                                onClick={() => {
+                                    setShowModal(false);
+                                    setShowToast(false);
+                                }}
                                 aria-label="Close"
                             />
                         </div>
@@ -410,7 +581,7 @@ const SupplierModalLayer = () => {
                                 <div className="row">
                                     <div className="col-12 mb-20">
                                         <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                                            Supplier Name <span className="text-danger-600">*</span>
+                                            Supplier Name {!isEdit && <span className="text-danger-600">*</span>}
                                         </label>
                                         <input
                                             type="text"
@@ -419,6 +590,7 @@ const SupplierModalLayer = () => {
                                             placeholder="Enter Supplier Name"
                                             value={formData.name}
                                             onChange={handleChange}
+                                            disabled={isEdit}
                                             required
                                         />
                                     </div>
@@ -461,6 +633,7 @@ const SupplierModalLayer = () => {
                                             placeholder="Enter Pincode"
                                             value={formData.pincode}
                                             onChange={handleChange}
+                                            maxLength="6"
                                             required
                                         />
                                     </div>
@@ -508,14 +681,14 @@ const SupplierModalLayer = () => {
                                     </div>
                                     <div className="col-6 mb-20">
                                         <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                                            GST <span className="text-danger-600">*</span>
+                                            GSTIN <span className="text-danger-600">*</span>
                                         </label>
                                         <input
                                             type="text"
-                                            name="gst"
+                                            name="gstin"
                                             className="form-control radius-8"
-                                            placeholder="Enter GST"
-                                            value={formData.gst}
+                                            placeholder="Enter GSTIN"
+                                            value={formData.gstin}
                                             onChange={handleChange}
                                             required
                                         />
@@ -531,6 +704,7 @@ const SupplierModalLayer = () => {
                                             placeholder="Enter Email"
                                             value={formData.email}
                                             onChange={handleChange}
+                                            pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
                                             required
                                         />
                                     </div>
@@ -545,12 +719,14 @@ const SupplierModalLayer = () => {
                                             placeholder="Enter Phone Number"
                                             value={formData.phone}
                                             onChange={handleChange}
+                                            pattern="[0-9]{10}"
+                                            maxLength="10"
                                             required
                                         />
                                     </div>
                                     <div className="col-12 mb-20">
                                         <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                                            Supplies
+                                            Supplies <span className="text-danger-600">*</span>
                                         </label>
                                         <div className="d-flex align-items-center gap-3">
                                             <div className="form-check d-flex align-items-center gap-2">
@@ -589,7 +765,10 @@ const SupplierModalLayer = () => {
                                 <button
                                     type="button"
                                     className="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-40 py-11 radius-8"
-                                    onClick={() => setShowModal(false)}
+                                    onClick={() => {
+                                        setShowModal(false);
+                                        setShowToast(false);
+                                    }}
                                 >
                                     Cancel
                                 </button>
@@ -597,6 +776,7 @@ const SupplierModalLayer = () => {
                                     type="button"
                                     className="btn btn-primary border border-primary-600 text-md px-48 py-12 radius-8"
                                     onClick={handleSubmit}
+                                    disabled={isEdit && !hasChanges}
                                 >
                                     {isEdit ? 'Update' : 'Save'}
                                 </button>

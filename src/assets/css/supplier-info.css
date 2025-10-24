@@ -1,0 +1,189 @@
+/* Supplier Info Page and Dialog Styles */
+
+/* Custom Toast Styles */
+.toast-custom {
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  font-size: 14px;
+  font-weight: 500;
+  width: 485px;
+}
+
+.toast-custom span {
+  flex: 1;
+  text-align: center;
+}
+
+.toast-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.toast-success {
+  background-color: #d1edff;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: inherit;
+  padding: 0;
+  margin-left: 12px;
+  line-height: 1;
+}
+
+/* Dark Mode Toast Styles */
+[data-theme="dark"] .toast-error {
+  background-color: #742a2a;
+  color: #fed7d7;
+  border-color: #c53030;
+}
+
+[data-theme="dark"] .toast-success {
+  background-color: #2f855a;
+  color: #c6f6d5;
+  border-color: #38a169;
+}
+
+[data-theme="dark"] .toast-close {
+  color: inherit;
+}
+
+/* Sidebar z-index to prevent overlap with table */
+.sidebar {
+  z-index: 5;
+}
+
+.sidebar:hover {
+  z-index: 25;
+}
+
+/* Hide text in collapsed sidebar, show in expanded */
+.sidebar .nav-link span {
+  display: none !important;
+}
+
+.sidebar.active .nav-link span {
+  display: inline !important;
+}
+
+/* Modal close button in dark mode */
+[data-theme="dark"] .modal .btn-close {
+  filter: invert(1) brightness(1.2);
+}
+
+/* Modal close button in light mode */
+[data-theme="light"] .modal .btn-close {
+  filter: invert(0);
+}
+
+/* Disabled button cursor */
+.btn:disabled {
+  cursor: no-drop !important;
+  pointer-events: auto;
+}
+
+/* Enabled button cursor */
+.btn:not(:disabled) {
+  cursor: pointer !important;
+}
+
+/* Ensure disabled button cursor */
+button:disabled {
+  cursor: no-drop !important;
+}
+
+/* Dark mode alert styles for validation */
+[data-theme="dark"] .alert-danger {
+  background-color: #742a2a;
+  border-color: #c53030;
+  color: #fed7d7;
+}
+
+[data-theme="dark"] .alert-success {
+  background-color: #2f855a;
+  border-color: #38a169;
+  color: #c6f6d5;
+}
+
+/* Dark gray color for Fabric and Trims checkbox labels */
+.form-check-label[for="fabric"],
+.form-check-label[for="trims"] {
+  color: #6b7280 !important;
+}
+
+[data-theme="dark"] .form-check-label[for="fabric"],
+[data-theme="dark"] .form-check-label[for="trims"] {
+  color: #6b7280 !important;
+}
+
+[data-theme="light"] .form-check-label[for="fabric"],
+[data-theme="light"] .form-check-label[for="trims"] {
+  color: #6b7280 !important;
+}
+
+/* Disabled input styling for light mode */
+[data-theme="light"] .form-control:disabled {
+  background-color: #e5e7eb;
+  color: #9ca3af;
+  border-color: #d1d5db;
+  opacity: 1;
+}
+
+/* Disabled input styling for dark mode */
+[data-theme="dark"] .form-control:disabled {
+  background-color: #4b5563;
+  color: #9ca3af;
+  border-color: #6b7280;
+  opacity: 1;
+}
+
+/* Disabled form control cursor */
+.form-control:disabled {
+  cursor: no-drop !important;
+}
+
+/* Search input clear button styling */
+.icon-field {
+  position: relative;
+}
+
+.icon-field .form-control {
+  padding-right: 35px;
+}
+
+.icon-field .btn {
+  color: #6b7280;
+  font-size: 16px;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.icon-field .btn:hover {
+  color: #374151;
+  background-color: #f3f4f6;
+}
+
+[data-theme="dark"] .icon-field .btn {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .icon-field .btn:hover {
+  color: #d1d5db;
+  background-color: #374151;
+}
