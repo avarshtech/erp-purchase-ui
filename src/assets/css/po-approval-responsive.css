@@ -310,33 +310,593 @@
     background-color: #2d3748;
     color: #e2e8f0;
   }
-  
+
   .modal-header {
     border-bottom-color: #4a5568;
   }
-  
+
   .modal-footer {
     border-top-color: #4a5568;
   }
-  
+
   .table {
     color: #e2e8f0;
   }
-  
+
   .table th {
     background-color: #4a5568;
   }
-  
+
   .form-control,
   .form-select {
     background-color: #4a5568;
     border-color: #718096;
     color: #e2e8f0;
   }
-  
+
   .alert-info {
     background-color: #2c5282;
     border-color: #2b6cb0;
     color: #bee3f8;
   }
+
+
+  .btn-close {
+    filter: invert(1);
+  }
+
+
+
+}
+
+
+
+/* Theme-based form styling */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+  background-color: #374151;
+  border-color: #6366f1;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .form-label {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .text-primary-light {
+  color: #a5b4fc !important;
+}
+
+[data-theme="dark"] .text-secondary-light {
+  color: #9ca3af !important;
+}
+
+[data-theme="dark"] .bg-base {
+  background-color: #1f2937 !important;
+}
+
+[data-theme="dark"] .bg-neutral-200 {
+  background-color: #374151 !important;
+}
+
+[data-theme="dark"] .border-neutral-300 {
+  border-color: #4b5563 !important;
+}
+
+[data-theme="dark"] .text-neutral-600 {
+  color: #9ca3af !important;
+}
+
+[data-theme="dark"] .text-neutral-900 {
+  color: #f9fafb !important;
+}
+
+/* Form control theme fixes */
+.form-control,
+.form-select {
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+[data-theme="light"] .form-control {
+  background-color: #ffffff;
+  border-color: #ced4da;
+  color: #212529;
+}
+
+[data-theme="light"] .form-control:focus {
+  background-color: #ffffff;
+  border-color: #86b7fe;
+  color: #212529;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+[data-theme="light"] .form-select {
+  background-color: #ffffff;
+  border-color: #ced4da;
+  color: #212529;
+}
+
+[data-theme="light"] .form-select:focus {
+  background-color: #ffffff;
+  border-color: #86b7fe;
+  color: #212529;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+[data-theme="light"] .form-label {
+  color: #212529;
+}
+
+[data-theme="light"] .text-primary-light {
+  color: #0d6efd !important;
+}
+
+[data-theme="light"] .text-secondary-light {
+  color: #6c757d !important;
+}
+
+[data-theme="light"] .bg-base {
+  background-color: #ffffff !important;
+}
+
+[data-theme="light"] .bg-neutral-200 {
+  background-color: #f8f9fa !important;
+}
+
+[data-theme="light"] .border-neutral-300 {
+  border-color: #dee2e6 !important;
+}
+
+[data-theme="light"] .text-neutral-600 {
+  color: #6c757d !important;
+}
+
+[data-theme="light"] .text-neutral-900 {
+  color: #212529 !important;
+}
+
+/* Fix z-index for dropdowns to show over table headers and sticky columns */
+.dropdown-menu {
+  z-index: 20 !important;
+}
+
+.dropdown {
+  position: relative;
+  z-index: 20;
+}
+
+/* Ensure dropdowns appear above sticky table elements */
+.table-responsive .table thead th {
+  z-index: 15;
+}
+
+.sticky-actions {
+  z-index: 10;
+}
+
+
+/* Table stripes for better readability */
+.table-responsive .table tbody tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.table-responsive .table tbody tr:nth-child(odd) {
+  background-color: transparent;
+}
+
+/* Dark mode table stripes */
+[data-theme="dark"] .table-responsive .table tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="dark"] .table-responsive .table tbody tr:nth-child(odd) {
+  background-color: transparent;
+}
+
+/* Light mode table stripes */
+[data-theme="light"] .table-responsive .table tbody tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .table-responsive .table tbody tr:nth-child(odd) {
+  background-color: transparent;
+}
+
+
+/* Center align table headers */
+.table-responsive .table thead th {
+  vertical-align: middle;
+  font-weight: 600;
+}
+
+/* Center align specific columns */
+.table-responsive .table td:first-child,
+.table-responsive .table th:first-child,
+.table-responsive .table td:last-child,
+.table-responsive .table th:last-child {
+  text-align: center;
+}
+
+/* Left align text content columns */
+.table-responsive .table td:nth-child(2),
+.table-responsive .table th:nth-child(2),
+.table-responsive .table td:nth-child(3),
+.table-responsive .table th:nth-child(3) {
+  text-align: left;
+}
+
+/* Custom scrollbar styling for table container */
+.table-responsive::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+/* Dark mode scrollbar styling */
+[data-theme="dark"] .table-responsive::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.6);
+}
+
+[data-theme="dark"] .table-responsive::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.9);
+}
+
+[data-theme="light"] .table-responsive::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+}
+
+[data-theme="light"] .table-responsive::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+/* Remove scrollbar arrows */
+.table-responsive::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* Firefox scrollbar styling */
+.table-responsive {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+[data-theme="dark"] .table-responsive {
+  scrollbar-color: rgba(75, 85, 99, 0.6) transparent;
+}
+
+[data-theme="light"] .table-responsive {
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+/* Modal body scrollbar styling */
+.modal-body::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 2px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
+}
+
+.modal-body::-webkit-scrollbar-button {
+  display: none;
+}
+
+.modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+}
+
+/* Dark mode modal scrollbar */
+[data-theme="dark"] .modal-body::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+}
+
+[data-theme="dark"] .modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.8);
+}
+
+[data-theme="dark"] .modal-body {
+  scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
+}
+
+/* Mobile responsive scrollbar adjustments */
+@media (max-width: 768px) {
+  .table-responsive::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .modal-body::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+}
+
+/* Enhanced scrollbar styling for better visibility */
+.table-responsive:hover::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+[data-theme="dark"] .table-responsive:hover::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.9);
+}
+
+[data-theme="light"] .table-responsive:hover::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+/* Ensure scrollbar is always visible when content overflows */
+.table-responsive {
+  scrollbar-gutter: stable;
+}
+
+/* Additional scrollbar styling for better cross-browser compatibility */
+.table-responsive::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.table-responsive {
+  -ms-overflow-style: -ms-autohiding-scrollbar;
+}
+
+/* Smooth scrollbar animations */
+.table-responsive::-webkit-scrollbar-thumb {
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.table-responsive:hover::-webkit-scrollbar-thumb {
+  opacity: 1;
+}
+
+/* Ensure modals don't prevent page scrolling */
+.modal {
+  overflow-y: auto;
+}
+
+body.modal-open {
+  overflow: auto !important;
+  padding-right: 0 !important;
+}
+
+/* Override Bootstrap modal body scroll prevention */
+.modal-open .modal {
+  overflow-y: auto;
+}
+
+.modal-backdrop {
+  opacity: 0.5 !important;
+}
+
+/* Sticky table columns and headers */
+.table-responsive {
+  position: relative;
+  max-height: 500px;
+  overflow: auto;
+}
+
+.table-responsive .table {
+  margin-bottom: 0;
+}
+
+.table-responsive .table thead th {
+  position: sticky;
+  top: 0;
+  background-color: var(--bs-body-bg);
+  z-index: 15;
+  border-bottom: 2px solid var(--bs-border-color);
+}
+
+.table-responsive .table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table th[style*="position: sticky"],
+.table td[style*="position: sticky"] {
+  background-color: var(--bs-body-bg);
+  z-index: 10;
+}
+
+[data-theme="dark"] .table-responsive .table thead th {
+  background-color: #374151;
+  border-bottom-color: #4b5563;
+}
+
+[data-theme="dark"] .table th[style*="position: sticky"],
+[data-theme="dark"] .table td[style*="position: sticky"] {
+  background-color: #374151;
+}
+
+[data-theme="light"] .table-responsive .table thead th {
+  background-color: #ffffff;
+  border-bottom-color: #dee2e6;
+}
+
+[data-theme="light"] .table th[style*="position: sticky"],
+[data-theme="light"] .table td[style*="position: sticky"] {
+  background-color: #ffffff;
+}
+
+/* Sticky actions column */
+.sticky-actions {
+  position: sticky;
+  right: 0;
+  background-color: var(--bs-body-bg);
+  z-index: 10;
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
+}
+
+[data-theme="dark"] .sticky-actions {
+  background-color: #374151;
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .sticky-actions {
+  background-color: #ffffff;
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure table layout works properly */
+.table-responsive .table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.table-responsive .table thead th.sticky-actions,
+.table-responsive .table tbody td.sticky-actions {
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
+}
+
+/* Enhanced table styling for better scrolling */
+.table-responsive {
+  border-radius: 8px;
+  border: 1px solid var(--bs-border-color);
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: auto;
+  position: relative;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure table takes full width to enable horizontal scrolling */
+.table-responsive .table {
+  min-width: 2220px;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+/* Prevent text wrapping in table cells */
+.table-responsive .table td,
+.table-responsive .table th {
+  white-space: nowrap;
+  vertical-align: middle;
+  padding: 12px 8px;
+  box-sizing: border-box;
+}
+
+/* Center align table headers */
+.table-responsive .table thead th {
+  vertical-align: middle;
+  font-weight: 600;
+}
+
+/* Center align specific columns */
+.table-responsive .table td:first-child,
+.table-responsive .table th:first-child,
+.table-responsive .table td:last-child,
+.table-responsive .table th:last-child {
+  text-align: center;
+}
+
+/* Left align text content columns */
+.table-responsive .table td:nth-child(2),
+.table-responsive .table th:nth-child(2),
+.table-responsive .table td:nth-child(3),
+.table-responsive .table th:nth-child(3) {
+  text-align: left;
+}
+
+/* Allow wrapping only for address and supplies columns */
+.table-responsive .table td:nth-child(3),
+.table-responsive .table th:nth-child(3),
+.table-responsive .table td:nth-child(11),
+.table-responsive .table th:nth-child(11) {
+  white-space: normal;
+  word-wrap: break-word;
+  max-width: 320px;
+}
+
+[data-theme="dark"] .table-responsive {
+  border-color: #4b5563;
+}
+
+[data-theme="light"] .table-responsive {
+  border-color: #dee2e6;
+}
+
+.table-responsive .table {
+  margin-bottom: 0;
+}
+
+.table-responsive .table thead th {
+  position: sticky;
+  top: 0;
+  background-color: var(--bs-body-bg);
+  border-bottom: 2px solid var(--bs-border-color);
+  font-weight: 600;
+  z-index: 15;
+}
+
+[data-theme="dark"] .table-responsive .table thead th {
+  background-color: #374151;
+  border-bottom-color: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="light"] .table-responsive .table thead th {
+  background-color: #ffffff;
+  border-bottom-color: #dee2e6;
+  color: #212529;
+}
+
+.table-responsive .table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Cursor pointer for sortable headers */
+.cursor-pointer {
+  cursor: pointer;
+  user-select: none;
+}
+
+.cursor-pointer:hover {
+  background-color: var(--bs-gray-100);
+}
+
+[data-theme="dark"] .cursor-pointer:hover {
+  background-color: #4b5563;
+}
+
+[data-theme="light"] .cursor-pointer:hover {
+  background-color: #f8f9fa;
 }
