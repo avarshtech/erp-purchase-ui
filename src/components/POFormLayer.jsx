@@ -77,15 +77,15 @@ const POFormLayer = () => {
   // Filter suppliers based on search
   useEffect(() => {
     if (uiState.supplierSearch) {
-      const filtered = masterData.suppliers.filter(supplier =>
-        supplier.name.toLowerCase().includes(uiState.supplierSearch.toLowerCase()) ||
-        supplier.code.toLowerCase().includes(uiState.supplierSearch.toLowerCase())
-      );
-      setMasterData(prev => ({ ...prev, filteredSuppliers: filtered }));
-    } else {
-      setMasterData(prev => ({ ...prev, filteredSuppliers: prev.suppliers }));
-    }
-  }, [uiState.supplierSearch, masterData.suppliers]);
+       const filtered = masterData.suppliers.filter(supplier =>
+         (supplier.name && supplier.name.toLowerCase().includes(uiState.supplierSearch.toLowerCase())) ||
+         (supplier.code && supplier.code.toLowerCase().includes(uiState.supplierSearch.toLowerCase()))
+       );
+       setMasterData(prev => ({ ...prev, filteredSuppliers: filtered }));
+     } else {
+       setMasterData(prev => ({ ...prev, filteredSuppliers: prev.suppliers }));
+     }
+   }, [uiState.supplierSearch, masterData.suppliers]);
 
   // Initialize filtered items when items are loaded
   useEffect(() => {
