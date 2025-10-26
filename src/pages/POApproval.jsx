@@ -2,7 +2,7 @@ import React from "react";
 import MasterLayout from "../masterLayout/MasterLayout";
 import Breadcrumb from "../components/Breadcrumb";
 import POApprovalListLayer from "../components/POApprovalListLayer";
-import { AuthProvider, ProtectedRoute, useAuth } from "../components/child/AccessControlWrapper";
+import { AuthProvider, ProtectedRoute } from "../components/child/AccessControlWrapper";
 
 // Import responsive CSS
 import "../assets/css/po-approval-responsive.css";
