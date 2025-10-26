@@ -2,6 +2,52 @@
 import poListData from './poListData.json';
 import poApprovalData from './poApprovalData.json';
 
+// Seed data for Item Master
+const categories = [
+  { id: 1, name: "Fabric" },
+  { id: 2, name: "Trims" }
+];
+
+const subcategories = [
+  { id: 1, categoryId: 1, name: "Knit" },
+  { id: 2, categoryId: 1, name: "Woven" },
+  { id: 3, categoryId: 2, name: "Button" },
+  { id: 4, categoryId: 2, name: "Label" }
+];
+
+const itemTypes = [
+  { id: 1, subCategoryId: 1, name: "Single Jersey" },
+  { id: 2, subCategoryId: 1, name: "French Terry" },
+  { id: 3, subCategoryId: 3, name: "Shell" },
+  { id: 4, subCategoryId: 3, name: "Snap" },
+  { id: 5, subCategoryId: 3, name: "Horn" },
+  { id: 6, subCategoryId: 3, name: "Plastic" }
+];
+
+const attributes = [
+  { id: 1, subCategoryId: 1, attribute_name: "GSM",     data_type: "Number", applicable_type_ids: [1,2], is_common: true },
+  { id: 2, subCategoryId: 1, attribute_name: "Width",   data_type: "Text",   applicable_type_ids: [1,2], is_common: true },
+  { id: 3, subCategoryId: 1, attribute_name: "Color",   data_type: "Text",   applicable_type_ids: [1,2], is_common: true },
+  { id: 4, subCategoryId: 3, attribute_name: "Size",    data_type: "Number", applicable_type_ids: [3,4,5,6], is_common: true },
+  { id: 5, subCategoryId: 3, attribute_name: "Holes",   data_type: "Number", applicable_type_ids: [3,4,5,6], is_common: true },
+  { id: 6, subCategoryId: 3, attribute_name: "Color",   data_type: "Text",   applicable_type_ids: [3,4,5,6], is_common: true },
+  { id: 7, subCategoryId: 3, attribute_name: "Extra Specification", data_type: "Text", applicable_type_ids: [3,4,5,6], is_common: false }
+];
+
+const items = [
+  {
+    id: 1,
+    itemCode: "BTN001",
+    itemName: "Button - Shell 10L Red",
+    categoryId: 2,
+    subCategoryId: 3,
+    itemTypeId: 3,
+    uomId: 1,
+    attributes: { Size: "10", Holes: "2", Color: "Red", "Extra Specification": "Logo embossed" },
+    isActive: true
+  }
+];
+
 // Mock data for suppliers
 const suppliersData = [
   {
@@ -432,7 +478,7 @@ class MockServer {
   constructor() {
     this.routes = new Map();
     this.namespace = '/api';
-    this.timing = 400; // Default delay in ms
+    this.timing = Math.floor(Math.random() * 300) + 300; // Random delay 300-600ms
   }
 
   // Configure GET route
@@ -457,12 +503,14 @@ class MockServer {
 
   // Handle requests
   async handleRequest(method, path, data = null) {
-    const routeKey = `${method} ${path}`;
+    // Strip query parameters from path for matching
+    const basePath = path.split('?')[0];
+    const routeKey = `${method} ${basePath}`;
     let handler = this.routes.get(routeKey);
 
     if (!handler) {
       // Check for parameterized routes
-      const pathParts = path.split('/');
+      const pathParts = basePath.split('/');
       const methodRoutes = Array.from(this.routes.keys()).filter(key => key.startsWith(`${method} /`));
       for (const route of methodRoutes) {
         const routeParts = route.split('/').slice(1);
@@ -478,6 +526,11 @@ class MockServer {
             }
           }
           if (match) {
+            // Parse query parameters
+            const queryParams = new URLSearchParams(path.split('?')[1] || '');
+            for (const [key, value] of queryParams) {
+              params[key] = value;
+            }
             handler = this.routes.get(route);
             return handler(data, params);
           }
@@ -486,10 +539,17 @@ class MockServer {
       throw new Error(`Route ${routeKey} not found`);
     }
 
+    // Parse query parameters for exact match routes
+    const params = {};
+    const queryParams = new URLSearchParams(path.split('?')[1] || '');
+    for (const [key, value] of queryParams) {
+      params[key] = value;
+    }
+
     // Add delay to simulate network request
     await new Promise(resolve => setTimeout(resolve, this.timing));
 
-    return handler(data);
+    return handler(data, params);
   }
 }
 
@@ -501,10 +561,11 @@ server.start = () => {
   const originalFetch = window.fetch;
   window.fetch = async (url, options = {}) => {
     const method = options.method || 'GET';
-    const path = url.replace(window.location.origin, '').replace('/api', '');
-    if (server.routes.has(`${method} ${path}`) || server.routes.has(`${method} /${path}`)) {
+    const fullPath = url.replace(window.location.origin, '').replace('/api', '');
+    const basePath = fullPath.split('?')[0];
+    if (server.routes.has(`${method} ${basePath}`) || server.routes.has(`${method} /${basePath}`)) {
       try {
-        const response = await server.handleRequest(method, path, options.body ? JSON.parse(options.body) : null);
+        const response = await server.handleRequest(method, fullPath, options.body ? JSON.parse(options.body) : null);
         return new Response(JSON.stringify(response), { status: 200, headers: { 'Content-Type': 'application/json' } });
       } catch (error) {
         return new Response(JSON.stringify({ error: error.message }), { status: 404, headers: { 'Content-Type': 'application/json' } });
@@ -606,6 +667,131 @@ server.get('/items', () => {
   return {
     data: itemsData,
     total: itemsData.length
+  };
+});
+
+// Item Master routes
+server.get('/categories', () => {
+  return {
+    data: categories,
+    total: categories.length
+  };
+});
+
+server.get('/subcategories', (data, params) => {
+  const categoryId = parseInt(params.categoryId);
+  const filtered = subcategories.filter(sc => sc.categoryId === categoryId);
+  return {
+    data: filtered,
+    total: filtered.length
+  };
+});
+
+server.get('/item-types', (data, params) => {
+  const subCategoryId = parseInt(params.subCategoryId);
+  const filtered = itemTypes.filter(it => it.subCategoryId === subCategoryId);
+  return {
+    data: filtered,
+    total: filtered.length
+  };
+});
+
+server.get('/attributes', (data, params) => {
+  const subCategoryId = parseInt(params.subCategoryId);
+  const typeId = parseInt(params.typeId);
+  const filtered = attributes.filter(attr =>
+    attr.subCategoryId === subCategoryId &&
+    (attr.applicable_type_ids.includes(typeId) || attr.is_common)
+  );
+  return {
+    data: filtered,
+    total: filtered.length
+  };
+});
+
+server.get('/items', () => {
+  return {
+    data: items,
+    total: items.length
+  };
+});
+
+server.get('/items/:id', (data, params) => {
+  const itemId = parseInt(params.id);
+  const item = items.find(i => i.id === itemId);
+  if (!item) {
+    throw new Error('Item not found');
+  }
+  return {
+    data: item,
+    success: true
+  };
+});
+
+server.post('/items/check-duplicate', (data) => {
+  const { categoryId, subCategoryId, itemTypeId, attributes } = data;
+  const existing = items.find(item =>
+    item.categoryId === categoryId &&
+    item.subCategoryId === subCategoryId &&
+    item.itemTypeId === itemTypeId &&
+    attributes.every(attr => item.attributes[attr.attributeId] === attr.value)
+  );
+  return {
+    isDuplicate: !!existing,
+    existingItemCode: existing ? existing.itemCode : null
+  };
+});
+
+server.post('/items', (data) => {
+  const newItem = {
+    id: Math.max(...items.map(i => i.id)) + 1,
+    itemCode: `ITEM${String(newItem.id).padStart(3, '0')}`,
+    itemName: data.itemName,
+    categoryId: data.categoryId,
+    subCategoryId: data.subCategoryId,
+    itemTypeId: data.itemTypeId,
+    uomId: data.uomId,
+    hsnCode: data.hsnCode,
+    isActive: data.isActive,
+    attributes: data.attributes.reduce((acc, attr) => {
+      acc[attr.attributeId] = attr.value;
+      return acc;
+    }, {}),
+    createdAt: new Date().toISOString()
+  };
+  items.push(newItem);
+  return {
+    success: true,
+    data: newItem,
+    message: 'Item created successfully'
+  };
+});
+
+server.put('/items/:id', (data, params) => {
+  const itemId = parseInt(params.id);
+  const itemIndex = items.findIndex(i => i.id === itemId);
+  if (itemIndex === -1) {
+    throw new Error('Item not found');
+  }
+  const updatedItem = {
+    ...items[itemIndex],
+    itemName: data.itemName,
+    categoryId: data.categoryId,
+    subCategoryId: data.subCategoryId,
+    itemTypeId: data.itemTypeId,
+    uomId: data.uomId,
+    hsnCode: data.hsnCode,
+    isActive: data.isActive,
+    attributes: data.attributes.reduce((acc, attr) => {
+      acc[attr.attributeId] = attr.value;
+      return acc;
+    }, {})
+  };
+  items[itemIndex] = updatedItem;
+  return {
+    success: true,
+    data: updatedItem,
+    message: 'Item updated successfully'
   };
 });
 
@@ -867,3 +1053,14 @@ export const getSuppliers = () => makeRequest('GET', '/suppliers');
 export const createSupplier = (data) => makeRequest('POST', '/suppliers', data);
 export const updateSupplier = (id, data) => makeRequest('PUT', `/suppliers/${id}`, data);
 export const deleteSupplier = (id) => makeRequest('DELETE', `/suppliers/${id}`);
+
+// Item Master API functions
+export const getCategories = () => makeRequest('GET', '/categories');
+export const getSubcategories = (categoryId) => makeRequest('GET', `/subcategories?categoryId=${categoryId}`);
+export const getItemTypes = (subCategoryId) => makeRequest('GET', `/item-types?subCategoryId=${subCategoryId}`);
+export const getAttributes = (subCategoryId, typeId) => makeRequest('GET', `/attributes?subCategoryId=${subCategoryId}&typeId=${typeId}`);
+export const getItems = () => makeRequest('GET', '/items');
+export const getItemById = (id) => makeRequest('GET', `/items/${id}`);
+export const checkDuplicateItem = (data) => makeRequest('POST', '/items/check-duplicate', data);
+export const createItem = (data) => makeRequest('POST', '/items', data);
+export const updateItem = (id, data) => makeRequest('PUT', `/items/${id}`, data);

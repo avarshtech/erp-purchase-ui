@@ -116,6 +116,18 @@ const MasterLayout = ({ children }) => {
                     <span>Supplier Info</span>
                   </NavLink>
                 </li>
+                <li>
+                  <NavLink
+                    to='/item-master'
+
+                    className={(navData) =>
+                      navData.isActive ? "active-page" : ""
+                    }
+                  >
+                    <Icon icon='mingcute:user-follow-fill' className='menu-icon' />
+                    <span>Item Master</span>
+                  </NavLink>
+                </li>
           </ul>
         </div>
       </aside>
