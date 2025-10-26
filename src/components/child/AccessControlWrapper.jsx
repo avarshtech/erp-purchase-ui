@@ -159,15 +159,15 @@ export const AccessControlWrapper = ({
 };
 
 // Role-based UI Component
-export const RoleBasedUI = ({ 
-  adminComponent, 
-  managerComponent, 
-  financeManagerComponent, 
-  deptHeadComponent, 
-  viewerComponent, 
-  defaultComponent 
+export const RoleBasedUI = ({
+  adminComponent,
+  managerComponent,
+  financeManagerComponent,
+  deptHeadComponent,
+  viewerComponent,
+  defaultComponent
 }) => {
-  const { currentUser, getUserRole } = useAuth();
+  const { currentUser } = useAuth();
   const userRole = currentUser?.role;
 
   const roleComponents = {
@@ -319,6 +319,9 @@ export const useKeyboardNavigation = (callbacks = {}) => {
               event.preventDefault();
               callbacks.search();
             }
+            break;
+          default:
+            // No action for other keys
             break;
         }
       }

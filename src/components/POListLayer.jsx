@@ -3,10 +3,71 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getPOList } from '../mocks/server';
 
+const TableRow = ({ po }) => {
+  const getStatusBadgeClass = (status) => {
+    return status === 'Completed'
+      ? 'bg-success-focus text-success-main'
+      : 'bg-warning-focus text-warning-main';
+  };
+
+  return (
+    <tr key={po.id}>
+      <td>
+        <div className="form-check style-check d-flex align-items-center">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            defaultValue=""
+            id={`check${po.id}`}
+          />
+          <label className="form-check-label" htmlFor={`check${po.id}`}>
+            {po.sl}
+          </label>
+        </div>
+      </td>
+      <td>
+        <Link to="#" className="text-primary-600">
+          {po.poNo}
+        </Link>
+      </td>
+      <td>{po.supplier.name}</td>
+      <td>{po.poDate}</td>
+      <td>{po.totalValue}</td>
+      <td>
+        <span className={`px-24 py-4 rounded-pill fw-medium text-sm ${getStatusBadgeClass(po.status)}`}>
+          {po.status}
+        </span>
+      </td>
+      <td>
+        <Link
+          to="#"
+          className="w-32-px h-32-px me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center"
+        >
+          <Icon icon="iconamoon:eye-light" />
+        </Link>
+        <Link
+          to="#"
+          className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+        >
+          <Icon icon="lucide:edit" />
+        </Link>
+        <Link
+          to="#"
+          className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+        >
+          <Icon icon="mingcute:delete-2-line" />
+        </Link>
+      </td>
+    </tr>
+  );
+};
+
 const POListLayer = () => {
-  const [poData, setPoData] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
 
   useEffect(() => {
     const fetchPOData = async () => {
@@ -14,7 +75,7 @@ const POListLayer = () => {
         setLoading(true);
         setError(null);
         const response = await getPOList();
-        setPoData(response.data);
+        setPurchaseOrders(response.data);
       } catch (err) {
         setError('Failed to fetch PO data. Please try again later.');
         console.error('Error fetching PO data:', err);
@@ -26,11 +87,12 @@ const POListLayer = () => {
     fetchPOData();
   }, []);
 
-  const getStatusBadgeClass = (status) => {
-    return status === 'Completed'
-      ? 'bg-success-focus text-success-main'
-      : 'bg-warning-focus text-warning-main';
-  };
+  const filteredOrders = purchaseOrders.filter((po) => {
+    const matchesSearch = po.poNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          po.supplier.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = !selectedStatus || po.status === selectedStatus;
+    return matchesSearch && matchesStatus;
+  });
 
     return (
         <div className="card">
@@ -50,9 +112,11 @@ const POListLayer = () => {
                     <div className="icon-field">
                         <input
                             type="text"
-                            name="#0"
+                            name="search"
                             className="form-control form-control-sm w-auto"
                             placeholder="Search"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                         />
                         <span className="icon">
                             <Icon icon="ion:search-outline" />
@@ -60,12 +124,14 @@ const POListLayer = () => {
                     </div>
                 </div>
                 <div className="d-flex flex-wrap align-items-center gap-3">
-                    <select className="form-select form-select-sm w-auto" defaultValue="Select Status">
-                        <option value="Select Status" disabled>
-                            Select Status
-                        </option>
-                        <option value="Paid">InProgres</option>
-                        <option value="Pending">Completed</option>
+                    <select
+                        className="form-select form-select-sm w-auto"
+                        value={selectedStatus}
+                        onChange={(e) => setSelectedStatus(e.target.value)}
+                    >
+                        <option value="">All Status</option>
+                        <option value="InProgress">InProgress</option>
+                        <option value="Completed">Completed</option>
                     </select>
                     <Link to="/invoice-add" className="btn btn-sm btn-primary-600">
                         <i className="ri-add-line" /> Create PO
@@ -115,62 +181,15 @@ const POListLayer = () => {
                             {error}
                           </td>
                         </tr>
-                      ) : poData.length === 0 ? (
+                      ) : purchaseOrders.length === 0 ? (
                         <tr>
                           <td colSpan="7" className="text-center py-4">
                             No PO data found.
                           </td>
                         </tr>
                       ) : (
-                        poData.map((po) => (
-                          <tr key={po.id}>
-                            <td>
-                              <div className="form-check style-check d-flex align-items-center">
-                                <input
-                                  className="form-check-input"
-                                  type="checkbox"
-                                  defaultValue=""
-                                  id={`check${po.id}`}
-                                />
-                                <label className="form-check-label" htmlFor={`check${po.id}`}>
-                                  {po.sl}
-                                </label>
-                              </div>
-                            </td>
-                            <td>
-                              <Link to="#" className="text-primary-600">
-                                {po.poNo}
-                              </Link>
-                            </td>
-                            <td>{po.supplier.name}</td>
-                            <td>{po.poDate}</td>
-                            <td>{po.totalValue}</td>
-                            <td>
-                              <span className={`px-24 py-4 rounded-pill fw-medium text-sm ${getStatusBadgeClass(po.status)}`}>
-                                {po.status}
-                              </span>
-                            </td>
-                            <td>
-                              <Link
-                                to="#"
-                                className="w-32-px h-32-px me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center"
-                              >
-                                <Icon icon="iconamoon:eye-light" />
-                              </Link>
-                              <Link
-                                to="#"
-                                className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                              >
-                                <Icon icon="lucide:edit" />
-                              </Link>
-                              <Link
-                                to="#"
-                                className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                              >
-                                <Icon icon="mingcute:delete-2-line" />
-                              </Link>
-                            </td>
-                          </tr>
+                        filteredOrders.map((po) => (
+                          <TableRow key={po.id} po={po} />
                         ))
                       )}
                     </tbody>

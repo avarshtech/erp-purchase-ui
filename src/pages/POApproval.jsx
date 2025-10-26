@@ -8,8 +8,6 @@ import { AuthProvider, ProtectedRoute } from "../components/child/AccessControlW
 import "../assets/css/po-approval-responsive.css";
 
 const POApprovalContent = () => {
-    const { hasPermission } = useAuth();
-    
     return (
         <ProtectedRoute
             permission="view_po"
