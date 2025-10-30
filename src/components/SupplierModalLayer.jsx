@@ -778,7 +778,7 @@ const SupplierModalLayer = () => {
                             <div className="d-flex align-items-center justify-content-center gap-3 w-100">
                                 <button
                                     type="button"
-                                    className="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-40 py-11 radius-8"
+                                    className="border border-gray-300 bg-hover-gray-50 text-gray-700 text-md px-40 py-11 radius-8"
                                     onClick={() => {
                                         setShowModal(false);
                                         setShowToast(false);

@@ -244,6 +244,30 @@
   transform: translateY(-1px);
 }
 
+.border-gray-300 {
+  border-color: #d1d5db !important;
+}
+
+[data-theme="dark"] .border-gray-300 {
+  border-color: #4b5563 !important;
+}
+
+.bg-hover-gray-50:hover {
+  background-color: #f9fafb !important;
+}
+
+[data-theme="dark"] .bg-hover-gray-50:hover {
+  background-color: #374151 !important;
+}
+
+.text-gray-700 {
+  color: #374151 !important;
+}
+
+[data-theme="dark"] .text-gray-700 {
+  color: #d1d5db !important;
+}
+
 .btn-danger {
   background-color: #dc2626;
   border-color: #dc2626;
@@ -644,6 +668,15 @@ button:disabled {
   .btn-primary-600 {
     width: 100%;
     margin-bottom: 0.5rem;
+  }
+
+  .bordered-table {
+    font-size: 0.875rem;
+  }
+
+  .bordered-table thead th,
+  .bordered-table tbody td {
+    padding: 0.5rem;
   }
 }
 

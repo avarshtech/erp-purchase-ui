@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
 import "../assets/css/master-layout.css";
 
@@ -19,11 +19,12 @@ const initializeTooltips = () => {
 const MasterLayout = ({ children }) => {
   const [sidebarActive, setSidebarActive] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     // Initialize tooltips after a short delay to ensure Bootstrap is loaded
     const timer = setTimeout(() => {
-      const tooltips = initializeTooltips();
+      initializeTooltips();
     }, 100);
 
     const handleDropdownClick = (event) => {
@@ -106,7 +107,7 @@ const MasterLayout = ({ children }) => {
   }, [location.pathname]);
 
   let sidebarControl = () => {
-    seSidebarActive(!sidebarActive);
+    setSidebarActive(!sidebarActive);
   };
 
   const toggleMobileMenu = () => {
