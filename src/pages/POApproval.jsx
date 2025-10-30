@@ -1,14 +1,12 @@
 import React from "react";
 import Breadcrumb from "../components/Breadcrumb";
 import POApprovalListLayer from "../components/POApprovalListLayer";
-import { AuthProvider, ProtectedRoute, useAuth } from "../components/child/AccessControlWrapper";
+import { AuthProvider, ProtectedRoute } from "../components/child/AccessControlWrapper";
 
 // Import responsive CSS
 import "../assets/css/po-approval-responsive.css";
 
 const POApprovalContent = () => {
-    const { hasPermission } = useAuth();
-    
     return (
         <ProtectedRoute
             permission="view_po"

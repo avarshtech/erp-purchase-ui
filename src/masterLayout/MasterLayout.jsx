@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
 import "../assets/css/master-layout.css";
 
@@ -17,9 +17,8 @@ const initializeTooltips = () => {
 };
 
 const MasterLayout = ({ children }) => {
-  let [sidebarActive, seSidebarActive] = useState(false);
-  let [mobileMenu, setMobileMenu] = useState(false);
-  const location = useLocation(); // Hook to get the current route
+  const [sidebarActive, setSidebarActive] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
 
   useEffect(() => {
     // Initialize tooltips after a short delay to ensure Bootstrap is loaded
@@ -110,9 +109,10 @@ const MasterLayout = ({ children }) => {
     seSidebarActive(!sidebarActive);
   };
 
-  let mobileMenuControl = () => {
+  const toggleMobileMenu = () => {
     setMobileMenu(!mobileMenu);
   };
+
 
   return (
     <section className={mobileMenu ? "overlay active" : "overlay "}>
@@ -127,7 +127,7 @@ const MasterLayout = ({ children }) => {
         }
       >
         <button
-          onClick={mobileMenuControl}
+          onClick={toggleMobileMenu}
           type='button'
           className='sidebar-close-btn'
         >
@@ -212,6 +212,18 @@ const MasterLayout = ({ children }) => {
                     <span>Supplier Info</span>
                   </NavLink>
                 </li>
+                <li>
+                  <NavLink
+                    to='/item-master'
+
+                    className={(navData) =>
+                      navData.isActive ? "active-page" : ""
+                    }
+                  >
+                    <Icon icon='mingcute:user-follow-fill' className='menu-icon' />
+                    <span>Item Master</span>
+                  </NavLink>
+                </li>
           </ul>
         </div>
       </aside>
@@ -244,7 +256,7 @@ const MasterLayout = ({ children }) => {
                   </div>
                 </button>
                 <button
-                  onClick={mobileMenuControl}
+                  onClick={toggleMobileMenu}
                   type='button'
                   className='sidebar-mobile-toggle'
                   data-bs-toggle="tooltip"
