@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import MasterLayout from "./masterLayout/MasterLayout";
 
 import HomePageTen from "./pages/HomePageTen";
 import POList from "./pages/POList";
@@ -8,6 +9,7 @@ import POApprovalTestPage from "./pages/POApprovalTestPage";
 import SupplierInfo from "./pages/SupplierInfo";
 import ItemMaster from "./pages/ItemMaster";
 import ItemAddEdit from "./pages/ItemAddEdit";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -19,6 +21,7 @@ function App() {
         <Route exact path='/po-approval' element={<POApproval />} />
         <Route exact path='/po-approval-test' element={<POApprovalTestPage />} />
         <Route exact path="/supplier-info" element={<SupplierInfo />} />
+        <Route exact path="/profile" element={<Profile />} />
         <Route exact path="/item-master" element={<ItemMaster />} />
         <Route exact path="/item-master/add" element={<ItemAddEdit />} />
         <Route exact path="/item-master/edit/:id" element={<ItemAddEdit />} />
