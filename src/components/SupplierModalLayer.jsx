@@ -2,6 +2,7 @@ import { Icon } from '@iconify/react/dist/iconify.js';
 import React, { useState, useEffect } from 'react';
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../mocks/server';
 
+
 const SupplierModalLayer = () => {
     const [allSuppliers, setAllSuppliers] = useState([]);
     const [filteredSuppliers, setFilteredSuppliers] = useState([]);
@@ -9,8 +10,6 @@ const SupplierModalLayer = () => {
     const [showModal, setShowModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-    // Note: Removed page-level scroll prevention to allow normal page scrolling
-    // Only table container will handle its own scrolling
     const [isEdit, setIsEdit] = useState(false);
     const [currentSupplier, setCurrentSupplier] = useState(null);
     const [supplierToDelete, setSupplierToDelete] = useState(null);
@@ -54,6 +53,20 @@ const SupplierModalLayer = () => {
             setHasChanges(changed);
         }
     }, [formData, originalSupplier, isEdit]);
+
+    // Prevent body scroll when modal is open
+    useEffect(() => {
+        if (showModal) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+
+        // Cleanup on unmount
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [showModal]);
 
     useEffect(() => {
         let filtered = allSuppliers;
@@ -365,6 +378,7 @@ const SupplierModalLayer = () => {
 
     return (
         <>
+            <h6 className="page-title">Supplier / Vendor Details</h6>
             <div className="card">
                 <div className="card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
                     <div className="d-flex flex-wrap align-items-center gap-3">

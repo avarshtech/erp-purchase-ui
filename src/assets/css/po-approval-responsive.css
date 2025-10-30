@@ -370,10 +370,6 @@
   color: #d1d5db;
 }
 
-[data-theme="dark"] .text-primary-light {
-  color: #a5b4fc !important;
-}
-
 [data-theme="dark"] .text-secondary-light {
   color: #9ca3af !important;
 }
@@ -432,10 +428,6 @@
 
 [data-theme="light"] .form-label {
   color: #212529;
-}
-
-[data-theme="light"] .text-primary-light {
-  color: #0d6efd !important;
 }
 
 [data-theme="light"] .text-secondary-light {

@@ -1,5 +1,4 @@
 import React from "react";
-import MasterLayout from "../masterLayout/MasterLayout";
 import Breadcrumb from "../components/Breadcrumb";
 import POApprovalListLayer from "../components/POApprovalListLayer";
 import { AuthProvider, ProtectedRoute, useAuth } from "../components/child/AccessControlWrapper";
@@ -31,12 +30,10 @@ const POApprovalContent = () => {
 const POApproval = () => {
     return (
         <AuthProvider>
-            <MasterLayout>
-                <Breadcrumb title="PO / Approval"/>
-                <main id="main-content" role="main" aria-label="PO Approval Section">
-                    <POApprovalContent />
-                </main>
-            </MasterLayout>
+            <Breadcrumb title="PO / Approval"/>
+            <main id="main-content" role="main" aria-label="PO Approval Section">
+                <POApprovalContent />
+            </main>
         </AuthProvider>
     )
 };
