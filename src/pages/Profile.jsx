@@ -3,7 +3,7 @@ import { Icon } from '@iconify/react/dist/iconify.js';
 import '../assets/css/profile.css';
 
 const Profile = () => {
-  const [user, setUser] = useState({
+  const [user] = useState({
     name: 'John Doe',
     password: '',
     email: 'john.doe@example.com',

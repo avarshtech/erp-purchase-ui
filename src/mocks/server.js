@@ -743,9 +743,11 @@ server.post('/items/check-duplicate', (data) => {
 });
 
 server.post('/items', (data) => {
+  const maxId = items.length > 0 ? Math.max(...items.map(i => i.id)) : 0;
+  const newId = maxId + 1;
   const newItem = {
-    id: Math.max(...items.map(i => i.id)) + 1,
-    itemCode: `ITEM${String(newItem.id).padStart(3, '0')}`,
+    id: newId,
+    itemCode: `ITEM${String(newId).padStart(3, '0')}`,
     itemName: data.itemName,
     categoryId: data.categoryId,
     subCategoryId: data.subCategoryId,
