@@ -1,0 +1,636 @@
+/* Purchase Orders List Component Specific Styles */
+
+.po-list-table {
+  /* Table specific styles can be added here if needed */
+}
+
+.po-list-date-header {
+  width: 90px;
+  min-width: 90px;
+  text-align: center;
+}
+
+.po-list-value-header {
+  width: 90px;
+  min-width: 90px;
+  text-align: center;
+}
+
+.po-list-status-header {
+  width: 80px;
+  min-width: 80px;
+  text-align: center;
+}
+
+.po-list-actions-header {
+  width: 80px;
+  min-width: 80px;
+  text-align: center;
+}
+
+.po-list-po-no-header {
+  width: 70px;
+  min-width: 70px;
+  text-align: center;
+}
+
+.po-list-supplier-header {
+  width: 150px;
+  min-width: 150px;
+}
+
+.po-list-header-text {
+  font-size: 0.75rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.po-list-cell-center {
+  text-align: center;
+}
+
+.po-list-value-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.po-list-status-cell {
+  display: flex;
+  justify-content: center;
+}
+
+.po-list-actions-cell {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.po-list-header {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.po-list-header-sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.po-list-header-sortable:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.po-list-loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  min-height: 200px;
+}
+
+.po-list-no-results {
+  text-align: center;
+  padding: 2rem;
+}
+
+.po-list-table-responsive {
+  /* Responsive table container */
+}
+
+.po-list-pagination {
+  /* Pagination specific styles if needed */
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .po-list-date-header {
+    width: 70px;
+    min-width: 70px;
+  }
+  
+  .po-list-value-header {
+    width: 70px;
+    min-width: 70px;
+  }
+  
+  .po-list-status-header {
+    width: 60px;
+    min-width: 60px;
+  }
+  
+  .po-list-actions-header {
+    width: 60px;
+    min-width: 60px;
+  }
+  
+  .po-list-supplier-header {
+    width: 70px;
+  }
+  
+  .po-list-header-text {
+    font-size: 0.65rem;
+  }
+  
+  .po-list-header {
+    font-size: 0.7rem;
+  }
+}
+
+/* Dark mode dropdown fixes */
+[data-theme="dark"] .dropdown-menu .dropdown-item {
+  color: #e9ecef;
+}
+
+[data-theme="dark"] .dropdown-menu .dropdown-item:hover {
+  background-color: #495057;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .dropdown-menu .dropdown-item.active {
+  background-color: #0d6efd;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .dropdown-menu .dropdown-item .text-muted {
+  color: #6c757d !important;
+}
+
+[data-theme="dark"] .dropdown-menu .dropdown-item .text-warning {
+  color: #ffc107 !important;
+}
+
+[data-theme="dark"] .dropdown-menu .dropdown-item .text-success {
+  color: #198754 !important;
+}
+
+[data-theme="dark"] .dropdown-menu .dropdown-item .text-info {
+  color: #0dcaf0 !important;
+}
+
+/* Dark mode active filters display fixes */
+[data-theme="dark"] .badge.bg-primary-light {
+  background-color: #495057 !important;
+  color: #e9ecef !important;
+}
+
+[data-theme="dark"] .text-muted {
+  color: #adb5bd !important;
+}
+
+[data-theme="dark"] .btn-close.btn-close-sm {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Dropdown label styling for theme adaptation */
+.dropdown-label {
+  color: inherit;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .dropdown-label {
+  color: #e9ecef !important;
+}
+
+/* Dropdown item content styling */
+.dropdown-item-content {
+  transition: all 0.2s ease;
+}
+
+.dropdown-item-text {
+  color: inherit;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .dropdown-item-content {
+  background-color: transparent;
+  color: #e9ecef !important;
+}
+
+[data-theme="dark"] .dropdown-item-content:hover {
+  background-color: #495057;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .dropdown-item-content.active {
+  background-color: #0d6efd;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .dropdown-item-content .dropdown-item-text {
+  color: inherit;
+}
+
+/* Active filter badge styling */
+.active-filter-badge {
+  background-color: #e3f2fd !important;
+  color: #1976d2 !important;
+  border: 1px solid #bbdefb;
+}
+
+.active-filter-badge .btn-close {
+  filter: invert(1) brightness(0.3);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.active-filter-badge .btn-close:hover {
+  opacity: 1;
+}
+
+[data-theme="dark"] .active-filter-badge {
+  background-color: #495057 !important;
+  color: #e9ecef !important;
+  border: 1px solid #6c757d;
+}
+
+[data-theme="dark"] .active-filter-badge .btn-close {
+  filter: invert(1) brightness(200%);
+}
+
+/* Ensure proper contrast for all text elements */
+.dropdown-menu {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .dropdown-menu {
+  background-color: #343a40;
+  border: 1px solid #495057;
+}
+
+[data-theme="dark"] .dropdown-item {
+  color: #e9ecef !important;
+}
+
+[data-theme="dark"] .dropdown-item .text-muted {
+  color: #adb5bd !important;
+}
+
+/* Advanced Date Picker Styles */
+.advanced-date-picker {
+  position: relative;
+  z-index: 1;
+}
+
+.advanced-date-picker .form-control {
+  height: 32px;
+  border: 1px solid #ced4da;
+  transition: all 0.2s ease;
+  background-color: #ffffff;
+  color: #495057;
+}
+
+.advanced-date-picker .form-control:disabled {
+  background-color: #f8f9fa !important;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.advanced-date-picker .form-control:focus {
+  border-color: #6c757d;
+  box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25);
+}
+
+[data-theme="dark"] .advanced-date-picker .form-control {
+  background-color: #273142;
+  border-color: #81868b;
+  color: #e9ecef;
+}
+
+[data-theme="dark"] .advanced-date-picker .form-control:disabled {
+  background-color: #495057 !important;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+[data-theme="dark"] .advanced-date-picker .form-control:focus {
+  background-color: #343a40;
+  border-color: #6c757d;
+  color: #e9ecef;
+}
+
+.advanced-date-picker .form-control:hover:not(:disabled) {
+  border-color: #6c757d;
+}
+
+/* Date Picker Dropdown - Highest Z-Index */
+.advanced-date-picker .position-absolute {
+  border: 1px solid #dee2e6;
+  background-color: #ffffff;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(10px);
+  z-index: 9999 !important;
+  position: fixed !important;
+}
+
+[data-theme="dark"] .advanced-date-picker .position-absolute {
+  background-color: #343a40 !important;
+  border-color: #495057;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+/* Date Picker Calendar Grid */
+.advanced-date-picker .grid-cols-7 {
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.advanced-date-picker .btn.btn-sm.border-0 {
+  height: 32px;
+  width: 32px;
+  padding: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.advanced-date-picker .btn.btn-sm.border-0:hover {
+  transform: scale(1.05);
+  background-color: rgba(108, 117, 125, 0.1) !important;
+  color: #495057 !important;
+}
+
+[data-theme="dark"] .advanced-date-picker .btn.btn-sm.border-0:hover {
+  background-color: rgba(173, 181, 189, 0.1) !important;
+  color: #e9ecef !important;
+}
+
+/* Today button special styling */
+.advanced-date-picker .bg-primary-light {
+  background-color: rgba(108, 117, 125, 0.1);
+}
+
+[data-theme="dark"] .advanced-date-picker .bg-primary-light {
+  background-color: rgba(173, 181, 189, 0.2);
+}
+
+.advanced-date-picker .text-muted.small.fw-medium {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+[data-theme="dark"] .advanced-date-picker .text-muted {
+  color: #e9e6ea !important;
+}
+
+[data-theme="dark"] .advanced-date-picker .text-dark {
+  color: #e9ecef !important;
+}
+
+/* Date Picker Footer */
+.advanced-date-picker .border-top {
+  border-top: 1px solid #dee2e6 !important;
+}
+
+[data-theme="dark"] .advanced-date-picker .border-top {
+  border-color: #495057 !important;
+}
+
+.advanced-date-picker .btn.btn-link {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  text-decoration: none;
+  color: #6c757d;
+  transition: color 0.2s ease;
+}
+
+.advanced-date-picker .btn.btn-link:hover {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+[data-theme="dark"] .advanced-date-picker .btn.btn-link {
+  color: #adb5bd;
+}
+
+[data-theme="dark"] .advanced-date-picker .btn.btn-link:hover {
+  color: #0dcaf0;
+}
+
+/* Calendar Navigation */
+.advanced-date-picker .btn.btn-link.p-1 {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.advanced-date-picker .btn.btn-link.p-1:hover {
+  background-color: rgba(108, 117, 125, 0.1);
+}
+
+[data-theme="dark"] .advanced-date-picker .btn.btn-link.p-1:hover {
+  background-color: rgba(173, 181, 189, 0.2);
+}
+
+/* Icon Animations */
+.advanced-date-picker .rotate-180 {
+  transform: rotate(180deg);
+}
+
+.advanced-date-picker .transition-transform {
+  transition: transform 0.2s ease;
+}
+
+/* Responsive adjustments for date picker */
+@media (max-width: 768px) {
+  .advanced-date-picker {
+    width: 100%;
+  }
+  
+  .advanced-date-picker .position-absolute {
+    left: 0 !important;
+    right: 0;
+    margin: 0 auto;
+  }
+}
+
+/* Today button special styling */
+.advanced-date-picker .bg-primary-light {
+  background-color: rgba(13, 110, 253, 0.1);
+}
+
+[data-theme="dark"] .advanced-date-picker .bg-primary-light {
+  background-color: rgba(13, 110, 253, 0.2);
+}
+
+/* Min width utility class */
+.min-w-140-px {
+  min-width: 140px;
+}
+
+/* Instant theme switching - targeted approach */
+[data-theme="dark"],
+[data-theme="light"] {
+  transition: background-color 0s, color 0s, border-color 0s !important;
+}
+
+/* Ensure table headers update instantly */
+.table thead th,
+.table thead td {
+  transition: background-color 0s, color 0s, border-color 0s !important;
+}
+
+/* Critical UI elements for theme changes */
+.card,
+.table,
+.dropdown-menu,
+.form-control,
+.btn,
+.form-select,
+.badge,
+.text-muted,
+.text-dark {
+  transition: background-color 0s, color 0s, border-color 0s !important;
+}
+
+/* Advanced date picker instant changes */
+.advanced-date-picker .form-control,
+.advanced-date-picker .position-absolute,
+.advanced-date-picker .btn {
+  transition: background-color 0s, color 0s, border-color 0s !important;
+}
+
+/* Preserve non-theme animations like hover effects */
+.advanced-date-picker .btn:hover,
+.btn:hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* Month and Year Selection Views */
+.advanced-date-picker .d-grid.grid-cols-3.gap-2 {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+/* Month/Year button styling */
+.advanced-date-picker .btn.btn-outline-primary {
+  border-color: #6c757d;
+  color: #6c757d;
+  background-color: transparent;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  min-height: 36px;
+}
+
+.advanced-date-picker .btn.btn-outline-primary:hover {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.2);
+}
+
+.advanced-date-picker .btn.btn-outline-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2);
+}
+
+[data-theme="dark"] .advanced-date-picker .btn.btn-outline-primary {
+  border-color: #adb5bd;
+  color: #adb5bd;
+}
+
+[data-theme="dark"] .advanced-date-picker .btn.btn-outline-primary:hover {
+  background-color: #adb5bd;
+  border-color: #adb5bd;
+  color: #000;
+}
+
+/* Header navigation buttons - Enhanced */
+.advanced-date-picker .btn.btn-link {
+  color: #6c757d !important;
+  border: none;
+  background: none;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  padding: 0.5rem 0.75rem;
+  min-height: auto;
+  border-radius: 6px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.advanced-date-picker .btn.btn-link:hover {
+  color: #495057 !important;
+  background-color: rgba(73, 80, 87, 0.1);
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(73, 80, 87, 0.15);
+}
+
+[data-theme="dark"] .advanced-date-picker .btn.btn-link {
+  color: #adb5bd !important;
+}
+
+[data-theme="dark"] .advanced-date-picker .btn.btn-link:hover {
+  color: #dee2e6 !important;
+  background-color: rgba(222, 226, 230, 0.1);
+  box-shadow: 0 2px 4px rgba(222, 226, 230, 0.15);
+}
+
+/* Back button styling - Enhanced */
+.advanced-date-picker .btn.btn-outline-primary {
+  border-width: 2px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.advanced-date-picker .btn.btn-primary {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+  color: white !important;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.advanced-date-picker .btn.btn-primary:hover {
+  background-color: #5a6268 !important;
+  border-color: #5a6268 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.2);
+}
+
+.advanced-date-picker .btn.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2);
+}
+
+[data-theme="dark"] .advanced-date-picker .btn.btn-primary {
+  background-color: #adb5bd !important;
+  border-color: #adb5bd !important;
+  color: #000 !important;
+}
+
+[data-theme="dark"] .advanced-date-picker .btn.btn-primary:hover {
+  background-color: #9ba2ac !important;
+  border-color: #9ba2ac !important;
+}
+
+/* Active year/month selection styling */
+.advanced-date-picker .btn.btn-sm.border.bg-primary {
+  background-color: #495057 !important;
+  border-color: #495057 !important;
+  color: white !important;
+  font-weight: 700;
+  transform: scale(1.05);
+  box-shadow: 0 3px 6px rgba(73, 80, 87, 0.3);
+  border-width: 2px;
+}
+
+[data-theme="dark"] .advanced-date-picker .btn.btn-sm.border.bg-primary {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+  color: white !important;
+  box-shadow: 0 3px 6px rgba(108, 117, 125, 0.3);
+}

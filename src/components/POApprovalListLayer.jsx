@@ -1,6 +1,7 @@
 import { Icon } from '@iconify/react/dist/iconify.js';
 import React, { useState, useEffect, useMemo } from 'react';
 import { getPOApprovalList, approvePO, rejectPO, bulkApprovePOs, bulkRejectPOs, exportPOList } from '../mocks/server';
+import AdvancedDatePicker from './AdvancedDatePicker';
 import PODetailModal from './child/PODetailModal';
 
 const POApprovalListLayer = () => {
@@ -13,6 +14,7 @@ const POApprovalListLayer = () => {
   const [priorityFilter, setPriorityFilter] = useState('All');
   const [departmentFilter, setDepartmentFilter] = useState('All');
   const [dateRangeFilter, setDateRangeFilter] = useState({ start: '', end: '' });
+  const [datePickerResetKey, setDatePickerResetKey] = useState(0);
   const [sortBy, setSortBy] = useState('poDate');
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -284,7 +286,7 @@ const POApprovalListLayer = () => {
         return 'bg-success-focus text-success-main';
       case 'Rejected':
         return 'bg-danger-focus text-danger-main';
-      case 'Pending':
+      case 'Draft':
         return 'bg-warning-focus text-warning-main';
       default:
         return 'bg-neutral-100 text-neutral-600';
@@ -367,7 +369,7 @@ const POApprovalListLayer = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="All">All Status</option>
-            <option value="Pending">Pending</option>
+            <option value="Draft">Draft</option>
             <option value="Approved">Approved</option>
             <option value="Rejected">Rejected</option>
           </select>
@@ -396,18 +398,22 @@ const POApprovalListLayer = () => {
           </select>
 
           <div className="d-flex align-items-center gap-2">
-            <input
-              type="date"
-              className="form-control form-control-sm"
+            <AdvancedDatePicker
               value={dateRangeFilter.start}
-              onChange={(e) => setDateRangeFilter(prev => ({ ...prev, start: e.target.value }))}
+              onChange={(date) => setDateRangeFilter(prev => ({ ...prev, start: date }))}
+              placeholder="From date"
+              label=""
+              className="min-w-140-px"
+              key={`start-${datePickerResetKey}`}
             />
             <span>to</span>
-            <input
-              type="date"
-              className="form-control form-control-sm"
+            <AdvancedDatePicker
               value={dateRangeFilter.end}
-              onChange={(e) => setDateRangeFilter(prev => ({ ...prev, end: e.target.value }))}
+              onChange={(date) => setDateRangeFilter(prev => ({ ...prev, end: date }))}
+              placeholder="To date"
+              label=""
+              className="min-w-140-px"
+              key={`end-${datePickerResetKey}`}
             />
           </div>
 
@@ -419,6 +425,7 @@ const POApprovalListLayer = () => {
               setPriorityFilter('All');
               setDepartmentFilter('All');
               setDateRangeFilter({ start: '', end: '' });
+              setDatePickerResetKey(prev => prev + 1); // Force date pickers to re-mount
             }}
           >
             Clear Filters
@@ -608,6 +615,7 @@ const POApprovalListLayer = () => {
                           setPriorityFilter('All');
                           setDepartmentFilter('All');
                           setDateRangeFilter({ start: '', end: '' });
+                          setDatePickerResetKey(prev => prev + 1); // Force date pickers to re-mount
                         }}
                       >
                         Clear Filters
@@ -625,7 +633,7 @@ const POApprovalListLayer = () => {
                           type="checkbox"
                           checked={selectedPOs.includes(po.id)}
                           onChange={() => handleSelectPO(po.id)}
-                          disabled={po.status !== 'Pending'}
+                          disabled={po.status !== 'Draft'}
                         />
                         <label className="form-check-label">{po.sl}</label>
                       </div>
@@ -701,7 +709,7 @@ const POApprovalListLayer = () => {
                         >
                           <Icon icon="iconamoon:eye-light" />
                         </button>
-                        {po.status === 'Pending' && (
+                        {po.status === 'Draft' && (
                           <>
                             <button
                               className="w-32-px h-32-px bg-success-light text-success-600 rounded-circle d-inline-flex align-items-center justify-content-center border-0"
@@ -725,7 +733,7 @@ const POApprovalListLayer = () => {
                             </button>
                           </>
                         )}
-                        {po.status !== 'Pending' && (
+                        {po.status !== 'Draft' && (
                           <button
                             className="w-32-px h-32-px bg-neutral-100 text-neutral-400 rounded-circle d-inline-flex align-items-center justify-content-center border-0"
                             title="Cannot modify - PO already processed"

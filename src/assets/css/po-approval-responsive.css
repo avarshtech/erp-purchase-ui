@@ -790,7 +790,6 @@ body.modal-open {
 
 /* Ensure table takes full width to enable horizontal scrolling */
 .table-responsive .table {
-  min-width: 2220px;
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;

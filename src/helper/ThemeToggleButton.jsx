@@ -18,9 +18,13 @@ const ThemeToggleButton = () => {
     // 5. Toggle theme when button is clicked
     const handleThemeToggle = () => {
         const newTheme = theme === 'dark' ? 'light' : 'dark';
-        setTheme(newTheme);
+        
+        // Immediately update localStorage and DOM for instant visual feedback
         localStorage.setItem('theme', newTheme);
         updateThemeOnHtmlEl(newTheme);
+        
+        // Then update state to trigger re-render if needed
+        setTheme(newTheme);
     };
 
     return (
