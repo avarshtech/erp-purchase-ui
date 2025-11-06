@@ -433,37 +433,7 @@ const POApprovalListLayer = () => {
         </div>
 
         <div className="d-flex flex-wrap align-items-center gap-3">
-          <div className="dropdown">
-            <button
-              className="btn btn-sm btn-outline-primary dropdown-toggle"
-              type="button"
-              data-bs-toggle="dropdown"
-              disabled={actionLoading}
-            >
-              <Icon icon="mdi:download" className="me-1" />
-              Export
-            </button>
-            <ul className="dropdown-menu">
-              <li>
-                <button 
-                  className="dropdown-item" 
-                  onClick={() => handleExport('csv')}
-                  disabled={actionLoading}
-                >
-                  Export as CSV
-                </button>
-              </li>
-              <li>
-                <button 
-                  className="dropdown-item" 
-                  onClick={() => handleExport('pdf')}
-                  disabled={actionLoading}
-                >
-                  Export as PDF
-                </button>
-              </li>
-            </ul>
-          </div>
+          {/* Export button removed as requested */}
         </div>
       </div>
 
@@ -579,7 +549,7 @@ const POApprovalListLayer = () => {
                   </div>
                 </th>
                 <th scope="col">Priority</th>
-                <th scope="col">Status</th>
+                <th scope="col" style={{ width: '120px', minWidth: '120px' }}>Status</th>
                 <th scope="col">Actions</th>
               </tr>
             </thead>
@@ -607,7 +577,7 @@ const POApprovalListLayer = () => {
                     <div className="text-center">
                       <Icon icon="mdi:file-document-outline" className="text-4xl text-muted mb-2" />
                       <p className="text-muted mb-2">No POs found matching your filters</p>
-                      <button 
+                      <button
                         className="btn btn-sm btn-primary"
                         onClick={() => {
                           setSearchTerm('');
@@ -688,16 +658,16 @@ const POApprovalListLayer = () => {
                       </span>
                     </td>
                     <td>
-                      <span className={`px-12 py-4 rounded-pill fw-medium text-xs ${getStatusBadgeClass(po.status)}`}>
-                        <Icon 
+                      <span className={`px-16 py-4 rounded-pill fw-bold text-xs d-inline-flex align-items-center gap-1 justify-content-center w-100-px status-pill ${getStatusBadgeClass(po.status)}`}>
+                        <Icon
                           icon={
                             po.status === 'Approved' ? 'mdi:check-circle' :
                             po.status === 'Rejected' ? 'mdi:close-circle' :
                             'mdi:clock-outline'
-                          } 
-                          className="me-1"
+                          }
+                          className="me-1 text-xl status-icon"
                         />
-                        {po.status}
+                        <span className="status-text">{po.status}</span>
                       </span>
                     </td>
                     <td>
@@ -772,8 +742,8 @@ const POApprovalListLayer = () => {
                 <li key={pageNum} className="page-item">
                   <button
                     className={`page-link fw-medium radius-4 border-0 px-10 py-10 d-flex align-items-center justify-content-center h-32-px w-32-px ${
-                      currentPage === pageNum 
-                        ? 'bg-primary-600 text-white' 
+                      currentPage === pageNum
+                        ? 'bg-primary-600 text-white'
                         : 'bg-primary-50 text-secondary-light'
                     }`}
                     onClick={() => setCurrentPage(pageNum)}

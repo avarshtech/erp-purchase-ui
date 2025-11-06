@@ -459,9 +459,105 @@
   background-color: rgba(13, 110, 253, 0.2);
 }
 
-/* Min width utility class */
+/* Min width utility classes */
 .min-w-140-px {
   min-width: 140px;
+}
+
+.min-w-80-px {
+  min-width: 80px;
+}
+
+/* Fixed width utility class */
+.w-100-px {
+  width: 100px;
+}
+
+/* Status pill styling */
+.status-pill {
+  min-height: 24px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: visible;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-text {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+/* Status icon consistency */
+.status-icon {
+  width: 1rem !important;
+  height: 1rem !important;
+  min-width: 1rem !important;
+  min-height: 1rem !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+}
+
+/* Table action buttons rounded background */
+.po-list-actions-cell .w-32-px {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+/* Action button backgrounds */
+.bg-primary-light {
+  background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+.bg-success-light {
+  background-color: rgba(25, 135, 84, 0.1) !important;
+}
+
+.bg-danger-light {
+  background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+[data-theme="dark"] .bg-primary-light {
+  background-color: rgba(13, 110, 253, 0.2) !important;
+}
+
+[data-theme="dark"] .bg-success-light {
+  background-color: rgba(25, 135, 84, 0.2) !important;
+}
+
+[data-theme="dark"] .bg-danger-light {
+  background-color: rgba(220, 53, 69, 0.2) !important;
+}
+
+/* Ensure button text colors */
+.text-primary-600 {
+  color: #0d6efd !important;
+}
+
+.text-success-600 {
+  color: #198754 !important;
+}
+
+.text-danger-600 {
+  color: #dc3545 !important;
+}
+
+[data-theme="dark"] .text-primary-600 {
+  color: #0dcaf0 !important;
+}
+
+[data-theme="dark"] .text-success-600 {
+  color: #20c997 !important;
+}
+
+[data-theme="dark"] .text-danger-600 {
+  color: #f8d7da !important;
 }
 
 /* Instant theme switching - targeted approach */

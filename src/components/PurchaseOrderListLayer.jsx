@@ -68,9 +68,9 @@ const TableRow = ({ po }) => {
       </td>
       <td>
         <div className="po-list-status-cell">
-          <span className={`px-12 py-4 rounded-pill fw-medium text-xs d-inline-flex align-items-center gap-1 ${getStatusBadgeClass(po.status)}`}>
-            <Icon icon={getStatusIcon(po.status)} className="text-xs" />
-            {po.status}
+          <span className={`px-16 py-4 rounded-pill fw-bold text-xs d-inline-flex align-items-center gap-1 justify-content-center w-100-px status-pill ${getStatusBadgeClass(po.status)}`}>
+            <Icon icon={getStatusIcon(po.status)} className="text-xl status-icon" />
+            <span className="status-text">{po.status}</span>
           </span>
         </div>
       </td>
@@ -266,7 +266,7 @@ const PurchaseOrderListLayer = () => {
                       e.currentTarget.closest('.dropdown').querySelector('.dropdown-toggle').click();
                     }}
                   >
-                    <Icon icon="mdi:file-document-outline" className="text-info" />
+                    <Icon icon="mdi:file-document-outline" className="text-primary" />
                     <span className="dropdown-item-text">Draft</span>
                   </button>
                 </li>
@@ -281,7 +281,7 @@ const PurchaseOrderListLayer = () => {
                       e.currentTarget.closest('.dropdown').querySelector('.dropdown-toggle').click();
                     }}
                   >
-                    <Icon icon="mdi:clock-outline" className="text-info" />
+                    <Icon icon="mdi:clock-outline" className="text-warning" />
                     <span className="dropdown-item-text">In Progress</span>
                   </button>
                 </li>
@@ -345,10 +345,6 @@ const PurchaseOrderListLayer = () => {
 
           {/* Action Buttons */}
           <div className="d-flex flex-wrap align-items-center gap-3">
-            <button className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2">
-              <Icon icon="mdi:download" className="icon" />
-              <span>Export</span>
-            </button>
             <Link to="/invoice-add" className="btn btn-sm btn-primary-600 d-flex align-items-center gap-2">
               <Icon icon="mdi:plus" className="icon" />
               <span>New Purchase Order</span>
