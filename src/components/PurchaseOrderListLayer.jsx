@@ -1,11 +1,11 @@
 import { Icon } from '@iconify/react/dist/iconify.js';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import { getPOList } from '../mocks/server';
 import AdvancedDatePicker from './AdvancedDatePicker';
+import POModalLayer from './POModalLayer';
 import '../assets/css/purchase-order.css';
 
-const TableRow = ({ po }) => {
+const TableRow = ({ po, onEdit }) => {
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case 'Completed':
@@ -85,7 +85,7 @@ const TableRow = ({ po }) => {
           </button>
           <button
             className="w-32-px h-32-px bg-success-light text-success-600 rounded-circle d-inline-flex align-items-center justify-content-center border-0"
-            onClick={() => {/* Handle edit PO */}}
+            onClick={() => onEdit(po)}
             title="Edit PO"
           >
             <Icon icon="lucide:edit" />
@@ -106,7 +106,6 @@ const TableRow = ({ po }) => {
 const PurchaseOrderListLayer = () => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('All');
   const [dateRangeFilter, setDateRangeFilter] = useState({ start: '', end: '' });
   const [datePickerResetKey, setDatePickerResetKey] = useState(0);
@@ -114,16 +113,18 @@ const PurchaseOrderListLayer = () => {
   const [sortDirection, setSortDirection] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  
+  // Modal state
+  const [showPOModal, setShowPOModal] = useState(false);
+  const [editingPO, setEditingPO] = useState(null);
 
   useEffect(() => {
     const fetchPOData = async () => {
       try {
         setLoading(true);
-        setError(null);
         const response = await getPOList();
         setPurchaseOrders(response.data);
       } catch (err) {
-        setError('Failed to fetch PO data. Please try again later.');
         console.error('Error fetching PO data:', err);
       } finally {
         setLoading(false);
@@ -219,6 +220,38 @@ const PurchaseOrderListLayer = () => {
     setCurrentPage(1);
   };
 
+  // Modal handlers
+  const handleAddPO = () => {
+    setEditingPO(null);
+    setShowPOModal(true);
+  };
+
+  const handleEditPO = (po) => {
+    setEditingPO(po);
+    setShowPOModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowPOModal(false);
+    setEditingPO(null);
+  };
+
+  const handlePOUpdated = () => {
+    // Refresh the PO list when a PO is created/updated
+    const fetchPOData = async () => {
+      try {
+        setLoading(true);
+        const response = await getPOList();
+        setPurchaseOrders(response.data);
+      } catch (err) {
+        console.error('Error fetching PO data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPOData();
+  };
+
   const hasActiveFilters = statusFilter !== 'All' || dateRangeFilter.start || dateRangeFilter.end;
 
   return (
@@ -233,7 +266,7 @@ const PurchaseOrderListLayer = () => {
                 className={`btn btn-sm ${statusFilter === 'All' ? 'btn-outline-secondary' : 'btn-primary'} dropdown-toggle d-flex align-items-center gap-2`}
                 type="button"
                 data-bs-toggle="dropdown"
-                style={{ borderColor: '#ced4da' }}
+                style={{ borderColor: '#81868b' }}
               >
                 <Icon icon="mdi:filter-variant" className="icon" />
                 <span className="dropdown-label">Status: {statusFilter}</span>
@@ -345,10 +378,14 @@ const PurchaseOrderListLayer = () => {
 
           {/* Action Buttons */}
           <div className="d-flex flex-wrap align-items-center gap-3">
-            <Link to="/invoice-add" className="btn btn-sm btn-primary-600 d-flex align-items-center gap-2">
+            <button
+              type="button"
+              className="btn btn-sm btn-primary-600 d-flex align-items-center gap-2"
+              onClick={handleAddPO}
+            >
               <Icon icon="mdi:plus" className="icon" />
               <span>New Purchase Order</span>
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -463,7 +500,7 @@ const PurchaseOrderListLayer = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedOrders.map((po) => <TableRow key={po.id} po={po} />)}
+                    {paginatedOrders.map((po) => <TableRow key={po.id} po={po} onEdit={handleEditPO} />)}
                   </tbody>
                 </table>
               </div>
@@ -508,6 +545,14 @@ const PurchaseOrderListLayer = () => {
           )}
         </div>
       </div>
+      
+      {/* PO Modal */}
+      <POModalLayer
+        showModal={showPOModal}
+        onClose={handleCloseModal}
+        editingPO={editingPO}
+        onPOUpdated={handlePOUpdated}
+      />
     </>
   );
 };

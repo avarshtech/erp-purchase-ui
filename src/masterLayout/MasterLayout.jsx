@@ -179,18 +179,6 @@ const MasterLayout = ({ children }) => {
                 </li>
                 <li>
                   <NavLink
-                    to='/addeditpo'
-
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <Icon icon='mingcute:storage-line' className='menu-icon' />
-                    <span>Add/Edit PO</span>
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink
                     to='/po-approval'
 
                     className={(navData) =>

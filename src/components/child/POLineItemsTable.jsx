@@ -21,7 +21,7 @@ const POLineItemsTable = ({
           <h6 className="mb-0">Line Items</h6>
           <button
             type="button"
-            className="btn btn-primary btn-sm"
+            className="btn btn-primary btn-sm d-inline-flex align-items-center justify-content-center"
             onClick={addLineItem}
             aria-label="Add new line item"
           >
@@ -30,19 +30,19 @@ const POLineItemsTable = ({
           </button>
         </div>
 
-        <div className="table-responsive">
-          <table className="table table-bordered">
-            <thead className="table-light">
+        <div className="table-responsive" style={{ overflowX: 'auto' }}>
+          <table className="table table-bordered" style={{ minWidth: '1000px' }}>
+            <thead className="table-header-custom">
               <tr>
-                <th style={{ width: '200px' }}>Item</th>
-                <th style={{ width: '250px' }}>Description</th>
-                <th style={{ width: '80px' }}>Qty</th>
-                <th style={{ width: '80px' }}>UOM</th>
-                <th style={{ width: '100px' }}>Unit Price</th>
-                <th style={{ width: '80px' }}>SGST %</th>
-                <th style={{ width: '80px' }}>CGST %</th>
-                <th style={{ width: '100px' }}>Amount</th>
-                <th style={{ width: '50px' }}>Action</th>
+                <th style={{ width: '180px', minWidth: '180px' }} className="text-center">Item</th>
+                <th style={{ width: '200px', minWidth: '200px' }} className="text-center">Description</th>
+                <th style={{ width: '70px', minWidth: '70px' }} className="text-center">Qty</th>
+                <th style={{ width: '80px', minWidth: '80px' }} className="text-center">UOM</th>
+                <th style={{ width: '90px', minWidth: '90px' }} className="text-center">Unit Price</th>
+                <th style={{ width: '70px', minWidth: '70px' }} className="text-center">SGST %</th>
+                <th style={{ width: '70px', minWidth: '70px' }} className="text-center">CGST %</th>
+                <th style={{ width: '90px', minWidth: '90px' }} className="text-center">Amount</th>
+                <th style={{ width: '60px', minWidth: '60px' }} className="text-center">Action</th>
               </tr>
             </thead>
             <tbody>

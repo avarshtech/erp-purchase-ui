@@ -369,26 +369,6 @@ const POFormLayer = () => {
   return (
     <div className="row gy-4">
       <ToastContainer position="top-right" autoClose={3000} />
-      <style jsx>{`
-        .datepicker-wrapper {
-          position: relative;
-        }
-        .datepicker-wrapper .react-datepicker-wrapper {
-          width: 100%;
-        }
-        .dropdown-menu.show {
-          display: block;
-        }
-        .cursor-pointer {
-          cursor: pointer;
-        }
-        .z-index-999 {
-          z-index: 999;
-        }
-        .table-responsive {
-          position: relative;
-        }
-      `}</style>
       <div className="col-lg-12">
         <div className="card">
           <div className="card-header">
