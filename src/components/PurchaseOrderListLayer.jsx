@@ -159,6 +159,12 @@ const PurchaseOrderListLayer = () => {
     }
   };
 
+  const getMonthIndex = (monthStr) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months.indexOf(monthStr);
+  };
+
   // Filter and sort data
   const filteredAndSortedOrders = useMemo(() => {
     let filtered = purchaseOrders.filter((po) => {
@@ -221,12 +227,6 @@ const PurchaseOrderListLayer = () => {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
-  };
-
-  const getMonthIndex = (monthStr) => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months.indexOf(monthStr);
   };
 
   const clearAllFilters = () => {
