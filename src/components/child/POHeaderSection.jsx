@@ -51,6 +51,7 @@ const POHeaderSection = ({
             value={formData.poNo}
             onChange={(e) => handleInputChange("poNo", e.target.value)}
             readOnly
+            disabled
             aria-label="Purchase Order Number"
             style={{ height: "40px" }}
           />

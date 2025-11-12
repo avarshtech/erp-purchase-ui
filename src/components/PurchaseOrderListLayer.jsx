@@ -5,7 +5,9 @@ import AdvancedDatePicker from './AdvancedDatePicker';
 import POModalLayer from './POModalLayer';
 import '../assets/css/purchase-order.css';
 
-const TableRow = ({ po, onEdit }) => {
+const TableRow = ({ po, onEdit, onDelete }) => {
+  const isEditable = po.status === 'Draft' || po.status === 'Rejected';
+  const isDeletable = po.status === 'Draft' || po.status === 'Rejected';
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case 'Completed':
@@ -13,7 +15,11 @@ const TableRow = ({ po, onEdit }) => {
       case 'InProgress':
         return 'bg-warning-focus text-warning-main';
       case 'Draft':
-        return 'bg-info-focus text-info-main';
+        return 'bg-info-focus text-info-600';
+      case 'Await Approval':
+        return 'bg-neutral-200 text-cyan-600';
+      case 'Rejected':
+        return 'bg-danger-focus text-danger-main';
       default:
         return 'bg-neutral-100 text-neutral-600';
     }
@@ -27,6 +33,10 @@ const TableRow = ({ po, onEdit }) => {
         return 'mdi:clock-outline';
       case 'Draft':
         return 'mdi:file-document-outline';
+      case 'Await Approval':
+        return 'mdi:clock-check-outline';
+      case 'Rejected':
+        return 'mdi:close-circle';
       default:
         return 'mdi:help-circle';
     }
@@ -68,7 +78,7 @@ const TableRow = ({ po, onEdit }) => {
       </td>
       <td>
         <div className="po-list-status-cell">
-          <span className={`px-16 py-4 rounded-pill fw-bold text-xs d-inline-flex align-items-center gap-1 justify-content-center w-100-px status-pill ${getStatusBadgeClass(po.status)}`}>
+          <span className={`px-16 py-4 rounded-pill fw-bold text-xs d-inline-flex align-items-center gap-1 justify-content-center status-pill ${getStatusBadgeClass(po.status)}`}>
             <Icon icon={getStatusIcon(po.status)} className="text-xl status-icon" />
             <span className="status-text">{po.status}</span>
           </span>
@@ -84,16 +94,18 @@ const TableRow = ({ po, onEdit }) => {
             <Icon icon="iconamoon:eye-light" />
           </button>
           <button
-            className="w-32-px h-32-px bg-success-light text-success-600 rounded-circle d-inline-flex align-items-center justify-content-center border-0"
-            onClick={() => onEdit(po)}
-            title="Edit PO"
+            className={`w-32-px h-32-px rounded-circle d-inline-flex align-items-center justify-content-center border-0 ${isEditable ? 'bg-success-light text-success-600' : 'bg-light text-muted'}`}
+            onClick={() => isEditable && onEdit(po)}
+            disabled={!isEditable}
+            title={isEditable ? "Edit PO" : "Cannot edit PO with current status"}
           >
             <Icon icon="lucide:edit" />
           </button>
           <button
-            className="w-32-px h-32-px bg-danger-light text-danger-600 rounded-circle d-inline-flex align-items-center justify-content-center border-0"
-            onClick={() => {/* Handle delete PO */}}
-            title="Delete PO"
+            className={`w-32-px h-32-px rounded-circle d-inline-flex align-items-center justify-content-center border-0 ${isDeletable ? 'bg-danger-light text-danger-600' : 'bg-light text-muted'}`}
+            onClick={() => isDeletable && onDelete(po)}
+            disabled={!isDeletable}
+            title={isDeletable ? "Delete PO" : "Cannot delete PO with current status"}
           >
             <Icon icon="mingcute:delete-2-line" />
           </button>
@@ -113,10 +125,14 @@ const PurchaseOrderListLayer = () => {
   const [sortDirection, setSortDirection] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  
+
   // Modal state
   const [showPOModal, setShowPOModal] = useState(false);
   const [editingPO, setEditingPO] = useState(null);
+
+  // Delete confirmation state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [poToDelete, setPoToDelete] = useState(null);
 
   useEffect(() => {
     const fetchPOData = async () => {
@@ -252,6 +268,40 @@ const PurchaseOrderListLayer = () => {
     fetchPOData();
   };
 
+  const handleDeletePO = (po) => {
+    setPoToDelete(po);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeletePO = async () => {
+    if (!poToDelete) return;
+
+    try {
+      setLoading(true);
+      // In a real app, this would be an API call to delete the PO
+      // For now, we'll simulate the deletion by removing it from the local state
+      setPurchaseOrders(prev => prev.filter(po => po.id !== poToDelete.id));
+
+      // Reset pagination if we're on a page that no longer exists
+      const newTotalPages = Math.ceil((purchaseOrders.length - 1) / itemsPerPage);
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages);
+      }
+
+      setShowDeleteDialog(false);
+      setPoToDelete(null);
+    } catch (error) {
+      console.error('Error deleting PO:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelDeletePO = () => {
+    setShowDeleteDialog(false);
+    setPoToDelete(null);
+  };
+
   const hasActiveFilters = statusFilter !== 'All' || dateRangeFilter.start || dateRangeFilter.end;
 
   return (
@@ -299,7 +349,7 @@ const PurchaseOrderListLayer = () => {
                       e.currentTarget.closest('.dropdown').querySelector('.dropdown-toggle').click();
                     }}
                   >
-                    <Icon icon="mdi:file-document-outline" className="text-primary" />
+                    <Icon icon="mdi:file-document-outline" className="text-info-600" />
                     <span className="dropdown-item-text">Draft</span>
                   </button>
                 </li>
@@ -331,6 +381,36 @@ const PurchaseOrderListLayer = () => {
                   >
                     <Icon icon="mdi:check-circle" className="text-success" />
                     <span className="dropdown-item-text">Completed</span>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className={`dropdown-item d-flex align-items-center gap-2 ${statusFilter === 'Await Approval' ? 'active' : ''} dropdown-item-content`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setStatusFilter('Await Approval');
+                      setCurrentPage(1);
+                      // Close dropdown by removing show class
+                      e.currentTarget.closest('.dropdown').querySelector('.dropdown-toggle').click();
+                    }}
+                  >
+                    <Icon icon="mdi:clock-check-outline" className="text-cyan-600" />
+                    <span className="dropdown-item-text">Await Approval</span>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className={`dropdown-item d-flex align-items-center gap-2 ${statusFilter === 'Rejected' ? 'active' : ''} dropdown-item-content`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setStatusFilter('Rejected');
+                      setCurrentPage(1);
+                      // Close dropdown by removing show class
+                      e.currentTarget.closest('.dropdown').querySelector('.dropdown-toggle').click();
+                    }}
+                  >
+                    <Icon icon="mdi:close-circle" className="text-danger" />
+                    <span className="dropdown-item-text">Rejected</span>
                   </button>
                 </li>
               </ul>
@@ -500,7 +580,7 @@ const PurchaseOrderListLayer = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedOrders.map((po) => <TableRow key={po.id} po={po} onEdit={handleEditPO} />)}
+                    {paginatedOrders.map((po) => <TableRow key={po.id} po={po} onEdit={handleEditPO} onDelete={handleDeletePO} />)}
                   </tbody>
                 </table>
               </div>
@@ -553,6 +633,44 @@ const PurchaseOrderListLayer = () => {
         editingPO={editingPO}
         onPOUpdated={handlePOUpdated}
       />
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && poToDelete && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-sm modal-dialog-centered">
+            <div className="modal-content radius-16 bg-base">
+              <div className="modal-body p-24 text-center">
+                <div className="mb-16">
+                  <Icon icon="mingcute:delete-2-line" className="text-danger text-4xl" />
+                </div>
+                <h6 className="text-lg text-neutral-900 mb-8">Delete Purchase Order</h6>
+                <p className="text-sm text-neutral-600 mb-16">
+                  Are you sure you want to delete PO <strong>{poToDelete.poNo}</strong>?
+                </p>
+                <p className="text-xs text-neutral-500 mb-24">
+                  This action cannot be undone.
+                </p>
+                <div className="d-flex align-items-center justify-content-center gap-3">
+                  <button
+                    type="button"
+                    className="border border-neutral-300 bg-hover-neutral-100 text-neutral-600 text-md px-32 py-11 radius-8"
+                    onClick={cancelDeletePO}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger border border-danger-600 text-md px-32 py-12 radius-8"
+                    onClick={confirmDeletePO}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

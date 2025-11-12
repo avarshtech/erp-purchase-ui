@@ -193,7 +193,7 @@ const AdvancedDatePicker = ({
 
         {isOpen && (
           <div
-            className="bg-white border shadow-lg"
+            className="position-absolute"
             style={{
               position: 'fixed',
               top: position.top === -9999 ? '-9999px' : `${position.top}px`,

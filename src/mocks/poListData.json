@@ -178,5 +178,65 @@
     "poDate": "28 Feb 2024",
     "totalValue": "745.60",
     "status": "Draft"
+  },
+  {
+    "id": 16,
+    "sl": "16",
+    "poNo": "#526548",
+    "supplier": {
+      "name": "Luxury Textiles Inc",
+      "image": "assets/images/user-list/user-list16.png"
+    },
+    "poDate": "02 Mar 2024",
+    "totalValue": "2150.40",
+    "status": "Await Approval"
+  },
+  {
+    "id": 17,
+    "sl": "17",
+    "poNo": "#526549",
+    "supplier": {
+      "name": "Basic Supplies Ltd",
+      "image": "assets/images/user-list/user-list17.png"
+    },
+    "poDate": "05 Mar 2024",
+    "totalValue": "890.75",
+    "status": "Await Approval"
+  },
+  {
+    "id": 18,
+    "sl": "18",
+    "poNo": "#526550",
+    "supplier": {
+      "name": "Advanced Materials",
+      "image": "assets/images/user-list/user-list18.png"
+    },
+    "poDate": "08 Mar 2024",
+    "totalValue": "3420.90",
+    "status": "Await Approval"
+  },
+  {
+    "id": 19,
+    "sl": "19",
+    "poNo": "#526551",
+    "supplier": {
+      "name": "Quality Textiles",
+      "image": "assets/images/user-list/user-list19.png"
+    },
+    "poDate": "10 Mar 2024",
+    "totalValue": "1250.75",
+    "status": "Rejected"
+  },
+  {
+    "id": 20,
+    "sl": "20",
+    "poNo": "#526552",
+    "supplier": {
+      "name": "Premium Fabrics Co",
+      "image": "assets/images/user-list/user-list20.png"
+    },
+    "poDate": "12 Mar 2024",
+    "totalValue": "890.40",
+    "status": "Rejected"
   }
 ]

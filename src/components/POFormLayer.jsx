@@ -47,8 +47,7 @@ const POFormLayer = () => {
   const [uiState, setUiState] = useState({
     loading: false,
     supplierSearch: '',
-    showSupplierDropdown: false,
-    openItemDropdown: null
+    showSupplierDropdown: false
   });
 
   // Static options (moved outside state for better performance)
@@ -324,7 +323,8 @@ const POFormLayer = () => {
     setUiState(prev => ({
       ...prev,
       supplierSearch: supplier.name,
-      showSupplierDropdown: false
+      showSupplierDropdown: false,
+      openItemDropdown: null
     }));
   };
 
@@ -334,8 +334,7 @@ const POFormLayer = () => {
       if (!event.target.closest('.position-relative')) {
         setUiState(prev => ({
           ...prev,
-          showSupplierDropdown: false,
-          openItemDropdown: null
+          showSupplierDropdown: false
         }));
       }
     };
@@ -348,7 +347,6 @@ const POFormLayer = () => {
 
   const selectItem = (itemId, lineItemId) => {
     handleLineItemChange(lineItemId, 'itemId', itemId);
-    setUiState(prev => ({ ...prev, openItemDropdown: null }));
   };
 
   const { subtotal, tax, grandTotal } = calculateTotals();
@@ -360,10 +358,6 @@ const POFormLayer = () => {
 
   const setShowSupplierDropdown = useCallback((value) => {
     setUiState(prev => ({ ...prev, showSupplierDropdown: value }));
-  }, []);
-
-  const setOpenItemDropdown = useCallback((value) => {
-    setUiState(prev => ({ ...prev, openItemDropdown: value }));
   }, []);
 
   return (
@@ -391,8 +385,6 @@ const POFormLayer = () => {
             <POLineItemsTable
               lineItems={formState.lineItems}
               errors={formState.errors}
-              openItemDropdown={uiState.openItemDropdown}
-              setOpenItemDropdown={setOpenItemDropdown}
               filteredItems={masterData.filteredItems}
               selectItem={selectItem}
               handleLineItemChange={handleLineItemChange}

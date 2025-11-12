@@ -652,7 +652,7 @@
 
 /* Ensure scrollbar is always visible when content overflows */
 .table-responsive {
-  scrollbar-gutter: stable;
+  scrollbar-gutter: auto;
 }
 
 /* Additional scrollbar styling for better cross-browser compatibility */

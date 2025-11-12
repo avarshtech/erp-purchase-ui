@@ -55,7 +55,6 @@ const POModalLayer = ({
     loading: false, // false, 'saving', or 'submitting'
     supplierSearch: '',
     showSupplierDropdown: false,
-    openItemDropdown: null,
     showConfirmDialog: false
   });
 
@@ -88,7 +87,7 @@ const POModalLayer = ({
           termsConditionId: po.termsConditionId || '',
           remarks: po.remarks || ''
         },
-        lineItems: po.lineItems.map(item => ({ ...item, id: uuidv4() })),
+        lineItems: po.lineItems ? po.lineItems.map(item => ({ ...item, id: uuidv4() })) : [],
         errors: {},
         isDirty: false // Start with isDirty as false for edit mode
       });
@@ -172,7 +171,6 @@ const POModalLayer = ({
         ...prev,
         supplierSearch: '',
         showSupplierDropdown: false,
-        openItemDropdown: null,
         showConfirmDialog: false
       }));
     }
@@ -445,8 +443,7 @@ const POModalLayer = ({
       setUiState(prev => ({
         ...prev,
         supplierSearch: '',
-        showSupplierDropdown: false,
-        openItemDropdown: null
+        showSupplierDropdown: false
       }));
       
       onPOUpdated();
@@ -511,8 +508,7 @@ const POModalLayer = ({
       setUiState(prev => ({
         ...prev,
         supplierSearch: '',
-        showSupplierDropdown: false,
-        openItemDropdown: null
+        showSupplierDropdown: false
       }));
       
       onPOUpdated();
@@ -572,7 +568,6 @@ const POModalLayer = ({
         ...prev,
         supplierSearch: '',
         showSupplierDropdown: false,
-        openItemDropdown: null,
         showConfirmDialog: false
       }));
       
@@ -598,8 +593,7 @@ const POModalLayer = ({
       if (!event.target.closest('.position-relative')) {
         setUiState(prev => ({
           ...prev,
-          showSupplierDropdown: false,
-          openItemDropdown: null
+          showSupplierDropdown: false
         }));
       }
     };
@@ -614,7 +608,6 @@ const POModalLayer = ({
 
   const selectItem = (itemId, lineItemId) => {
     handleLineItemChange(lineItemId, 'itemId', itemId);
-    setUiState(prev => ({ ...prev, openItemDropdown: null }));
   };
 
   const { subtotal, tax, grandTotal } = calculateTotals();
@@ -628,9 +621,6 @@ const POModalLayer = ({
     setUiState(prev => ({ ...prev, showSupplierDropdown: value }));
   }, []);
 
-  const setOpenItemDropdown = useCallback((value) => {
-    setUiState(prev => ({ ...prev, openItemDropdown: value }));
-  }, []);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -681,8 +671,6 @@ const POModalLayer = ({
             <POLineItemsTable
               lineItems={formState.lineItems}
               errors={formState.errors}
-              openItemDropdown={uiState.openItemDropdown}
-              setOpenItemDropdown={setOpenItemDropdown}
               filteredItems={masterData.filteredItems}
               selectItem={selectItem}
               handleLineItemChange={handleLineItemChange}

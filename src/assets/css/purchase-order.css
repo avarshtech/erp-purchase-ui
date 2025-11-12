@@ -306,7 +306,7 @@
 }
 
 [data-theme="dark"] .advanced-date-picker .form-control:focus {
-  background-color: #343a40;
+  background-color: #2c374b;
   border-color: #6c757d;
   color: #e9ecef;
 }
@@ -326,7 +326,7 @@
 }
 
 [data-theme="dark"] .advanced-date-picker .position-absolute {
-  background-color: #343a40 !important;
+  background-color: #2c374b !important;
   border-color: #495057;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
 }
@@ -792,6 +792,32 @@
   background-color: #4b5563;
 }
 
+/* Item dropdown styling for PO line items */
+.dropdown-menu.show {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .dropdown-menu.show {
+  background-color: #374151;
+  border-color: #6b7280;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .dropdown-item {
+  color: #f9fafb !important;
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+  background-color: #4b5563;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .dropdown-item .text-muted {
+  color: #9ca3af !important;
+}
+
+
 /* PO Form Dropdown Styling */
 .po-form-dropdown .dropdown-toggle {
   border-color: #ced4da;
@@ -869,4 +895,20 @@
 
 [data-theme="dark"] .bg-light.text-dark hr {
   border-color: #6b7280 !important;
+}
+
+/* Disabled action buttons styling for dark mode */
+[data-theme="dark"] .bg-light.text-muted {
+  background-color: #4b5563 !important;
+  color: #9ca3af !important;
+  border-color: #6b7280 !important;
+}
+
+/* PO Footer Summary text colors for theme adaptation */
+.bg-light .text-body {
+  color: #000000 !important; /* Black text in light mode */
+}
+
+[data-theme="dark"] .bg-light .text-body {
+  color: #ffffff !important; /* White text in dark mode */
 }
