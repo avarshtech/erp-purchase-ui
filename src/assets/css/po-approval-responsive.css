@@ -652,7 +652,7 @@
 
 /* Ensure scrollbar is always visible when content overflows */
 .table-responsive {
-  scrollbar-gutter: stable;
+  scrollbar-gutter: auto;
 }
 
 /* Additional scrollbar styling for better cross-browser compatibility */
@@ -790,7 +790,6 @@ body.modal-open {
 
 /* Ensure table takes full width to enable horizontal scrolling */
 .table-responsive .table {
-  min-width: 2220px;
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;

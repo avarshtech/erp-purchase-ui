@@ -461,7 +461,24 @@ const itemsData = [
   { id: 5, name: 'Coffee Beans', code: 'ITEM005', description: 'Premium arabica coffee beans, 1kg pack', uom: 'kg', unitPrice: 25.00, category: 'Pantry' },
   { id: 6, name: 'Whiteboard Markers', code: 'ITEM006', description: 'Set of 4 colored whiteboard markers', uom: 'sets', unitPrice: 15.00, category: 'Stationery' },
   { id: 7, name: 'Network Switch', code: 'ITEM007', description: '24-port gigabit ethernet switch', uom: 'pcs', unitPrice: 180.00, category: 'Electronics' },
-  { id: 8, name: 'Cleaning Supplies', code: 'ITEM008', description: 'All-purpose cleaning solution, 5L bottle', uom: 'liters', unitPrice: 22.00, category: 'Maintenance' }
+  { id: 8, name: 'Cleaning Supplies', code: 'ITEM008', description: 'All-purpose cleaning solution, 5L bottle', uom: 'liters', unitPrice: 22.00, category: 'Maintenance' },
+  { id: 9, name: 'Wireless Mouse', code: 'ITEM009', description: 'Optical wireless mouse with USB receiver', uom: 'pcs', unitPrice: 35.00, category: 'Electronics' },
+  { id: 10, name: 'Desk Lamp', code: 'ITEM010', description: 'LED desk lamp with adjustable brightness', uom: 'pcs', unitPrice: 45.00, category: 'Furniture' },
+  { id: 11, name: 'Notebooks', code: 'ITEM011', description: 'Pack of 10 ruled notebooks, A4 size', uom: 'packs', unitPrice: 18.00, category: 'Stationery' },
+  { id: 12, name: 'HDMI Cable', code: 'ITEM012', description: 'High-speed HDMI cable, 2m length', uom: 'pcs', unitPrice: 15.00, category: 'Electronics' },
+  { id: 13, name: 'Green Tea', code: 'ITEM013', description: 'Premium green tea leaves, 500g pack', uom: 'kg', unitPrice: 30.00, category: 'Pantry' },
+  { id: 14, name: 'Permanent Markers', code: 'ITEM014', description: 'Set of 6 permanent markers, assorted colors', uom: 'sets', unitPrice: 12.00, category: 'Stationery' },
+  { id: 15, name: 'Router', code: 'ITEM015', description: 'Wireless router with 4 LAN ports', uom: 'pcs', unitPrice: 85.00, category: 'Electronics' },
+  { id: 16, name: 'Floor Cleaner', code: 'ITEM016', description: 'Concentrated floor cleaning solution, 5L', uom: 'liters', unitPrice: 28.00, category: 'Maintenance' },
+  { id: 17, name: 'Keyboard', code: 'ITEM017', description: 'Mechanical keyboard with RGB lighting', uom: 'pcs', unitPrice: 95.00, category: 'Electronics' },
+  { id: 18, name: 'Filing Cabinet', code: 'ITEM018', description: '4-drawer metal filing cabinet', uom: 'pcs', unitPrice: 180.00, category: 'Furniture' },
+  { id: 19, name: 'Sticky Notes', code: 'ITEM019', description: 'Pack of 12 sticky note pads, various sizes', uom: 'packs', unitPrice: 8.00, category: 'Stationery' },
+  { id: 20, name: 'Power Strip', code: 'ITEM020', description: '6-outlet power strip with surge protection', uom: 'pcs', unitPrice: 25.00, category: 'Electronics' },
+  { id: 21, name: 'Coffee Cups', code: 'ITEM021', description: 'Pack of 50 disposable coffee cups', uom: 'packs', unitPrice: 12.00, category: 'Pantry' },
+  { id: 22, name: 'Highlighters', code: 'ITEM022', description: 'Set of 5 fluorescent highlighters', uom: 'sets', unitPrice: 10.00, category: 'Stationery' },
+  { id: 23, name: 'External Hard Drive', code: 'ITEM023', description: '1TB external hard drive with USB 3.0', uom: 'pcs', unitPrice: 75.00, category: 'Electronics' },
+  { id: 24, name: 'Air Freshener', code: 'ITEM024', description: 'Room air freshener spray, 300ml', uom: 'bottles', unitPrice: 15.00, category: 'Maintenance' },
+  { id: 25, name: 'Monitor Stand', code: 'ITEM025', description: 'Adjustable monitor stand with cable management', uom: 'pcs', unitPrice: 40.00, category: 'Furniture' }
 ];
 
 // Mock data for terms and conditions

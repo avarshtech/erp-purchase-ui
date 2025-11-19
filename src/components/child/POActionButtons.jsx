@@ -21,7 +21,7 @@ const POActionButtons = ({ loading, handleCancel, handleSaveDraft, handleSubmit,
             disabled={loading}
             aria-label="Save Purchase Order as Draft"
           >
-            {loading ? 'Saving...' : 'Save as Draft'}
+            {loading === 'saving' ? 'Saving...' : 'Save as Draft'}
           </button>
           <button
             type="button"
@@ -30,7 +30,7 @@ const POActionButtons = ({ loading, handleCancel, handleSaveDraft, handleSubmit,
             disabled={loading}
             aria-label="Submit Purchase Order for Approval"
           >
-            {loading ? 'Submitting...' : 'Submit for Approval'}
+            {loading === 'submitting' ? 'Submitting...' : 'Submit for Approval'}
           </button>
         </div>
       </div>

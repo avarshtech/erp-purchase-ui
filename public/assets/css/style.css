@@ -535,7 +535,7 @@ img,
 embed,
 object,
 iframe {
-  vertical-align: bottom;
+  vertical-align: middle;
 }
 
 button,
@@ -13012,6 +13012,8 @@ select option {
   background-image: url(../images/arrow-down.png);
   background-size: 11px 7px;
   background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
 }
 
 [data-theme="dark"] .btn-close {
@@ -13815,7 +13817,7 @@ select option {
 
 .dropdown-menu {
   border: 0;
-  border-radius: 16px;
+  border-radius: 8px;
   box-shadow: 0px 13px 30px 10px rgba(46, 45, 116, 0.05);
   padding: 16px;
   background-color: var(--white);
@@ -15724,3 +15726,4 @@ td.fc-header-center {
 }
 
 /* === footer css end === */
+

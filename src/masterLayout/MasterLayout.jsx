@@ -167,26 +167,14 @@ const MasterLayout = ({ children }) => {
             </li>
             <li>
                   <NavLink
-                    to='/po-list'
+                    to='/purchase-orders'
 
                     className={(navData) =>
                       navData.isActive ? "active-page" : ""
                     }
                   >
                     <Icon icon='mingcute:storage-line' className='menu-icon' />
-                    <span>PO List</span>
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink
-                    to='/addeditpo'
-
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <Icon icon='mingcute:storage-line' className='menu-icon' />
-                    <span>Add/Edit PO</span>
+                    <span>Purchase Orders</span>
                   </NavLink>
                 </li>
                 <li>

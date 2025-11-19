@@ -47,8 +47,7 @@ const POFormLayer = () => {
   const [uiState, setUiState] = useState({
     loading: false,
     supplierSearch: '',
-    showSupplierDropdown: false,
-    openItemDropdown: null
+    showSupplierDropdown: false
   });
 
   // Static options (moved outside state for better performance)
@@ -324,7 +323,8 @@ const POFormLayer = () => {
     setUiState(prev => ({
       ...prev,
       supplierSearch: supplier.name,
-      showSupplierDropdown: false
+      showSupplierDropdown: false,
+      openItemDropdown: null
     }));
   };
 
@@ -334,8 +334,7 @@ const POFormLayer = () => {
       if (!event.target.closest('.position-relative')) {
         setUiState(prev => ({
           ...prev,
-          showSupplierDropdown: false,
-          openItemDropdown: null
+          showSupplierDropdown: false
         }));
       }
     };
@@ -348,7 +347,6 @@ const POFormLayer = () => {
 
   const selectItem = (itemId, lineItemId) => {
     handleLineItemChange(lineItemId, 'itemId', itemId);
-    setUiState(prev => ({ ...prev, openItemDropdown: null }));
   };
 
   const { subtotal, tax, grandTotal } = calculateTotals();
@@ -362,33 +360,9 @@ const POFormLayer = () => {
     setUiState(prev => ({ ...prev, showSupplierDropdown: value }));
   }, []);
 
-  const setOpenItemDropdown = useCallback((value) => {
-    setUiState(prev => ({ ...prev, openItemDropdown: value }));
-  }, []);
-
   return (
     <div className="row gy-4">
       <ToastContainer position="top-right" autoClose={3000} />
-      <style jsx>{`
-        .datepicker-wrapper {
-          position: relative;
-        }
-        .datepicker-wrapper .react-datepicker-wrapper {
-          width: 100%;
-        }
-        .dropdown-menu.show {
-          display: block;
-        }
-        .cursor-pointer {
-          cursor: pointer;
-        }
-        .z-index-999 {
-          z-index: 999;
-        }
-        .table-responsive {
-          position: relative;
-        }
-      `}</style>
       <div className="col-lg-12">
         <div className="card">
           <div className="card-header">
@@ -411,8 +385,6 @@ const POFormLayer = () => {
             <POLineItemsTable
               lineItems={formState.lineItems}
               errors={formState.errors}
-              openItemDropdown={uiState.openItemDropdown}
-              setOpenItemDropdown={setOpenItemDropdown}
               filteredItems={masterData.filteredItems}
               selectItem={selectItem}
               handleLineItemChange={handleLineItemChange}
