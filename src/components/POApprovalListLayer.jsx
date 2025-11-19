@@ -1,6 +1,6 @@
 import { Icon } from '@iconify/react/dist/iconify.js';
 import React, { useState, useEffect, useMemo } from 'react';
-import { getPOApprovalList, approvePO, rejectPO, bulkApprovePOs, bulkRejectPOs, exportPOList } from '../mocks/server';
+import { getPOApprovalList, approvePO, rejectPO, bulkApprovePOs, bulkRejectPOs } from '../mocks/server';
 import AdvancedDatePicker from './AdvancedDatePicker';
 import PODetailModal from './child/PODetailModal';
 
@@ -258,23 +258,6 @@ const POApprovalListLayer = () => {
     } catch (err) {
       console.error('Error bulk rejecting POs:', err);
       alert('Failed to reject POs. Please try again.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleExport = async (format) => {
-    try {
-      setActionLoading(true);
-      const response = await exportPOList(format);
-      
-      if (response.success) {
-        // In a real app, this would trigger a file download
-        alert(`PO list exported as ${format.toUpperCase()} successfully!`);
-      }
-    } catch (err) {
-      console.error('Error exporting PO list:', err);
-      alert('Failed to export PO list. Please try again.');
     } finally {
       setActionLoading(false);
     }
