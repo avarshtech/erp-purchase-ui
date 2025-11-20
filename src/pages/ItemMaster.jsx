@@ -1,11 +1,10 @@
 import React from "react";
-import Breadcrumb from "../components/Breadcrumb";
 import ItemListLayer from "../components/ItemListLayer";
+import "../assets/css/item-master.css";
 
 const ItemMaster = () => {
   return (
     <>
-      <Breadcrumb title="Item Master / List" />
       <ItemListLayer />
     </>
   );
