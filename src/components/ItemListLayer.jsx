@@ -1,11 +1,9 @@
 import { Icon } from '@iconify/react/dist/iconify.js';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { getItems, getCategories, getSubcategories, getItemTypes } from '../mocks/server';
 import ItemFormLayer from './ItemFormLayer';
 
 const ItemListLayer = () => {
-    const navigate = useNavigate();
     const [allItems, setAllItems] = useState([]);
     const [filteredItems, setFilteredItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -25,6 +23,7 @@ const ItemListLayer = () => {
 
     // Modal state
     const [showModal, setShowModal] = useState(false);
+    const [selectedItemId, setSelectedItemId] = useState(null);
 
     const fetchData = async () => {
         try {
@@ -173,20 +172,24 @@ const ItemListLayer = () => {
     };
 
     const handleAdd = () => {
+        setSelectedItemId(null);
         setShowModal(true);
     };
 
     const handleModalClose = () => {
         setShowModal(false);
+        setSelectedItemId(null);
     };
 
-    const handleItemAdded = () => {
+    const handleItemSuccess = () => {
         setShowModal(false);
+        setSelectedItemId(null);
         fetchData(); // Refresh the list
     };
 
     const handleEdit = (item) => {
-        navigate(`/item-master/edit/${item.id}`);
+        setSelectedItemId(item.id);
+        setShowModal(true);
     };
 
     // Pagination logic
@@ -419,7 +422,7 @@ const ItemListLayer = () => {
                     <div className="modal-content radius-16 bg-base" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
                         <div className="modal-header py-16 px-24 border border-top-0 border-start-0 border-end-0" style={{ flexShrink: 0 }}>
                             <h1 className="modal-title fs-5" id="itemModalLabel">
-                                Add Item
+                                {selectedItemId ? 'Edit Item' : 'Add Item'}
                             </h1>
                             <button
                                 type="button"
@@ -429,7 +432,11 @@ const ItemListLayer = () => {
                             />
                         </div>
                         <div className="modal-body p-24" style={{ flex: 1, overflowY: 'auto' }}>
-                            <ItemFormLayer onSuccess={handleItemAdded} />
+                            <ItemFormLayer 
+                                itemId={selectedItemId} 
+                                onSuccess={handleItemSuccess} 
+                                onCancel={handleModalClose} 
+                            />
                         </div>
                     </div>
                 </div>

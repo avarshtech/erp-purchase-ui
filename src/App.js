@@ -7,7 +7,6 @@ import POApproval from "./pages/POApproval";
 import POApprovalTestPage from "./pages/POApprovalTestPage";
 import SupplierInfo from "./pages/SupplierInfo";
 import ItemMaster from "./pages/ItemMaster";
-import ItemAddEdit from "./pages/ItemAddEdit";
 import Profile from "./pages/Profile";
 import Users from "./pages/Users";
 import RoleAccess from "./pages/RoleAccess";
@@ -28,8 +27,6 @@ function App() {
           <Route exact path="/supplier-info" element={<SupplierInfo />} />
           <Route exact path="/profile" element={<Profile />} />
           <Route exact path="/item-master" element={<ItemMaster />} />
-          <Route exact path="/item-master/add" element={<ItemAddEdit />} />
-          <Route exact path="/item-master/edit/:id" element={<ItemAddEdit />} />
           <Route exact path="/users" element={<Users />} />
           <Route exact path="/roles" element={<RoleAccess />} />
         </Routes>
