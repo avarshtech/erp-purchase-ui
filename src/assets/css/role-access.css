@@ -1,4 +1,4 @@
-/* Supplier Info Page and Dialog Styles */
+/* Role Access Page and Dialog Styles */
 
 /* Page title styling */
 .page-title {
@@ -22,7 +22,7 @@
   text-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
 }
 
-/* Supplier modal styling */
+/* Modal styling */
 .modal-content {
   border-radius: 16px;
   border: none;
@@ -123,6 +123,8 @@
 .text-danger-600 {
   color: #dc2626;
 }
+
+
 
 .form-control {
   border-radius: 8px;
@@ -440,22 +442,6 @@ button:disabled {
   color: #c6f6d5;
 }
 
-/* Dark gray color for Fabric and Trims checkbox labels */
-.form-check-label[for="fabric"],
-.form-check-label[for="trims"] {
-  color: #6b7280 !important;
-}
-
-[data-theme="dark"] .form-check-label[for="fabric"],
-[data-theme="dark"] .form-check-label[for="trims"] {
-  color: #6b7280 !important;
-}
-
-[data-theme="light"] .form-check-label[for="fabric"],
-[data-theme="light"] .form-check-label[for="trims"] {
-  color: #6b7280 !important;
-}
-
 /* Disabled input styling for light mode */
 [data-theme="light"] .form-control:disabled {
   background-color: #e5e7eb;
@@ -513,7 +499,7 @@ button:disabled {
   background-color: #374151;
 }
 
-/* Modern button styling for Add Supplier button */
+/* Modern button styling for Add button */
 .btn-primary-600 {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;

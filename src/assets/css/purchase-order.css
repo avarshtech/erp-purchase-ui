@@ -237,78 +237,22 @@
   transition: opacity 0.2s ease;
 }
 
-.active-filter-badge .btn-close:hover {
-  opacity: 1;
-}
-
-[data-theme="dark"] .active-filter-badge {
-  background-color: #495057 !important;
-  color: #e9ecef !important;
-  border: 1px solid #6c757d;
-}
-
-[data-theme="dark"] .active-filter-badge .btn-close {
-  filter: invert(1) brightness(200%);
-}
-
-/* Ensure proper contrast for all text elements */
-.dropdown-menu {
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-[data-theme="dark"] .dropdown-menu {
-  background-color: #273142;
-  border: 1px solid #495057;
-}
-
-[data-theme="dark"] .dropdown-item {
-  color: #e9ecef !important;
-}
-
-[data-theme="dark"] .dropdown-item .text-muted {
-  color: #adb5bd !important;
-}
-
-.advanced-date-picker {
-  position: relative;
-  z-index: 20;
-}
-
-.advanced-date-picker .form-control {
-  height: 40px;
-  border: 1px solid #ced4da;
-  transition: all 0.2s ease;
-  background-color: #ffffff;
-  color: #495057;
-}
-
-.advanced-date-picker .form-control:disabled {
-  background-color: #f8f9fa !important;
-  color: #6c757d;
-  cursor: not-allowed;
-}
-
-.advanced-date-picker .form-control:focus {
-  border-color: #6c757d;
-  box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25);
-}
-
 [data-theme="dark"] .advanced-date-picker .form-control {
-  background-color: #273142;
+  background-color: #1b2431;
   border-color: #81868b;
   color: #e9ecef;
+}
+
+[data-theme="dark"] .advanced-date-picker .form-control:focus {
+  background-color: #2c3c57;
+  border-color: #a855f7;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
 }
 
 [data-theme="dark"] .advanced-date-picker .form-control:disabled {
   background-color: #495057 !important;
   color: #6c757d;
   cursor: not-allowed;
-}
-
-[data-theme="dark"] .advanced-date-picker .form-control:focus {
-  background-color: #2c374b;
-  border-color: #6c757d;
-  color: #e9ecef;
 }
 
 .advanced-date-picker .form-control:hover:not(:disabled) {

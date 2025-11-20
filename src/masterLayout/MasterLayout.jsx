@@ -6,8 +6,14 @@ import "../assets/css/master-layout.css";
 
 // Initialize tooltips when component mounts
 const initializeTooltips = () => {
-  if (typeof window !== 'undefined' && window.bootstrap && window.bootstrap.Tooltip) {
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  if (
+    typeof window !== "undefined" &&
+    window.bootstrap &&
+    window.bootstrap.Tooltip
+  ) {
+    const tooltipTriggerList = [].slice.call(
+      document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
     const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
       return new window.bootstrap.Tooltip(tooltipTriggerEl);
     });
@@ -94,10 +100,17 @@ const MasterLayout = ({ children }) => {
         trigger.removeEventListener("click", handleDropdownClick);
       });
       // Dispose tooltips
-      if (typeof window !== 'undefined' && window.bootstrap && window.bootstrap.Tooltip) {
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      if (
+        typeof window !== "undefined" &&
+        window.bootstrap &&
+        window.bootstrap.Tooltip
+      ) {
+        const tooltipTriggerList = [].slice.call(
+          document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        );
         tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-          const tooltip = window.bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+          const tooltip =
+            window.bootstrap.Tooltip.getInstance(tooltipTriggerEl);
           if (tooltip) {
             tooltip.dispose();
           }
@@ -114,7 +127,6 @@ const MasterLayout = ({ children }) => {
     setMobileMenu(!mobileMenu);
   };
 
-
   return (
     <section className={mobileMenu ? "overlay active" : "overlay "}>
       {/* sidebar */}
@@ -129,90 +141,96 @@ const MasterLayout = ({ children }) => {
       >
         <button
           onClick={toggleMobileMenu}
-          type='button'
-          className='sidebar-close-btn'
+          type="button"
+          className="sidebar-close-btn"
         >
-          <Icon icon='radix-icons:cross-2' />
+          <Icon icon="radix-icons:cross-2" />
         </button>
         <div>
-          <Link to='/' className='sidebar-logo'>
+          <Link to="/" className="sidebar-logo">
             <img
-              src='assets/images/logosmall.png'
-              alt='site logo'
-              className='light-logo'
+              src="assets/images/logosmall.png"
+              alt="site logo"
+              className="light-logo"
             />
             <img
-              src='assets/images/logo-light.png'
-              alt='site logo'
-              className='dark-logo'
+              src="assets/images/logo-light.png"
+              alt="site logo"
+              className="dark-logo"
             />
             <img
-              src='assets/images/logo-icon.png'
-              alt='site logo'
-              className='logo-icon'
+              src="assets/images/logo-icon.png"
+              alt="site logo"
+              className="logo-icon"
             />
           </Link>
         </div>
-        <div className='sidebar-menu-area'>
-          <ul className='sidebar-menu' id='sidebar-menu'>
-            <li className='sidebar-menu-group-title'>Purchase Order</li>
+        <div className="sidebar-menu-area">
+          <ul className="sidebar-menu" id="sidebar-menu">
+            <li className="sidebar-menu-group-title">Purchase Order</li>
             <li>
               <NavLink
-                to='/index-10'
+                to="/index-10"
                 className={(navData) => (navData.isActive ? "active-page" : "")}
               >
-                <Icon icon='mage:email' className='menu-icon' />
+                <Icon icon="mage:email" className="menu-icon" />
                 <span>Dashboard</span>
               </NavLink>
             </li>
             <li>
-                  <NavLink
-                    to='/purchase-orders'
-
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <Icon icon='mingcute:storage-line' className='menu-icon' />
-                    <span>Purchase Orders</span>
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink
-                    to='/po-approval'
-
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <Icon icon='mingcute:department-line' className='menu-icon' />
-                    <span>PO Approval</span>
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink
-                    to='/supplier-info'
-
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <Icon icon='mingcute:shop-line' className='menu-icon' />
-                    <span>Supplier Info</span>
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink
-                    to='/item-master'
-
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <Icon icon='mingcute:user-follow-fill' className='menu-icon' />
-                    <span>Item Master</span>
-                  </NavLink>
-                </li>
+              <NavLink
+                to="/purchase-orders"
+                className={(navData) => (navData.isActive ? "active-page" : "")}
+              >
+                <Icon icon="mingcute:storage-line" className="menu-icon" />
+                <span>Purchase Orders</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/po-approval"
+                className={(navData) => (navData.isActive ? "active-page" : "")}
+              >
+                <Icon icon="mingcute:department-line" className="menu-icon" />
+                <span>PO Approval</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/supplier-info"
+                className={(navData) => (navData.isActive ? "active-page" : "")}
+              >
+                <Icon icon="mingcute:shop-line" className="menu-icon" />
+                <span>Supplier Info</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/item-master"
+                className={(navData) => (navData.isActive ? "active-page" : "")}
+              >
+                <Icon icon="mingcute:inventory-line" className="menu-icon" />
+                <span>Item Master</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/users"
+                className={(navData) => (navData.isActive ? "active-page" : "")}
+              >
+                <Icon icon="mingcute:group-3-line" className="menu-icon" />
+                <span>Users</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/roles"
+                className={(navData) => (navData.isActive ? "active-page" : "")}
+              >
+                <Icon icon="mingcute:user-follow-line" className="menu-icon" />
+                <span>Role & Access</span>
+              </NavLink>
+            </li>
           </ul>
         </div>
       </aside>
@@ -220,13 +238,13 @@ const MasterLayout = ({ children }) => {
       <main
         className={sidebarActive ? "dashboard-main active" : "dashboard-main"}
       >
-        <div className='navbar-header'>
-          <div className='row align-items-center justify-content-between'>
-            <div className='col-auto'>
-              <div className='d-flex flex-wrap align-items-center gap-4'>
+        <div className="navbar-header">
+          <div className="row align-items-center justify-content-between">
+            <div className="col-auto">
+              <div className="d-flex flex-wrap align-items-center gap-4">
                 <button
-                  type='button'
-                  className='sidebar-toggle modern-toggle'
+                  type="button"
+                  className="sidebar-toggle modern-toggle"
                   onClick={sidebarControl}
                   data-bs-toggle="tooltip"
                   data-bs-placement="right"
@@ -238,76 +256,73 @@ const MasterLayout = ({ children }) => {
                     <span className="line line-3"></span>
                   </div>
                   <div className="toggle-arrow">
-                    <Icon
-                      icon='iconoir:arrow-right'
-                      className='arrow-icon'
-                    />
+                    <Icon icon="iconoir:arrow-right" className="arrow-icon" />
                   </div>
                 </button>
                 <button
                   onClick={toggleMobileMenu}
-                  type='button'
-                  className='sidebar-mobile-toggle'
+                  type="button"
+                  className="sidebar-mobile-toggle"
                   data-bs-toggle="tooltip"
                   data-bs-placement="right"
                   title="Open Menu"
                 >
-                  <Icon icon='heroicons:bars-3-solid' className='icon' />
+                  <Icon icon="heroicons:bars-3-solid" className="icon" />
                 </button>
               </div>
             </div>
-            <div className='col-auto'>
-              <h4 className='navbar-title'>Purchase Module</h4>
+            <div className="col-auto">
+              <h4 className="navbar-title">Purchase Module</h4>
             </div>
-            <div className='col-auto'>
-              <div className='d-flex flex-wrap align-items-center gap-3'>
+            <div className="col-auto">
+              <div className="d-flex flex-wrap align-items-center gap-3">
                 <ThemeToggleButton />
-                <div className='dropdown'>
+                <div className="dropdown">
                   <button
-                    className='modern-nav-button'
-                    type='button'
-                    data-bs-toggle='dropdown'
+                    className="modern-nav-button"
+                    type="button"
+                    data-bs-toggle="dropdown"
                     data-bs-placement="bottom-start"
                     title="User Menu"
                   >
-                    <Icon icon='solar:user-linear' className='nav-icon' />
+                    <Icon icon="solar:user-linear" className="nav-icon" />
                   </button>
-                  <div className='dropdown-menu to-top dropdown-menu-sm'>
-                    <div className='py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2'>
+                  <div className="dropdown-menu to-top dropdown-menu-sm">
+                    <div className="py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
                       <div>
-                        <h6 className='text-lg text-primary-light fw-semibold mb-2'>
+                        <h6 className="text-lg text-primary-light fw-semibold mb-2">
                           Shaidul Islam
                         </h6>
-                        <span className='text-secondary-light fw-medium text-sm'>
+                        <span className="text-secondary-light fw-medium text-sm">
                           Admin
                         </span>
                       </div>
-                      <button type='button' className='hover-text-danger'>
+                      <button type="button" className="hover-text-danger">
                         <Icon
-                          icon='radix-icons:cross-1'
-                          className='icon text-xl'
+                          icon="radix-icons:cross-1"
+                          className="icon text-xl"
                         />
                       </button>
                     </div>
-                    <ul className='to-top-list'>
+                    <ul className="to-top-list">
                       <li>
                         <Link
-                          className='dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-primary d-flex align-items-center gap-3'
-                          to='/profile'
+                          className="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-primary d-flex align-items-center gap-3"
+                          to="/profile"
                         >
                           <Icon
-                            icon='solar:user-linear'
-                            className='icon text-xl'
+                            icon="solar:user-linear"
+                            className="icon text-xl"
                           />{" "}
                           My Profile
                         </Link>
                       </li>
                       <li>
                         <Link
-                          className='dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-danger d-flex align-items-center gap-3'
-                          to='#'
+                          className="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-danger d-flex align-items-center gap-3"
+                          to="#"
                         >
-                          <Icon icon='lucide:power' className='icon text-xl' />{" "}
+                          <Icon icon="lucide:power" className="icon text-xl" />{" "}
                           Log Out
                         </Link>
                       </li>
@@ -321,13 +336,13 @@ const MasterLayout = ({ children }) => {
         </div>
 
         {/* dashboard-main-body */}
-        <div className='dashboard-main-body'>{children}</div>
+        <div className="dashboard-main-body">{children}</div>
 
         {/* Footer section */}
-        <footer className='d-footer'>
-          <div className='row align-items-center justify-content-between'>
-            <div className='col-auto'>
-              <p className='mb-0'>© 2025 Avarsh. All Rights Reserved.</p>
+        <footer className="d-footer">
+          <div className="row align-items-center justify-content-between">
+            <div className="col-auto">
+              <p className="mb-0">© 2025 Avarsh. All Rights Reserved.</p>
             </div>
           </div>
         </footer>
