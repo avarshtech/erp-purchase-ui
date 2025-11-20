@@ -861,7 +861,7 @@ class MockServer {
       );
 
       for (const routeKey of methodRoutes) {
-        const [routeMethod, routePath] = routeKey.split(" ");
+        const routePath = routeKey.split(" ")[1];
         const routeSegments = routePath.split("/").filter(Boolean);
 
         if (routeSegments.length === pathSegments.length) {
