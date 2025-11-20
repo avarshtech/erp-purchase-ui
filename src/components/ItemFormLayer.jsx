@@ -1,14 +1,11 @@
 import { Icon } from '@iconify/react/dist/iconify.js';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { getCategories, getSubcategories, getItemTypes, getAttributes, getItemById, checkDuplicateItem, createItem, updateItem } from '../mocks/server';
 
-const ItemFormLayer = ({ onSuccess }) => {
-    const navigate = useNavigate();
-    const { id } = useParams();
-    const isEdit = !!id;
+const ItemFormLayer = ({ itemId, onSuccess, onCancel }) => {
+    const isEdit = !!itemId;
 
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
@@ -82,7 +79,7 @@ const ItemFormLayer = ({ onSuccess }) => {
 
     const fetchItem = useCallback(async () => {
         try {
-            const response = await getItemById(id);
+            const response = await getItemById(itemId);
             const item = response.data;
             setFormData({
                 itemName: item.itemName,
@@ -101,7 +98,7 @@ const ItemFormLayer = ({ onSuccess }) => {
         } catch (err) {
             console.error('Error fetching item:', err);
         }
-    }, [id, handleCategoryChange, handleSubcategoryChange, handleItemTypeChange]);
+    }, [itemId, handleCategoryChange, handleSubcategoryChange, handleItemTypeChange]);
 
     useEffect(() => {
         fetchCategories();
@@ -182,17 +179,13 @@ const ItemFormLayer = ({ onSuccess }) => {
             };
 
             if (isEdit) {
-                await updateItem(id, itemData);
+                await updateItem(itemId, itemData);
                 toast.success('Item updated successfully');
-                navigate('/item-master');
+                if (onSuccess) onSuccess();
             } else {
                 await createItem(itemData);
                 toast.success('Item created successfully');
-                if (onSuccess) {
-                    onSuccess();
-                } else {
-                    navigate('/item-master');
-                }
+                if (onSuccess) onSuccess();
             }
         } catch (err) {
             toast.error('Failed to save item');
@@ -222,18 +215,14 @@ const ItemFormLayer = ({ onSuccess }) => {
             };
 
             if (isEdit) {
-                await updateItem(id, itemData);
+                await updateItem(itemId, itemData);
                 toast.success('Item updated successfully');
-                navigate('/item-master');
+                if (onSuccess) onSuccess();
             } else {
                 await createItem(itemData);
                 toast.success('Item created successfully');
                 setShowDuplicateModal(false);
-                if (onSuccess) {
-                    onSuccess();
-                } else {
-                    navigate('/item-master');
-                }
+                if (onSuccess) onSuccess();
             }
         } catch (err) {
             toast.error('Failed to save item');
@@ -455,10 +444,8 @@ const ItemFormLayer = ({ onSuccess }) => {
                                     type="button"
                                     className="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-40 py-11 radius-8"
                                     onClick={() => {
-                                        if (onSuccess) {
-                                            onSuccess();
-                                        } else {
-                                            navigate('/item-master');
+                                        if (onCancel) {
+                                            onCancel();
                                         }
                                     }}
                                 >

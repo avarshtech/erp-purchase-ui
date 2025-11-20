@@ -7,7 +7,6 @@ import POApproval from "./pages/POApproval";
 import POApprovalTestPage from "./pages/POApprovalTestPage";
 import SupplierInfo from "./pages/SupplierInfo";
 import ItemMaster from "./pages/ItemMaster";
-import ItemAddEdit from "./pages/ItemAddEdit";
 import Profile from "./pages/Profile";
 
 function App() {
@@ -22,8 +21,6 @@ function App() {
           <Route exact path="/supplier-info" element={<SupplierInfo />} />
           <Route exact path="/profile" element={<Profile />} />
           <Route exact path="/item-master" element={<ItemMaster />} />
-          <Route exact path="/item-master/add" element={<ItemAddEdit />} />
-          <Route exact path="/item-master/edit/:id" element={<ItemAddEdit />} />
         </Routes>
       </MasterLayout>
     </BrowserRouter>
