@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import MasterLayout from "./masterLayout/MasterLayout";
 
 import PurchaseOrders from "./pages/PurchaseOrders";
@@ -15,7 +15,11 @@ function App() {
     <BrowserRouter>
       <MasterLayout>
         <Routes>
-          <Route exact path="/" element={<PurchaseOrders />} />
+          <Route
+            exact
+            path="/"
+            element={<Navigate to="/purchase-orders" replace />}
+          />
           <Route exact path="/purchase-orders" element={<PurchaseOrders />} />
           <Route exact path="/po-approval" element={<POApproval />} />
           <Route

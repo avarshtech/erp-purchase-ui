@@ -1860,6 +1860,63 @@ server.get("/po/export", (params) => {
   };
 });
 
+// PO Notes endpoints
+server.post("/purchase-orders/:id/notes", (data, params) => {
+  const poId = parseInt(params.id);
+  const poIndex = poListData.findIndex((p) => p.id === poId);
+  if (poIndex === -1) {
+    throw new Error("PO not found");
+  }
+
+  const po = poListData[poIndex];
+  if (!po.notes) {
+    po.notes = [];
+  }
+
+  const newNote = {
+    text: data.text,
+    timestamp: data.timestamp,
+    user: data.user,
+    edited: false,
+  };
+
+  po.notes.push(newNote);
+
+  return {
+    success: true,
+    data: newNote,
+    message: "Note added successfully",
+  };
+});
+
+server.put("/purchase-orders/:id/notes/:noteIndex", (data, params) => {
+  const poId = parseInt(params.id);
+  const noteIndex = parseInt(params.noteIndex);
+  const poIndex = poListData.findIndex((p) => p.id === poId);
+
+  if (poIndex === -1) {
+    throw new Error("PO not found");
+  }
+
+  const po = poListData[poIndex];
+  if (!po.notes || !po.notes[noteIndex]) {
+    throw new Error("Note not found");
+  }
+
+  po.notes[noteIndex] = {
+    ...po.notes[noteIndex],
+    text: data.text,
+    timestamp: data.timestamp,
+    edited: true,
+  };
+
+  return {
+    success: true,
+    data: po.notes[noteIndex],
+    message: "Note updated successfully",
+  };
+});
+
 // Export server instance
 export default server;
 
