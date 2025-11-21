@@ -15,15 +15,11 @@ function App() {
     <BrowserRouter>
       <MasterLayout>
         <Routes>
-<<<<<<< HEAD
           <Route
             exact
             path="/"
             element={<Navigate to="/purchase-orders" replace />}
           />
-=======
-          <Route exact path="/" element={<PurchaseOrders />} />
->>>>>>> 6b73cd4de3479fd4375f806437e2d154f512a03f
           <Route exact path="/purchase-orders" element={<PurchaseOrders />} />
           <Route exact path="/po-approval" element={<POApproval />} />
           <Route
