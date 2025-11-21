@@ -3,37 +3,131 @@
     "id": 1,
     "sl": "01",
     "poNo": "#526534",
+    "supplierId": 1,
     "supplier": {
       "name": "Sushil Corporation",
+      "code": "SUP001",
       "image": "assets/images/user-list/user-list1.png"
     },
-    "poDate": "25 Jan 2024",
-    "totalValue": "200.00",
-    "status": "InProgress"
+    "poDate": "2024-01-25",
+    "expectedDeliveryDate": "2024-02-10",
+    "termsConditionId": 1,
+    "remarks": "Urgent delivery required.",
+    "totalValue": "755.00",
+    "subtotal": 650.00,
+    "tax": 105.00,
+    "grandTotal": 755.00,
+    "status": "InProgress",
+    "lineItems": [
+      {
+        "itemId": 1,
+        "description": "Button - Shell 10L Red",
+        "qty": 40,
+        "uom": "Pcs",
+        "unitPrice": 5.00,
+        "sgstPercent": 9,
+        "cgstPercent": 9,
+        "amount": 200.00
+      },
+      {
+        "itemId": 2,
+        "description": "Button - Shell 12L Blue",
+        "qty": 50,
+        "uom": "Pcs",
+        "unitPrice": 6.00,
+        "sgstPercent": 9,
+        "cgstPercent": 9,
+        "amount": 300.00
+      },
+      {
+        "itemId": 3,
+        "description": "Cotton Fabric White",
+        "qty": 10,
+        "uom": "Mtr",
+        "unitPrice": 15.00,
+        "sgstPercent": 5,
+        "cgstPercent": 5,
+        "amount": 150.00
+      }
+    ],
+    "notes": [
+      {
+        "text": "Contacted supplier - confirmed delivery date",
+        "timestamp": "Jan 26, 2024, 10:30 AM",
+        "user": "Current User",
+        "edited": false
+      },
+      {
+        "text": "Quality check scheduled for Feb 5th",
+        "timestamp": "Jan 28, 2024, 2:15 PM",
+        "user": "Current User",
+        "edited": false
+      }
+    ]
   },
   {
     "id": 2,
     "sl": "02",
     "poNo": "#696589",
+    "supplierId": 2,
     "supplier": {
       "name": "Moorthy Industries",
+      "code": "SUP002",
       "image": "assets/images/user-list/user-list2.png"
     },
-    "poDate": "28 Jan 2024",
-    "totalValue": "400.00",
-    "status": "Completed"
+    "poDate": "2024-01-28",
+    "expectedDeliveryDate": "2024-02-15",
+    "termsConditionId": 2,
+    "remarks": "Standard packaging.",
+    "totalValue": "472.00",
+    "subtotal": 400.00,
+    "tax": 72.00,
+    "grandTotal": 472.00,
+    "status": "Completed",
+    "lineItems": [
+      {
+        "itemId": 6,
+        "description": "Single Jersey 180 GSM Navy",
+        "qty": 20,
+        "uom": "Kg",
+        "unitPrice": 20.00,
+        "sgstPercent": 9,
+        "cgstPercent": 9,
+        "amount": 400.00
+      }
+    ]
   },
   {
     "id": 3,
     "sl": "03",
     "poNo": "#526535",
+    "supplierId": 3,
     "supplier": {
       "name": "Global Tech Solutions",
+      "code": "SUP003",
       "image": "assets/images/user-list/user-list3.png"
     },
-    "poDate": "30 Jan 2024",
-    "totalValue": "750.50",
-    "status": "Draft"
+    "poDate": "2024-01-30",
+    "expectedDeliveryDate": "2024-02-20",
+    "termsConditionId": 3,
+    "remarks": "Deliver to warehouse B.",
+    "totalValue": "885.59",
+    "subtotal": 750.50,
+    "tax": 135.09,
+    "grandTotal": 885.59,
+    "status": "Draft",
+    "lineItems": [
+      {
+        "itemId": 2,
+        "description": "Button - Shell 12L Blue",
+        "qty": 100,
+        "uom": "Pcs",
+        "unitPrice": 7.505,
+        "sgstPercent": 9,
+        "cgstPercent": 9,
+        "amount": 750.50
+      }
+    ]
   },
   {
     "id": 4,
@@ -45,7 +139,8 @@
     },
     "poDate": "01 Feb 2024",
     "totalValue": "1250.75",
-    "status": "InProgress"
+    "status": "InProgress",
+    "lineItems": []
   },
   {
     "id": 5,
@@ -57,7 +152,8 @@
     },
     "poDate": "03 Feb 2024",
     "totalValue": "890.25",
-    "status": "Completed"
+    "status": "Completed",
+    "lineItems": []
   },
   {
     "id": 6,
@@ -69,7 +165,8 @@
     },
     "poDate": "05 Feb 2024",
     "totalValue": "3200.00",
-    "status": "Draft"
+    "status": "Draft",
+    "lineItems": []
   },
   {
     "id": 7,
@@ -81,7 +178,8 @@
     },
     "poDate": "07 Feb 2024",
     "totalValue": "675.80",
-    "status": "InProgress"
+    "status": "InProgress",
+    "lineItems": []
   },
   {
     "id": 8,
@@ -93,7 +191,8 @@
     },
     "poDate": "10 Feb 2024",
     "totalValue": "1825.90",
-    "status": "Completed"
+    "status": "Completed",
+    "lineItems": []
   },
   {
     "id": 9,
@@ -105,7 +204,8 @@
     },
     "poDate": "12 Feb 2024",
     "totalValue": "425.60",
-    "status": "Draft"
+    "status": "Draft",
+    "lineItems": []
   },
   {
     "id": 10,
@@ -117,7 +217,8 @@
     },
     "poDate": "15 Feb 2024",
     "totalValue": "3450.75",
-    "status": "InProgress"
+    "status": "InProgress",
+    "lineItems": []
   },
   {
     "id": 11,
@@ -129,7 +230,8 @@
     },
     "poDate": "18 Feb 2024",
     "totalValue": "275.30",
-    "status": "Completed"
+    "status": "Completed",
+    "lineItems": []
   },
   {
     "id": 12,
@@ -141,7 +243,8 @@
     },
     "poDate": "20 Feb 2024",
     "totalValue": "985.40",
-    "status": "Draft"
+    "status": "Draft",
+    "lineItems": []
   },
   {
     "id": 13,
@@ -153,7 +256,8 @@
     },
     "poDate": "22 Feb 2024",
     "totalValue": "156.20",
-    "status": "InProgress"
+    "status": "InProgress",
+    "lineItems": []
   },
   {
     "id": 14,
@@ -165,7 +269,8 @@
     },
     "poDate": "25 Feb 2024",
     "totalValue": "2890.85",
-    "status": "Completed"
+    "status": "Completed",
+    "lineItems": []
   },
   {
     "id": 15,
@@ -177,7 +282,8 @@
     },
     "poDate": "28 Feb 2024",
     "totalValue": "745.60",
-    "status": "Draft"
+    "status": "Draft",
+    "lineItems": []
   },
   {
     "id": 16,
@@ -189,7 +295,8 @@
     },
     "poDate": "02 Mar 2024",
     "totalValue": "2150.40",
-    "status": "Await Approval"
+    "status": "Await Approval",
+    "lineItems": []
   },
   {
     "id": 17,
@@ -201,7 +308,8 @@
     },
     "poDate": "05 Mar 2024",
     "totalValue": "890.75",
-    "status": "Await Approval"
+    "status": "Await Approval",
+    "lineItems": []
   },
   {
     "id": 18,
@@ -213,7 +321,8 @@
     },
     "poDate": "08 Mar 2024",
     "totalValue": "3420.90",
-    "status": "Await Approval"
+    "status": "Await Approval",
+    "lineItems": []
   },
   {
     "id": 19,
@@ -225,7 +334,8 @@
     },
     "poDate": "10 Mar 2024",
     "totalValue": "1250.75",
-    "status": "Rejected"
+    "status": "Rejected",
+    "lineItems": []
   },
   {
     "id": 20,
@@ -237,6 +347,7 @@
     },
     "poDate": "12 Mar 2024",
     "totalValue": "890.40",
-    "status": "Rejected"
+    "status": "Rejected",
+    "lineItems": []
   }
 ]

@@ -3,9 +3,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import { getPOList } from "../mocks/server";
 import AdvancedDatePicker from "./AdvancedDatePicker";
 import POModalLayer from "./POModalLayer";
+import POViewLayer from "./POViewLayer";
 import "../assets/css/purchase-order.css";
 
-const TableRow = ({ po, onEdit, onDelete }) => {
+const TableRow = ({ po, onEdit, onDelete, onView }) => {
   const isEditable = po.status === "Draft" || po.status === "Rejected";
   const isDeletable = po.status === "Draft" || po.status === "Rejected";
   const getStatusBadgeClass = (status) => {
@@ -53,9 +54,7 @@ const TableRow = ({ po, onEdit, onDelete }) => {
       <td>
         <button
           className="btn btn-link text-primary-600 p-0 text-decoration-none fw-medium"
-          onClick={() => {
-            /* Handle view PO */
-          }}
+          onClick={() => onView(po)}
         >
           {po.poNo}
         </button>
@@ -104,9 +103,7 @@ const TableRow = ({ po, onEdit, onDelete }) => {
         <div className="po-list-actions-cell">
           <button
             className="w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center border-0"
-            onClick={() => {
-              /* Handle view PO */
-            }}
+            onClick={() => onView(po)}
             title="View Details"
           >
             <Icon icon="iconamoon:eye-light" />
@@ -167,6 +164,10 @@ const PurchaseOrderListLayer = () => {
   // Delete confirmation state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [poToDelete, setPoToDelete] = useState(null);
+
+  // View Modal state
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingPO, setViewingPO] = useState(null);
 
   useEffect(() => {
     const fetchPOData = async () => {
@@ -239,13 +240,27 @@ const PurchaseOrderListLayer = () => {
     });
 
     if (searchTerm) {
-      filtered = filtered.filter(
-        (po) =>
-          po.poNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          po.supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          po.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          po.totalValue.toString().includes(searchTerm)
-      );
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      filtered = filtered.filter((po) => {
+        const totalValue =
+          typeof po.totalValue === "string"
+            ? parseFloat(po.totalValue)
+            : po.totalValue;
+        const formattedTotalValue =
+          totalValue !== null && totalValue !== undefined
+            ? totalValue.toFixed(2)
+            : "";
+
+        return (
+          (po.poNo && po.poNo.toLowerCase().includes(lowerSearchTerm)) ||
+          (po.supplier &&
+            po.supplier.name &&
+            po.supplier.name.toLowerCase().includes(lowerSearchTerm)) ||
+          (po.status && po.status.toLowerCase().includes(lowerSearchTerm)) ||
+          (po.poDate && po.poDate.toLowerCase().includes(lowerSearchTerm)) ||
+          (formattedTotalValue && formattedTotalValue.includes(lowerSearchTerm))
+        );
+      });
     }
 
     // Sort data
@@ -281,7 +296,14 @@ const PurchaseOrderListLayer = () => {
     });
 
     return filtered;
-  }, [purchaseOrders, statusFilter, dateRangeFilter, sortField, sortDirection, searchTerm]);
+  }, [
+    purchaseOrders,
+    statusFilter,
+    dateRangeFilter,
+    sortField,
+    sortDirection,
+    searchTerm,
+  ]);
 
   // Pagination
   const totalPages = Math.ceil(filteredAndSortedOrders.length / itemsPerPage);
@@ -315,6 +337,16 @@ const PurchaseOrderListLayer = () => {
   const handleCloseModal = () => {
     setShowPOModal(false);
     setEditingPO(null);
+  };
+
+  const handleViewPO = (po) => {
+    setViewingPO(po);
+    setShowViewModal(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setShowViewModal(false);
+    setViewingPO(null);
   };
 
   const handlePOUpdated = () => {
@@ -769,6 +801,7 @@ const PurchaseOrderListLayer = () => {
                         po={po}
                         onEdit={handleEditPO}
                         onDelete={handleDeletePO}
+                        onView={handleViewPO}
                       />
                     ))}
                   </tbody>
@@ -881,6 +914,14 @@ const PurchaseOrderListLayer = () => {
             </div>
           </div>
         </div>
+      )}
+      {/* View PO Modal */}
+      {showViewModal && (
+        <POViewLayer
+          showModal={showViewModal}
+          onClose={handleCloseViewModal}
+          po={viewingPO}
+        />
       )}
     </>
   );
