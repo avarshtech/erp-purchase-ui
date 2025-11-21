@@ -8,6 +8,7 @@ import {
   deleteItem,
 } from "../mocks/server";
 import ItemFormLayer from "./ItemFormLayer";
+import "../assets/css/item-master.css";
 
 const ItemListLayer = () => {
   const [allItems, setAllItems] = useState([]);
@@ -32,6 +33,27 @@ const ItemListLayer = () => {
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+
+  // Toast state
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState("error");
+
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
+
+  const triggerToast = (message, type = "error") => {
+    setToastMessage(message);
+    setToastType(type);
+    setShowToast(true);
+  };
 
   const fetchData = async () => {
     try {
@@ -218,9 +240,12 @@ const ItemListLayer = () => {
     setSelectedItemId(null);
   };
 
-  const handleItemSuccess = () => {
+  const handleItemSuccess = (message) => {
     setShowModal(false);
     setSelectedItemId(null);
+    if (message) {
+      triggerToast(message, "success");
+    }
     fetchData(); // Refresh the list
   };
 
@@ -239,9 +264,11 @@ const ItemListLayer = () => {
       await deleteItem(itemToDelete.id);
       setShowDeleteModal(false);
       setItemToDelete(null);
+      triggerToast("Item deleted successfully", "success");
       fetchData(); // Refresh list
     } catch (err) {
       console.error("Error deleting item:", err);
+      triggerToast("Failed to delete item", "error");
     }
   };
 
@@ -277,6 +304,30 @@ const ItemListLayer = () => {
 
   return (
     <>
+      {/* Toast Notification */}
+      {showToast && (
+        <div
+          className="position-fixed top-0 start-50 translate-middle-x mt-4"
+          style={{ zIndex: 9999 }}
+        >
+          <div
+            className={`toast-custom ${
+              toastType === "error" ? "toast-error" : "toast-success"
+            }`}
+          >
+            <span>{toastMessage}</span>
+            <button
+              type="button"
+              className="toast-close"
+              onClick={() => setShowToast(false)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+      )}
+
       <h6 className="page-title">Item Master</h6>
       <div className="card">
         <div className="card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -563,11 +614,14 @@ const ItemListLayer = () => {
               className="modal-body p-24"
               style={{ flex: 1, overflowY: "auto" }}
             >
-              <ItemFormLayer
-                itemId={selectedItemId}
-                onSuccess={handleItemSuccess}
-                onCancel={handleModalClose}
-              />
+              {showModal && (
+                <ItemFormLayer
+                  itemId={selectedItemId}
+                  onSuccess={handleItemSuccess}
+                  onCancel={handleModalClose}
+                  triggerToast={triggerToast}
+                />
+              )}
             </div>
           </div>
         </div>

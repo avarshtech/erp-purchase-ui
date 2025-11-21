@@ -1,7 +1,5 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useState, useEffect, useCallback } from "react";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import {
   getCategories,
   getSubcategories,
@@ -13,7 +11,7 @@ import {
   updateItem,
 } from "../mocks/server";
 
-const ItemFormLayer = ({ itemId, onSuccess, onCancel }) => {
+const ItemFormLayer = ({ itemId, onSuccess, onCancel, triggerToast }) => {
   const isEdit = !!itemId;
 
   const [loading, setLoading] = useState(false);
@@ -131,9 +129,9 @@ const ItemFormLayer = ({ itemId, onSuccess, onCancel }) => {
       });
     } catch (err) {
       console.error("Error fetching item:", err);
-      toast.error("Failed to load item details");
+      if (triggerToast) triggerToast("Failed to load item details", "error");
     }
-  }, [itemId]);
+  }, [itemId, triggerToast]);
 
   useEffect(() => {
     fetchCategories();
@@ -180,7 +178,7 @@ const ItemFormLayer = ({ itemId, onSuccess, onCancel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
-      toast.error("Please fix the errors");
+      if (triggerToast) triggerToast("Please fix the errors", "error");
       return;
     }
 
@@ -218,15 +216,13 @@ const ItemFormLayer = ({ itemId, onSuccess, onCancel }) => {
 
       if (isEdit) {
         await updateItem(itemId, itemData);
-        toast.success("Item updated successfully");
-        if (onSuccess) onSuccess();
+        if (onSuccess) onSuccess("Item updated successfully");
       } else {
         await createItem(itemData);
-        toast.success("Item created successfully");
-        if (onSuccess) onSuccess();
+        if (onSuccess) onSuccess("Item created successfully");
       }
     } catch (err) {
-      toast.error("Failed to save item");
+      if (triggerToast) triggerToast("Failed to save item", "error");
       console.error("Error saving item:", err);
     } finally {
       setLoading(false);
@@ -254,16 +250,15 @@ const ItemFormLayer = ({ itemId, onSuccess, onCancel }) => {
 
       if (isEdit) {
         await updateItem(itemId, itemData);
-        toast.success("Item updated successfully");
-        if (onSuccess) onSuccess();
+        setShowDuplicateModal(false);
+        if (onSuccess) onSuccess("Item updated successfully");
       } else {
         await createItem(itemData);
-        toast.success("Item created successfully");
         setShowDuplicateModal(false);
-        if (onSuccess) onSuccess();
+        if (onSuccess) onSuccess("Item created successfully");
       }
     } catch (err) {
-      toast.error("Failed to save item");
+      if (triggerToast) triggerToast("Failed to save item", "error");
       console.error("Error saving item:", err);
     } finally {
       setLoading(false);
@@ -313,7 +308,6 @@ const ItemFormLayer = ({ itemId, onSuccess, onCancel }) => {
 
   return (
     <>
-      <ToastContainer position="top-right" autoClose={3000} />
       {/* Removed card-body and col wrappers to match SupplierModalLayer structure and fix background issue */}
       <form onSubmit={handleSubmit}>
         <div className="row gy-4">
