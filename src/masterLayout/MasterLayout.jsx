@@ -170,15 +170,6 @@ const MasterLayout = ({ children }) => {
             <li className="sidebar-menu-group-title">Purchase Order</li>
             <li>
               <NavLink
-                to="/index-10"
-                className={(navData) => (navData.isActive ? "active-page" : "")}
-              >
-                <Icon icon="mage:email" className="menu-icon" />
-                <span>Dashboard</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
                 to="/purchase-orders"
                 className={(navData) => (navData.isActive ? "active-page" : "")}
               >

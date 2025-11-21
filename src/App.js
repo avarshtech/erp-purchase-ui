@@ -1,7 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import MasterLayout from "./masterLayout/MasterLayout";
 
-import HomePageTen from "./pages/HomePageTen";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import POApproval from "./pages/POApproval";
 import POApprovalTestPage from "./pages/POApprovalTestPage";
@@ -16,7 +15,7 @@ function App() {
     <BrowserRouter>
       <MasterLayout>
         <Routes>
-          <Route exact path="/" element={<HomePageTen />} />
+          <Route exact path="/" element={<PurchaseOrders />} />
           <Route exact path="/purchase-orders" element={<PurchaseOrders />} />
           <Route exact path="/po-approval" element={<POApproval />} />
           <Route
