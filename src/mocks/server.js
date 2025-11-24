@@ -1135,6 +1135,36 @@ const rolesData = [
     description: "Full access to all features",
     status: "Active",
     createdDate: "2024-01-01",
+    permissions: {
+      "purchase-orders": {
+        access: true,
+        operations: { view: true, add: true, update: true, delete: true },
+      },
+      "po-approval": {
+        access: true,
+        operations: { view: true, add: true, update: true, delete: true },
+      },
+      "supplier-info": {
+        access: true,
+        operations: { view: true, add: true, update: true, delete: true },
+      },
+      "item-master": {
+        access: true,
+        operations: { view: true, add: true, update: true, delete: true },
+      },
+      users: {
+        access: true,
+        operations: { view: true, add: true, update: true, delete: true },
+      },
+      roles: {
+        access: true,
+        operations: { view: true, add: true, update: true, delete: true },
+      },
+      profile: {
+        access: true,
+        operations: { view: true, add: true, update: true, delete: true },
+      },
+    },
   },
   {
     id: 2,
@@ -1142,6 +1172,36 @@ const rolesData = [
     description: "Can manage users and view reports",
     status: "Active",
     createdDate: "2024-01-01",
+    permissions: {
+      "purchase-orders": {
+        access: true,
+        operations: { view: true, add: true, update: true, delete: false },
+      },
+      "po-approval": {
+        access: true,
+        operations: { view: true, add: false, update: true, delete: false },
+      },
+      "supplier-info": {
+        access: true,
+        operations: { view: true, add: true, update: true, delete: false },
+      },
+      "item-master": {
+        access: true,
+        operations: { view: true, add: true, update: true, delete: false },
+      },
+      users: {
+        access: true,
+        operations: { view: true, add: true, update: true, delete: false },
+      },
+      roles: {
+        access: false,
+        operations: { view: false, add: false, update: false, delete: false },
+      },
+      profile: {
+        access: true,
+        operations: { view: true, add: false, update: true, delete: false },
+      },
+    },
   },
   {
     id: 3,
@@ -1149,6 +1209,36 @@ const rolesData = [
     description: "Read-only access",
     status: "Active",
     createdDate: "2024-01-01",
+    permissions: {
+      "purchase-orders": {
+        access: true,
+        operations: { view: true, add: false, update: false, delete: false },
+      },
+      "po-approval": {
+        access: true,
+        operations: { view: true, add: false, update: false, delete: false },
+      },
+      "supplier-info": {
+        access: true,
+        operations: { view: true, add: false, update: false, delete: false },
+      },
+      "item-master": {
+        access: true,
+        operations: { view: true, add: false, update: false, delete: false },
+      },
+      users: {
+        access: false,
+        operations: { view: false, add: false, update: false, delete: false },
+      },
+      roles: {
+        access: false,
+        operations: { view: false, add: false, update: false, delete: false },
+      },
+      profile: {
+        access: true,
+        operations: { view: true, add: false, update: true, delete: false },
+      },
+    },
   },
 ];
 
@@ -1591,6 +1681,7 @@ server.post("/roles", (data) => {
     name: data.name,
     description: data.description,
     status: data.status || "Active",
+    permissions: data.permissions || {},
     createdDate: new Date().toISOString().split("T")[0],
   };
   rolesData.push(newRole);
@@ -1612,6 +1703,7 @@ server.put("/roles/:id", (data, params) => {
     name: data.name,
     description: data.description,
     status: data.status,
+    permissions: data.permissions || rolesData[roleIndex].permissions || {},
   };
   rolesData[roleIndex] = updatedRole;
   return {

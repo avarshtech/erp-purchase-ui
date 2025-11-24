@@ -12738,7 +12738,6 @@ textarea:active {
   content: "";
   width: calc(100% - 4px);
   height: calc(100% - 4px);
-  background-color: var(--primary-600);
   border-radius: inherit;
   left: 50%;
   top: 50%;

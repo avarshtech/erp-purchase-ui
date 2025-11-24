@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { makeRequest } from "../mocks/server";
 import POFooterSummary from "./child/POFooterSummary";
+import OperationControl from "./OperationControl";
 
 const POViewLayer = ({ showModal, onClose, po }) => {
   const [masterData, setMasterData] = useState({
@@ -476,16 +477,21 @@ const POViewLayer = ({ showModal, onClose, po }) => {
                                     <div className="stepper-text flex-grow-1">
                                       {note.text}
                                     </div>
-                                    <button
-                                      className="btn btn-sm btn-link text-primary p-0 ms-2"
-                                      onClick={() => handleEditNote(index)}
-                                      title="Edit note"
+                                    <OperationControl
+                                      pageId="purchase-orders"
+                                      operation="update"
                                     >
-                                      <Icon
-                                        icon="mdi:pencil"
-                                        className="text-lg"
-                                      />
-                                    </button>
+                                      <button
+                                        className="btn btn-sm btn-link text-primary p-0 ms-2"
+                                        onClick={() => handleEditNote(index)}
+                                        title="Edit note"
+                                      >
+                                        <Icon
+                                          icon="mdi:pencil"
+                                          className="text-lg"
+                                        />
+                                      </button>
+                                    </OperationControl>
                                   </div>
                                 )}
                               </div>
@@ -494,29 +500,34 @@ const POViewLayer = ({ showModal, onClose, po }) => {
                         )}
                       </div>
 
-                      <div className="notes-input-area">
-                        <label className="form-label fw-medium mb-2">
-                          Add Note
-                        </label>
-                        <div className="d-flex gap-2 align-items-start">
-                          <textarea
-                            className="form-control"
-                            rows="2"
-                            placeholder="Enter your note or comment here..."
-                            value={newNote}
-                            onChange={(e) => setNewNote(e.target.value)}
-                          ></textarea>
-                          <button
-                            className="btn btn-primary d-flex align-items-center gap-2"
-                            onClick={handleAddNote}
-                            disabled={!newNote.trim()}
-                            style={{ whiteSpace: "nowrap" }}
-                          >
-                            <Icon icon="mdi:send" />
+                      <OperationControl
+                        pageId="purchase-orders"
+                        operation="update"
+                      >
+                        <div className="notes-input-area">
+                          <label className="form-label fw-medium mb-2">
                             Add Note
-                          </button>
+                          </label>
+                          <div className="d-flex gap-2 align-items-start">
+                            <textarea
+                              className="form-control"
+                              rows="2"
+                              placeholder="Enter your note or comment here..."
+                              value={newNote}
+                              onChange={(e) => setNewNote(e.target.value)}
+                            ></textarea>
+                            <button
+                              className="btn btn-primary d-flex align-items-center gap-2"
+                              onClick={handleAddNote}
+                              disabled={!newNote.trim()}
+                              style={{ whiteSpace: "nowrap" }}
+                            >
+                              <Icon icon="mdi:send" />
+                              Add Note
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                      </OperationControl>
                     </div>
                   </>
                 )}
