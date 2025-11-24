@@ -6,10 +6,22 @@ import {
   updateSupplier,
   deleteSupplier,
 } from "../mocks/server";
+import OperationControl from "./OperationControl";
+import { getCurrentUser, hasOperationPermission } from "../utils/permissions";
 
 const SupplierModalLayer = () => {
   const [allSuppliers, setAllSuppliers] = useState([]);
   const [filteredSuppliers, setFilteredSuppliers] = useState([]);
+
+  // Calculate permissions
+  const user = getCurrentUser();
+  const canUpdate = user?.permissions
+    ? hasOperationPermission(user.permissions, "supplier-info", "update")
+    : false;
+  const canDelete = user?.permissions
+    ? hasOperationPermission(user.permissions, "supplier-info", "delete")
+    : false;
+  const showActionsColumn = canUpdate || canDelete;
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -440,17 +452,19 @@ const SupplierModalLayer = () => {
               )}
             </div>
           </div>
-          <button
-            type="button"
-            className="btn btn-sm btn-primary-600"
-            onClick={handleAdd}
-          >
-            <Icon
-              icon="ic:baseline-plus"
-              className="icon text-xl line-height-1"
-            />
-            Add Supplier
-          </button>
+          <OperationControl pageId="supplier-info" operation="add">
+            <button
+              type="button"
+              className="btn btn-sm btn-primary-600"
+              onClick={handleAdd}
+            >
+              <Icon
+                icon="ic:baseline-plus"
+                className="icon text-xl line-height-1"
+              />
+              Add Supplier
+            </button>
+          </OperationControl>
         </div>
         <div className="card-body">
           {loading ? (
@@ -556,9 +570,11 @@ const SupplierModalLayer = () => {
                       <th scope="col" style={{ width: "180px" }}>
                         Supplies
                       </th>
-                      <th scope="col" className="sticky-actions">
-                        Actions
-                      </th>
+                      {showActionsColumn && (
+                        <th scope="col" className="sticky-actions">
+                          Actions
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -580,22 +596,34 @@ const SupplierModalLayer = () => {
                         <td style={{ width: "180px" }}>
                           {renderSuppliesChips(supplier)}
                         </td>
-                        <td className="sticky-actions">
-                          <button
-                            type="button"
-                            className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                            onClick={() => handleEdit(supplier)}
-                          >
-                            <Icon icon="lucide:edit" />
-                          </button>
-                          <button
-                            type="button"
-                            className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                            onClick={() => handleDelete(supplier)}
-                          >
-                            <Icon icon="mingcute:delete-2-line" />
-                          </button>
-                        </td>
+                        {showActionsColumn && (
+                          <td className="sticky-actions">
+                            <OperationControl
+                              pageId="supplier-info"
+                              operation="update"
+                            >
+                              <button
+                                type="button"
+                                className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                onClick={() => handleEdit(supplier)}
+                              >
+                                <Icon icon="lucide:edit" />
+                              </button>
+                            </OperationControl>
+                            <OperationControl
+                              pageId="supplier-info"
+                              operation="delete"
+                            >
+                              <button
+                                type="button"
+                                className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                onClick={() => handleDelete(supplier)}
+                              >
+                                <Icon icon="mingcute:delete-2-line" />
+                              </button>
+                            </OperationControl>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

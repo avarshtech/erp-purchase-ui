@@ -2,6 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
+import {
+  getCurrentUser,
+  getSidebarPages,
+  hasPageAccess,
+} from "../utils/permissions";
 import "../assets/css/master-layout.css";
 
 // Initialize tooltips when component mounts
@@ -168,60 +173,30 @@ const MasterLayout = ({ children }) => {
         <div className="sidebar-menu-area">
           <ul className="sidebar-menu" id="sidebar-menu">
             <li className="sidebar-menu-group-title">Purchase Order</li>
-            <li>
-              <NavLink
-                to="/purchase-orders"
-                className={(navData) => (navData.isActive ? "active-page" : "")}
-              >
-                <Icon icon="mingcute:storage-line" className="menu-icon" />
-                <span>Purchase Orders</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/po-approval"
-                className={(navData) => (navData.isActive ? "active-page" : "")}
-              >
-                <Icon icon="mingcute:department-line" className="menu-icon" />
-                <span>PO Approval</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/supplier-info"
-                className={(navData) => (navData.isActive ? "active-page" : "")}
-              >
-                <Icon icon="mingcute:shop-line" className="menu-icon" />
-                <span>Supplier Info</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/item-master"
-                className={(navData) => (navData.isActive ? "active-page" : "")}
-              >
-                <Icon icon="mingcute:inventory-line" className="menu-icon" />
-                <span>Item Master</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/users"
-                className={(navData) => (navData.isActive ? "active-page" : "")}
-              >
-                <Icon icon="mingcute:group-3-line" className="menu-icon" />
-                <span>Users</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/roles"
-                className={(navData) => (navData.isActive ? "active-page" : "")}
-              >
-                <Icon icon="mingcute:user-follow-line" className="menu-icon" />
-                <span>Role & Access</span>
-              </NavLink>
-            </li>
+            {getSidebarPages().map((page) => {
+              const user = getCurrentUser();
+              // Admin has access to all pages
+              const canAccess =
+                user.role === "Admin" ||
+                (user.permissions && hasPageAccess(user.permissions, page.id));
+
+              // Only show menu items the user has access to
+              if (!canAccess) return null;
+
+              return (
+                <li key={page.id}>
+                  <NavLink
+                    to={page.path}
+                    className={(navData) =>
+                      navData.isActive ? "active-page" : ""
+                    }
+                  >
+                    <Icon icon={page.icon} className="menu-icon" />
+                    <span>{page.name}</span>
+                  </NavLink>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </aside>

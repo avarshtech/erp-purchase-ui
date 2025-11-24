@@ -147,21 +147,29 @@
   margin-top: 0.25em;
   border-radius: 0.25em;
   border: 2px solid #6b7280;
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-block;
+  vertical-align: middle;
 }
 
-[data-theme="dark"] .form-check-input {
-  background-color: #4b5563;
-  border-color: #9ca3af;
-}
 
 .form-check-input:checked {
   background-color: #667eea;
   border-color: #667eea;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='white' d='M13.485 1.757l-7.07 7.07-3.536-3.535-1.414 1.414 4.95 4.95 8.485-8.485z'/%3e%3c/svg%3e");
+  background-size: 0.8em 0.8em;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 [data-theme="dark"] .form-check-input:checked {
   background-color: #a855f7;
   border-color: #a855f7;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='white' d='M13.485 1.757l-7.07 7.07-3.536-3.535-1.414 1.414 4.95 4.95 8.485-8.485z'/%3e%3c/svg%3e");
+  background-size: 0.8em 0.8em;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .form-check-label {

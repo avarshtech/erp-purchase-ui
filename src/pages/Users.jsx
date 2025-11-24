@@ -1,11 +1,23 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useState, useEffect } from "react";
 import { getUsers, createUser, updateUser, deleteUser } from "../mocks/server";
+import OperationControl from "../components/OperationControl";
+import { getCurrentUser, hasOperationPermission } from "../utils/permissions";
 import "../assets/css/users-page.css";
 
 const Users = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
+
+  // Calculate permissions
+  const user = getCurrentUser();
+  const canUpdate = user?.permissions
+    ? hasOperationPermission(user.permissions, "users", "update")
+    : false;
+  const canDelete = user?.permissions
+    ? hasOperationPermission(user.permissions, "users", "delete")
+    : false;
+  const showActionsColumn = canUpdate || canDelete;
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -296,17 +308,19 @@ const Users = () => {
               )}
             </div>
           </div>
-          <button
-            type="button"
-            className="btn btn-sm btn-primary-600"
-            onClick={handleAdd}
-          >
-            <Icon
-              icon="ic:baseline-plus"
-              className="icon text-xl line-height-1"
-            />
-            Add User
-          </button>
+          <OperationControl pageId="users" operation="add">
+            <button
+              type="button"
+              className="btn btn-sm btn-primary-600"
+              onClick={handleAdd}
+            >
+              <Icon
+                icon="ic:baseline-plus"
+                className="icon text-xl line-height-1"
+              />
+              Add User
+            </button>
+          </OperationControl>
         </div>
         <div className="card-body">
           {loading ? (
@@ -394,9 +408,11 @@ const Users = () => {
                           )}
                         </div>
                       </th>
-                      <th scope="col" className="sticky-actions">
-                        Actions
-                      </th>
+                      {showActionsColumn && (
+                        <th scope="col" className="sticky-actions">
+                          Actions
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -418,22 +434,43 @@ const Users = () => {
                           </span>
                         </td>
                         <td>{user.createdDate}</td>
-                        <td className="sticky-actions">
-                          <button
-                            type="button"
-                            className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                            onClick={() => handleEdit(user)}
-                          >
-                            <Icon icon="lucide:edit" />
-                          </button>
-                          <button
-                            type="button"
-                            className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                            onClick={() => handleDelete(user)}
-                          >
-                            <Icon icon="mingcute:delete-2-line" />
-                          </button>
-                        </td>
+                        {showActionsColumn && (
+                          <td className="sticky-actions">
+                            {user.role !== "Admin" && (
+                              <>
+                                <OperationControl
+                                  pageId="users"
+                                  operation="update"
+                                >
+                                  <button
+                                    type="button"
+                                    className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                    onClick={() => handleEdit(user)}
+                                  >
+                                    <Icon icon="lucide:edit" />
+                                  </button>
+                                </OperationControl>
+                                <OperationControl
+                                  pageId="users"
+                                  operation="delete"
+                                >
+                                  <button
+                                    type="button"
+                                    className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                    onClick={() => handleDelete(user)}
+                                  >
+                                    <Icon icon="mingcute:delete-2-line" />
+                                  </button>
+                                </OperationControl>
+                              </>
+                            )}
+                            {user.role === "Admin" && (
+                              <span className="text-muted text-sm">
+                                Protected
+                              </span>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

@@ -8,11 +8,23 @@ import {
   deleteItem,
 } from "../mocks/server";
 import ItemFormLayer from "./ItemFormLayer";
+import OperationControl from "./OperationControl";
+import { getCurrentUser, hasOperationPermission } from "../utils/permissions";
 import "../assets/css/item-master.css";
 
 const ItemListLayer = () => {
   const [allItems, setAllItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
+
+  // Calculate permissions
+  const user = getCurrentUser();
+  const canUpdate = user?.permissions
+    ? hasOperationPermission(user.permissions, "item-master", "update")
+    : false;
+  const canDelete = user?.permissions
+    ? hasOperationPermission(user.permissions, "item-master", "delete")
+    : false;
+  const showActionsColumn = canUpdate || canDelete;
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -391,17 +403,19 @@ const ItemListLayer = () => {
               ))}
             </select>
           </div>
-          <button
-            type="button"
-            className="btn btn-sm btn-primary-600"
-            onClick={handleAdd}
-          >
-            <Icon
-              icon="ic:baseline-plus"
-              className="icon text-xl line-height-1"
-            />
-            Add Item
-          </button>
+          <OperationControl pageId="item-master" operation="add">
+            <button
+              type="button"
+              className="btn btn-sm btn-primary-600"
+              onClick={handleAdd}
+            >
+              <Icon
+                icon="ic:baseline-plus"
+                className="icon text-xl line-height-1"
+              />
+              Add Item
+            </button>
+          </OperationControl>
         </div>
         <div className="card-body">
           {loading ? (
@@ -492,9 +506,11 @@ const ItemListLayer = () => {
                           )}
                         </div>
                       </th>
-                      <th scope="col" className="sticky-actions text-center">
-                        Actions
-                      </th>
+                      {showActionsColumn && (
+                        <th scope="col" className="sticky-actions text-center">
+                          Actions
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -507,24 +523,36 @@ const ItemListLayer = () => {
                         <td>{getItemTypeName(item.itemTypeId)}</td>
                         <td>{item.uomId}</td>
                         <td>{new Date(item.createdAt).toLocaleDateString()}</td>
-                        <td className="sticky-actions">
-                          <div className="d-flex align-items-center justify-content-center gap-2">
-                            <button
-                              type="button"
-                              className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                              onClick={() => handleEdit(item)}
-                            >
-                              <Icon icon="lucide:edit" />
-                            </button>
-                            <button
-                              type="button"
-                              className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                              onClick={() => handleDeleteClick(item)}
-                            >
-                              <Icon icon="mingcute:delete-2-line" />
-                            </button>
-                          </div>
-                        </td>
+                        {showActionsColumn && (
+                          <td className="sticky-actions">
+                            <div className="d-flex align-items-center justify-content-center gap-2">
+                              <OperationControl
+                                pageId="item-master"
+                                operation="update"
+                              >
+                                <button
+                                  type="button"
+                                  className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                  onClick={() => handleEdit(item)}
+                                >
+                                  <Icon icon="lucide:edit" />
+                                </button>
+                              </OperationControl>
+                              <OperationControl
+                                pageId="item-master"
+                                operation="delete"
+                              >
+                                <button
+                                  type="button"
+                                  className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                  onClick={() => handleDeleteClick(item)}
+                                >
+                                  <Icon icon="mingcute:delete-2-line" />
+                                </button>
+                              </OperationControl>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

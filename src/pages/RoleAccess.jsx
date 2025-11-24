@@ -1,11 +1,30 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useState, useEffect } from "react";
 import { getRoles, createRole, updateRole, deleteRole } from "../mocks/server";
+import {
+  getAllPages,
+  getAllOperations,
+  getAdminPermissions,
+  getEmptyPermissions,
+  getCurrentUser,
+  hasOperationPermission,
+} from "../utils/permissions";
+import OperationControl from "../components/OperationControl";
 import "../assets/css/role-access.css";
 
 const RoleAccess = () => {
   const [allRoles, setAllRoles] = useState([]);
   const [filteredRoles, setFilteredRoles] = useState([]);
+
+  // Calculate permissions
+  const user = getCurrentUser();
+  const canUpdate = user?.permissions
+    ? hasOperationPermission(user.permissions, "roles", "update")
+    : false;
+  const canDelete = user?.permissions
+    ? hasOperationPermission(user.permissions, "roles", "delete")
+    : false;
+  const showActionsColumn = canUpdate || canDelete;
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -17,6 +36,7 @@ const RoleAccess = () => {
     name: "",
     description: "",
     status: "Active",
+    permissions: getEmptyPermissions(),
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -109,6 +129,7 @@ const RoleAccess = () => {
       name: "",
       description: "",
       status: "Active",
+      permissions: getEmptyPermissions(),
     });
     setShowModal(true);
   };
@@ -120,6 +141,7 @@ const RoleAccess = () => {
       name: role.name,
       description: role.description,
       status: role.status,
+      permissions: role.permissions || getEmptyPermissions(),
     });
     setShowModal(true);
   };
@@ -191,10 +213,19 @@ const RoleAccess = () => {
     // Validation: Name should only contain letters and spaces
     if (name === "name") {
       if (value === "" || /^[a-zA-Z\s]+$/.test(value)) {
-        setFormData((prev) => ({
-          ...prev,
-          [name]: value,
-        }));
+        setFormData((prev) => {
+          const newFormData = {
+            ...prev,
+            [name]: value,
+          };
+
+          // If role name is "Admin", set all permissions
+          if (value === "Admin") {
+            newFormData.permissions = getAdminPermissions();
+          }
+
+          return newFormData;
+        });
       }
       return;
     }
@@ -227,6 +258,103 @@ const RoleAccess = () => {
       setSortField(field);
       setSortDirection("asc");
     }
+  };
+
+  // Permission management handlers
+  const handlePageAccessToggle = (pageId) => {
+    setFormData((prev) => {
+      const newPermissions = { ...prev.permissions };
+      const currentAccess = newPermissions[pageId]?.access || false;
+
+      // Toggle access
+      newPermissions[pageId] = {
+        ...newPermissions[pageId],
+        access: !currentAccess,
+        operations: {
+          view: !currentAccess,
+          add: false,
+          update: false,
+          delete: false,
+        },
+      };
+
+      return { ...prev, permissions: newPermissions };
+    });
+  };
+
+  const handleOperationToggle = (pageId, operationId) => {
+    setFormData((prev) => {
+      const newPermissions = { ...prev.permissions };
+
+      // Ensure the page has access before toggling operations
+      if (!newPermissions[pageId]?.access) {
+        return prev;
+      }
+
+      const currentValue =
+        newPermissions[pageId].operations[operationId] || false;
+
+      newPermissions[pageId] = {
+        ...newPermissions[pageId],
+        operations: {
+          ...newPermissions[pageId].operations,
+          [operationId]: !currentValue,
+        },
+      };
+
+      return { ...prev, permissions: newPermissions };
+    });
+  };
+
+  const handleSelectAllAccess = () => {
+    const allPages = getAllPages();
+    setFormData((prev) => {
+      const newPermissions = {};
+      const allSelected = allPages.every(
+        (page) => prev.permissions[page.id]?.access
+      );
+
+      allPages.forEach((page) => {
+        newPermissions[page.id] = {
+          access: !allSelected,
+          operations: {
+            view: !allSelected,
+            add: false,
+            update: false,
+            delete: false,
+          },
+        };
+      });
+
+      return { ...prev, permissions: newPermissions };
+    });
+  };
+
+  const handleSelectAllOperations = (pageId) => {
+    setFormData((prev) => {
+      const newPermissions = { ...prev.permissions };
+
+      if (!newPermissions[pageId]?.access) {
+        return prev;
+      }
+
+      const allOperations = getAllOperations();
+      const allSelected = allOperations.every(
+        (op) => newPermissions[pageId].operations[op.id]
+      );
+
+      newPermissions[pageId] = {
+        ...newPermissions[pageId],
+        operations: {
+          view: true, // View should always be true if access is granted
+          add: !allSelected,
+          update: !allSelected,
+          delete: !allSelected,
+        },
+      };
+
+      return { ...prev, permissions: newPermissions };
+    });
   };
 
   // Pagination logic
@@ -291,17 +419,19 @@ const RoleAccess = () => {
               )}
             </div>
           </div>
-          <button
-            type="button"
-            className="btn btn-sm btn-primary-600"
-            onClick={handleAdd}
-          >
-            <Icon
-              icon="ic:baseline-plus"
-              className="icon text-xl line-height-1"
-            />
-            Add Role
-          </button>
+          <OperationControl pageId="roles" operation="add">
+            <button
+              type="button"
+              className="btn btn-sm btn-primary-600"
+              onClick={handleAdd}
+            >
+              <Icon
+                icon="ic:baseline-plus"
+                className="icon text-xl line-height-1"
+              />
+              Add Role
+            </button>
+          </OperationControl>
         </div>
         <div className="card-body">
           {loading ? (
@@ -386,9 +516,11 @@ const RoleAccess = () => {
                           )}
                         </div>
                       </th>
-                      <th scope="col" className="sticky-actions">
-                        Actions
-                      </th>
+                      {showActionsColumn && (
+                        <th scope="col" className="sticky-actions">
+                          Actions
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -409,22 +541,43 @@ const RoleAccess = () => {
                           </span>
                         </td>
                         <td>{role.createdDate}</td>
-                        <td className="sticky-actions">
-                          <button
-                            type="button"
-                            className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                            onClick={() => handleEdit(role)}
-                          >
-                            <Icon icon="lucide:edit" />
-                          </button>
-                          <button
-                            type="button"
-                            className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                            onClick={() => handleDelete(role)}
-                          >
-                            <Icon icon="mingcute:delete-2-line" />
-                          </button>
-                        </td>
+                        {showActionsColumn && (
+                          <td className="sticky-actions">
+                            {role.name !== "Admin" && (
+                              <>
+                                <OperationControl
+                                  pageId="roles"
+                                  operation="update"
+                                >
+                                  <button
+                                    type="button"
+                                    className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                    onClick={() => handleEdit(role)}
+                                  >
+                                    <Icon icon="lucide:edit" />
+                                  </button>
+                                </OperationControl>
+                                <OperationControl
+                                  pageId="roles"
+                                  operation="delete"
+                                >
+                                  <button
+                                    type="button"
+                                    className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                    onClick={() => handleDelete(role)}
+                                  >
+                                    <Icon icon="mingcute:delete-2-line" />
+                                  </button>
+                                </OperationControl>
+                              </>
+                            )}
+                            {role.name === "Admin" && (
+                              <span className="text-muted text-sm">
+                                Protected
+                              </span>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -487,7 +640,7 @@ const RoleAccess = () => {
         }}
         data-bs-backdrop="static"
       >
-        <div className="modal-dialog modal-lg modal-dialog-centered">
+        <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
           <div className="modal-content radius-16 bg-base">
             <div className="modal-header py-16 px-24 border border-top-0 border-start-0 border-end-0">
               <h1 className="modal-title fs-5">
@@ -547,6 +700,223 @@ const RoleAccess = () => {
                       <option value="Active">Active</option>
                       <option value="Inactive">Inactive</option>
                     </select>
+                  </div>
+
+                  {/* Permissions Section */}
+                  <div className="col-12 mb-20">
+                    <div className="d-flex align-items-center justify-content-between mb-12">
+                      <label className="form-label fw-semibold text-primary-light text-sm mb-0">
+                        Page Access & Operations{" "}
+                        <span className="text-danger">*</span>
+                      </label>
+                      {formData.name !== "Admin" && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-primary-600"
+                          onClick={handleSelectAllAccess}
+                        >
+                          <Icon
+                            icon="ic:baseline-select-all"
+                            className="icon me-1"
+                          />
+                          Toggle All Access
+                        </button>
+                      )}
+                    </div>
+
+                    {formData.name === "Admin" && (
+                      <div className="alert alert-info mb-12">
+                        <Icon
+                          icon="mingcute:information-line"
+                          className="me-2"
+                        />
+                        Admin role has full access to all pages and operations
+                        by default.
+                      </div>
+                    )}
+
+                    <div
+                      className="table-responsive"
+                      style={{ maxHeight: "400px", overflowY: "auto" }}
+                    >
+                      <table className="table bordered-table mb-0">
+                        <thead
+                          style={{
+                            position: "sticky",
+                            top: 0,
+                            backgroundColor: "#fff",
+                            zIndex: 10,
+                          }}
+                        >
+                          <tr>
+                            <th scope="col" style={{ width: "200px" }}>
+                              Page
+                            </th>
+                            <th
+                              scope="col"
+                              className="text-center"
+                              style={{ width: "100px" }}
+                            >
+                              Access
+                            </th>
+                            <th
+                              scope="col"
+                              className="text-center"
+                              style={{ width: "80px" }}
+                            >
+                              View
+                            </th>
+                            <th
+                              scope="col"
+                              className="text-center"
+                              style={{ width: "80px" }}
+                            >
+                              Add
+                            </th>
+                            <th
+                              scope="col"
+                              className="text-center"
+                              style={{ width: "80px" }}
+                            >
+                              Update
+                            </th>
+                            <th
+                              scope="col"
+                              className="text-center"
+                              style={{ width: "80px" }}
+                            >
+                              Delete
+                            </th>
+                            <th
+                              scope="col"
+                              className="text-center"
+                              style={{ width: "100px" }}
+                            >
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {getAllPages().map((page) => {
+                            const pagePermissions = formData.permissions[
+                              page.id
+                            ] || {
+                              access: false,
+                              operations: {
+                                view: false,
+                                add: false,
+                                update: false,
+                                delete: false,
+                              },
+                            };
+                            const isDisabled = formData.name === "Admin";
+                            const hasAccess =
+                              isDisabled || pagePermissions.access;
+
+                            return (
+                              <tr key={page.id}>
+                                <td>
+                                  <div className="d-flex align-items-center gap-2">
+                                    <Icon
+                                      icon={page.icon}
+                                      className="text-xl"
+                                    />
+                                    <span className="fw-medium">
+                                      {page.name}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="text-center">
+                                  <input
+                                    type="checkbox"
+                                    className="form-check-input"
+                                    checked={hasAccess}
+                                    disabled={isDisabled}
+                                    onChange={() =>
+                                      handlePageAccessToggle(page.id)
+                                    }
+                                  />
+                                </td>
+                                <td className="text-center">
+                                  <input
+                                    type="checkbox"
+                                    className="form-check-input"
+                                    checked={
+                                      isDisabled ||
+                                      (hasAccess &&
+                                        pagePermissions.operations.view)
+                                    }
+                                    disabled={isDisabled || !hasAccess}
+                                    onChange={() =>
+                                      handleOperationToggle(page.id, "view")
+                                    }
+                                  />
+                                </td>
+                                <td className="text-center">
+                                  <input
+                                    type="checkbox"
+                                    className="form-check-input"
+                                    checked={
+                                      isDisabled ||
+                                      (hasAccess &&
+                                        pagePermissions.operations.add)
+                                    }
+                                    disabled={isDisabled || !hasAccess}
+                                    onChange={() =>
+                                      handleOperationToggle(page.id, "add")
+                                    }
+                                  />
+                                </td>
+                                <td className="text-center">
+                                  <input
+                                    type="checkbox"
+                                    className="form-check-input"
+                                    checked={
+                                      isDisabled ||
+                                      (hasAccess &&
+                                        pagePermissions.operations.update)
+                                    }
+                                    disabled={isDisabled || !hasAccess}
+                                    onChange={() =>
+                                      handleOperationToggle(page.id, "update")
+                                    }
+                                  />
+                                </td>
+                                <td className="text-center">
+                                  <input
+                                    type="checkbox"
+                                    className="form-check-input"
+                                    checked={
+                                      isDisabled ||
+                                      (hasAccess &&
+                                        pagePermissions.operations.delete)
+                                    }
+                                    disabled={isDisabled || !hasAccess}
+                                    onChange={() =>
+                                      handleOperationToggle(page.id, "delete")
+                                    }
+                                  />
+                                </td>
+                                <td className="text-center">
+                                  {!isDisabled && hasAccess && (
+                                    <button
+                                      type="button"
+                                      className="btn btn-sm btn-outline-secondary"
+                                      onClick={() =>
+                                        handleSelectAllOperations(page.id)
+                                      }
+                                      title="Toggle All Operations"
+                                    >
+                                      <Icon icon="ic:baseline-select-all" />
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </form>
