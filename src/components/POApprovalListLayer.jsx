@@ -1100,6 +1100,12 @@ const POApprovalListLayer = () => {
             setShowDetailModal(false);
             setShowRejectModal(true);
           }}
+          currentUser={{
+            id: 201,
+            name: "Sarah Johnson",
+            role: "Finance Manager",
+            email: "sarah.j@avarsh.com"
+          }}
         />
       )}
     </div>

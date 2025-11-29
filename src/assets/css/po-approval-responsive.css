@@ -6,71 +6,71 @@
   .card-header {
     padding: 12px 16px !important;
   }
-  
+
   .card-header .d-flex {
     flex-direction: column;
     align-items: stretch !important;
     gap: 12px !important;
   }
-  
+
   /* Filter controls stacking */
   .card-header .d-flex.align-items-center.gap-3 {
     flex-direction: column;
     align-items: stretch !important;
     gap: 12px !important;
   }
-  
+
   /* Search and select inputs */
   .icon-field {
     width: 100%;
   }
-  
+
   .form-select-sm.w-auto {
     width: 100% !important;
   }
-  
+
   .form-control-sm.w-auto {
     width: 100% !important;
   }
-  
+
   /* Date range inputs */
   .d-flex.align-items-center.gap-2 input[type="date"] {
     flex: 1;
     min-width: 0;
   }
-  
+
   /* Export button */
   .dropdown {
     width: 100%;
   }
-  
+
   .btn.btn-sm.btn-outline-primary.dropdown-toggle {
     width: 100%;
     justify-content: center;
   }
-  
+
   /* Bulk actions bar */
   .alert.alert-info {
     flex-direction: column;
     gap: 12px !important;
     text-align: center;
   }
-  
+
   .alert .d-flex.gap-2 {
     flex-direction: column;
     width: 100%;
   }
-  
+
   .alert .btn {
     width: 100%;
   }
-  
+
   /* Table responsiveness */
   .table-responsive {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  
+
   /* Table columns - hide less important ones on mobile */
   .table th:nth-child(5),
   .table td:nth-child(5),
@@ -78,30 +78,30 @@
   .table td:nth-child(6) {
     display: none;
   }
-  
+
   /* Make table more compact on mobile */
   .table {
     font-size: 0.875rem;
   }
-  
+
   .table th,
   .table td {
     padding: 8px 4px;
     vertical-align: middle;
   }
-  
+
   /* Action buttons - make them larger for touch */
   .w-32-px.h-32-px {
     width: 40px !important;
     height: 40px !important;
   }
-  
+
   /* Pagination */
   .pagination {
     flex-wrap: wrap;
     justify-content: center;
   }
-  
+
   .page-link {
     min-width: 44px;
     min-height: 44px;
@@ -109,43 +109,43 @@
     align-items: center;
     justify-content: center;
   }
-  
+
   /* Modal responsiveness */
   .modal-dialog {
     margin: 8px;
     max-width: calc(100% - 16px);
   }
-  
+
   .modal-dialog.modal-xl {
     max-width: calc(100% - 16px);
   }
-  
+
   /* Modal content */
   .modal-body {
     padding: 16px;
     max-height: calc(100vh - 200px);
     overflow-y: auto;
   }
-  
+
   /* Tabs in modal */
   .nav-tabs {
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  
+
   .nav-tabs .nav-link {
     white-space: nowrap;
     padding: 8px 12px;
     font-size: 0.875rem;
   }
-  
+
   /* Form controls in modals */
   .modal .form-control,
   .modal .form-select {
     font-size: 16px; /* Prevents zoom on iOS */
   }
-  
+
   /* Status and priority badges */
   .badge,
   .px-12.py-4 {
@@ -160,11 +160,11 @@
     flex-wrap: wrap;
     gap: 12px !important;
   }
-  
+
   .table {
     font-size: 0.9rem;
   }
-  
+
   .table th,
   .table td {
     padding: 10px 8px;
@@ -176,16 +176,16 @@
   .table {
     border: 2px solid;
   }
-  
+
   .table th,
   .table td {
     border: 1px solid;
   }
-  
+
   .btn {
     border: 2px solid;
   }
-  
+
   .form-control,
   .form-select {
     border: 2px solid;
@@ -197,13 +197,13 @@
   .modal.fade {
     transition: none;
   }
-  
+
   .btn,
   .page-link,
   .dropdown-item {
     transition: none;
   }
-  
+
   .spinner-border {
     animation: none;
     border: 2px solid currentColor;
@@ -258,8 +258,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Touch-friendly targets */
@@ -273,7 +277,7 @@
     align-items: center;
     justify-content: center;
   }
-  
+
   .w-32-px.h-32-px {
     width: 44px !important;
     height: 44px !important;
@@ -289,16 +293,16 @@
   .alert {
     display: none !important;
   }
-  
+
   .table {
     font-size: 12px;
   }
-  
+
   .card {
     border: 1px solid #000;
     box-shadow: none;
   }
-  
+
   .badge {
     border: 1px solid #000;
   }
@@ -340,16 +344,10 @@
     color: #bee3f8;
   }
 
-
   .btn-close {
     filter: invert(1);
   }
-
-
-
 }
-
-
 
 /* Theme-based form styling */
 [data-theme="dark"] .form-control,
@@ -397,7 +395,8 @@
 /* Form control theme fixes */
 .form-control,
 .form-select {
-  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
+    color 0.15s ease-in-out;
 }
 
 [data-theme="light"] .form-control {
@@ -473,7 +472,6 @@
   z-index: 10;
 }
 
-
 /* Table stripes for better readability */
 .table-responsive .table tbody tr:nth-child(even) {
   background-color: rgba(0, 0, 0, 0.02);
@@ -500,7 +498,6 @@
 [data-theme="light"] .table-responsive .table tbody tr:nth-child(odd) {
   background-color: transparent;
 }
-
 
 /* Center align table headers */
 .table-responsive .table thead th {
@@ -883,6 +880,201 @@ body.modal-open {
 .cursor-pointer:hover {
   background-color: var(--bs-gray-100);
 }
+.modal-backdrop {
+  opacity: 0.5 !important;
+}
+
+/* Sticky table columns and headers */
+.table-responsive {
+  position: relative;
+  max-height: 500px;
+  overflow: auto;
+}
+
+.table-responsive .table {
+  margin-bottom: 0;
+}
+
+.table-responsive .table thead th {
+  position: sticky;
+  top: 0;
+  background-color: var(--bs-body-bg);
+  z-index: 15;
+  border-bottom: 2px solid var(--bs-border-color);
+}
+
+.table-responsive .table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table th[style*="position: sticky"],
+.table td[style*="position: sticky"] {
+  background-color: var(--bs-body-bg);
+  z-index: 10;
+}
+
+[data-theme="dark"] .table-responsive .table thead th {
+  background-color: #374151;
+  border-bottom-color: #4b5563;
+}
+
+[data-theme="dark"] .table th[style*="position: sticky"],
+[data-theme="dark"] .table td[style*="position: sticky"] {
+  background-color: #374151;
+}
+
+[data-theme="light"] .table-responsive .table thead th {
+  background-color: #ffffff;
+  border-bottom-color: #dee2e6;
+}
+
+[data-theme="light"] .table th[style*="position: sticky"],
+[data-theme="light"] .table td[style*="position: sticky"] {
+  background-color: #ffffff;
+}
+
+/* Sticky actions column */
+.sticky-actions {
+  position: sticky;
+  right: 0;
+  background-color: var(--bs-body-bg);
+  z-index: 10;
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
+}
+
+[data-theme="dark"] .sticky-actions {
+  background-color: #374151;
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .sticky-actions {
+  background-color: #ffffff;
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure table layout works properly */
+.table-responsive .table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.table-responsive .table thead th.sticky-actions,
+.table-responsive .table tbody td.sticky-actions {
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
+}
+
+/* Enhanced table styling for better scrolling */
+.table-responsive {
+  border-radius: 8px;
+  border: 1px solid var(--bs-border-color);
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: auto;
+  position: relative;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure table takes full width to enable horizontal scrolling */
+.table-responsive .table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+/* Prevent text wrapping in table cells */
+.table-responsive .table td,
+.table-responsive .table th {
+  white-space: nowrap;
+  vertical-align: middle;
+  padding: 12px 8px;
+  box-sizing: border-box;
+}
+
+/* Center align table headers */
+.table-responsive .table thead th {
+  vertical-align: middle;
+  font-weight: 600;
+}
+
+/* Center align specific columns */
+.table-responsive .table td:first-child,
+.table-responsive .table th:first-child,
+.table-responsive .table td:last-child,
+.table-responsive .table th:last-child {
+  text-align: center;
+}
+
+/* Left align text content columns */
+.table-responsive .table td:nth-child(2),
+.table-responsive .table th:nth-child(2),
+.table-responsive .table td:nth-child(3),
+.table-responsive .table th:nth-child(3) {
+  text-align: left;
+}
+
+/* Allow wrapping only for address and supplies columns */
+.table-responsive .table td:nth-child(3),
+.table-responsive .table th:nth-child(3),
+.table-responsive .table td:nth-child(11),
+.table-responsive .table th:nth-child(11) {
+  white-space: normal;
+  word-wrap: break-word;
+  max-width: 320px;
+}
+
+[data-theme="dark"] .table-responsive {
+  border-color: #4b5563;
+}
+
+[data-theme="light"] .table-responsive {
+  border-color: #dee2e6;
+}
+
+.table-responsive .table {
+  margin-bottom: 0;
+}
+
+.table-responsive .table thead th {
+  position: sticky;
+  top: 0;
+  background-color: var(--bs-body-bg);
+  border-bottom: 2px solid var(--bs-border-color);
+  font-weight: 600;
+  z-index: 15;
+}
+
+[data-theme="dark"] .table-responsive .table thead th {
+  background-color: #374151;
+  border-bottom-color: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="light"] .table-responsive .table thead th {
+  background-color: #ffffff;
+  border-bottom-color: #dee2e6;
+  color: #212529;
+}
+
+.table-responsive .table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Cursor pointer for sortable headers */
+.cursor-pointer {
+  cursor: pointer;
+  user-select: none;
+}
+
+.cursor-pointer:hover {
+  background-color: var(--bs-gray-100);
+}
 
 [data-theme="dark"] .cursor-pointer:hover {
   background-color: #4b5563;
@@ -890,4 +1082,68 @@ body.modal-open {
 
 [data-theme="light"] .cursor-pointer:hover {
   background-color: #f8f9fa;
+}
+
+/* Timeline Styles */
+.timeline {
+  position: relative;
+  padding-left: 1rem;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 2rem;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  left: 20px; /* Center of the 40px icon (assuming icon container is 40px) */
+  top: 40px; /* Start after the icon */
+  bottom: -10px; /* Extend to next item */
+  width: 2px;
+  background-color: #e2e8f0;
+  z-index: 0;
+}
+
+.timeline-item:last-child::before {
+  display: none;
+}
+
+/* Adjust for the gap-3 (1rem = 16px) in d-flex */
+/* The icon container is the first child of d-flex */
+/* We need to ensure the line aligns with the center of the icon */
+
+.timeline-item .d-flex.gap-3 {
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme="dark"] .timeline-item::before {
+  background-color: #4b5563;
+}
+
+/* Line Items Table Fixes */
+.line-items-table th,
+.line-items-table td {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  vertical-align: top !important;
+}
+
+.line-items-table td:nth-child(1), /* Item Name */
+.line-items-table td:nth-child(2) { /* Description */
+  min-width: 150px;
+}
+
+.line-items-table td:nth-child(3), /* Quantity */
+.line-items-table td:nth-child(5), /* Unit Price */
+.line-items-table td:nth-child(6), /* SGST */
+.line-items-table td:nth-child(7), /* CGST */
+.line-items-table td:nth-child(8) { /* Amount */
+  white-space: nowrap !important;
 }
