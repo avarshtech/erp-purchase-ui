@@ -323,9 +323,9 @@ const POModalLayer = ({
                 (i) => i.id === parseInt(value)
               );
               if (selectedItem) {
-                updatedItem.description = selectedItem.description;
-                updatedItem.uom = selectedItem.uom;
-                updatedItem.unitPrice = selectedItem.unitPrice;
+                updatedItem.description = selectedItem.itemName; // Map itemName to description
+                updatedItem.uom = selectedItem.uomId; // Map uomId to uom
+                updatedItem.unitPrice = selectedItem.unitPrice; // Map unitPrice
               }
             }
 

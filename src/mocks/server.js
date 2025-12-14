@@ -101,6 +101,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-01-15T10:30:00Z",
+    unitPrice: 0.50,
   },
   {
     id: 2,
@@ -119,6 +120,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-01-16T11:20:00Z",
+    unitPrice: 0.60,
   },
   {
     id: 3,
@@ -137,6 +139,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-01-18T09:15:00Z",
+    unitPrice: 0.75,
   },
   {
     id: 4,
@@ -155,6 +158,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-01-20T14:45:00Z",
+    unitPrice: 1.20,
   },
   {
     id: 5,
@@ -173,6 +177,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-01-22T16:30:00Z",
+    unitPrice: 0.30,
   },
   {
     id: 6,
@@ -190,6 +195,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-02-01T10:00:00Z",
+    unitPrice: 12.50,
   },
   {
     id: 7,
@@ -207,6 +213,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-02-03T11:30:00Z",
+    unitPrice: 11.00,
   },
   {
     id: 8,
@@ -224,6 +231,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-02-05T09:45:00Z",
+    unitPrice: 15.00,
   },
   {
     id: 9,
@@ -241,6 +249,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-02-07T13:20:00Z",
+    unitPrice: 14.50,
   },
   {
     id: 10,
@@ -259,6 +268,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-02-10T15:10:00Z",
+    unitPrice: 0.80,
   },
   {
     id: 11,
@@ -276,6 +286,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-02-12T10:30:00Z",
+    unitPrice: 13.00,
   },
   {
     id: 12,
@@ -294,6 +305,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-02-14T12:00:00Z",
+    unitPrice: 0.40,
   },
   {
     id: 13,
@@ -311,6 +323,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-02-16T14:30:00Z",
+    unitPrice: 16.00,
   },
   {
     id: 14,
@@ -329,6 +342,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-02-18T16:45:00Z",
+    unitPrice: 1.50,
   },
   {
     id: 15,
@@ -346,6 +360,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-02-20T09:00:00Z",
+    unitPrice: 11.50,
   },
   {
     id: 16,
@@ -364,6 +379,7 @@ const items = [
     },
     isActive: false,
     createdAt: "2024-02-22T11:15:00Z",
+    unitPrice: 0.90,
   },
   {
     id: 17,
@@ -381,6 +397,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-02-24T13:30:00Z",
+    unitPrice: 17.00,
   },
   {
     id: 18,
@@ -399,6 +416,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-02-26T15:45:00Z",
+    unitPrice: 0.50,
   },
   {
     id: 19,
@@ -416,6 +434,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-02-28T10:20:00Z",
+    unitPrice: 12.00,
   },
   {
     id: 20,
@@ -434,6 +453,7 @@ const items = [
     },
     isActive: true,
     createdAt: "2024-03-01T12:00:00Z",
+    unitPrice: 1.00,
   },
 ];
 
