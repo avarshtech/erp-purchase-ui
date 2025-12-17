@@ -11,11 +11,10 @@ import { getCurrentUser, hasPageAccess } from "../utils/permissions";
 const ProtectedRoute = ({ pageId, children }) => {
   const user = getCurrentUser();
 
-  // If no user is logged in, should redirect to unauthorized
-  // In a real app, this would redirect to login
+  // If no user is logged in, redirect to login
   if (!user || !user.role) {
-    console.warn("No user found. Redirecting to unauthorized page.");
-    return <Navigate to="/unauthorized" replace />;
+    console.warn("No user found. Redirecting to login page.");
+    return <Navigate to="/login" replace />;
   }
 
   // Admin always has access

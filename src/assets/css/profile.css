@@ -5,7 +5,7 @@
   font-size: 2.5rem;
   font-weight: 800;
   margin-bottom: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -15,7 +15,7 @@
 }
 
 [data-theme="dark"] .profile-page-title {
-  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -46,7 +46,7 @@
 
 /* Profile header */
 .profile-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
   color: white;
   padding: 2rem;
   border-radius: 16px 16px 0 0;
@@ -55,7 +55,7 @@
 }
 
 [data-theme="dark"] .profile-header {
-  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
 }
 
 .profile-header::before {
@@ -79,7 +79,7 @@
   height: 80px;
   border-radius: 50%;
   border: 4px solid rgba(255, 255, 255, 0.3);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -90,7 +90,7 @@
 }
 
 [data-theme="dark"] .profile-avatar {
-  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
 }
 
 .profile-name {
@@ -180,7 +180,7 @@
 }
 
 .btn-update-password {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
   border: none;
   color: white;
   padding: 0.75rem 2rem;
@@ -191,15 +191,15 @@
 
 .btn-update-password:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
 }
 
 [data-theme="dark"] .btn-update-password {
-  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
 }
 
 [data-theme="dark"] .btn-update-password:hover {
-  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+  box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
 }
 
 /* Password update modal */
@@ -215,7 +215,7 @@
 }
 
 .password-modal .modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
   color: white;
   border-radius: 16px 16px 0 0;
   border-bottom: none;
@@ -223,11 +223,11 @@
 }
 
 [data-theme="dark"] .password-modal .modal-header {
-  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
 }
 
 [data-theme="light"] .password-modal .modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
   color: white;
 }
 
@@ -285,13 +285,13 @@
 }
 
 .password-modal .form-control:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #1e40af;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
 
 [data-theme="dark"] .password-modal .form-control:focus {
-  border-color: #a855f7;
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+  border-color: #1e40af;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
 
 /* Password strength indicator */
@@ -447,7 +447,7 @@
 }
 
 .password-modal .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
   border: none;
   color: white;
   padding: 0.75rem 2rem;
@@ -457,18 +457,18 @@
 }
 
 .password-modal .btn-primary:hover {
-  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  background: linear-gradient(135deg, #1d4ed8 0%, #0891b2 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
 }
 
 [data-theme="dark"] .password-modal .btn-primary {
-  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
 }
 
 [data-theme="dark"] .password-modal .btn-primary:hover {
-  background: linear-gradient(135deg, #9333ea 0%, #db2777 100%);
-  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+  background: linear-gradient(135deg, #1d4ed8 0%, #0891b2 100%);
+  box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
 }
 
 /* Toast notifications */
@@ -552,14 +552,14 @@
   width: 40px;
   height: 40px;
   border: 4px solid #f3f4f6;
-  border-top: 4px solid #667eea;
+  border-top: 4px solid #1e40af;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 [data-theme="dark"] .loading-spinner {
   border-color: #4b5563;
-  border-top-color: #a855f7;
+  border-top-color: #1e40af;
 }
 
 @keyframes spin {

@@ -245,8 +245,8 @@
 
 [data-theme="dark"] .advanced-date-picker .form-control:focus {
   background-color: #2c3c57;
-  border-color: #a855f7;
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+  border-color: #1e40af;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
 
 [data-theme="dark"] .advanced-date-picker .form-control:disabled {
@@ -769,8 +769,8 @@
 }
 
 .po-form-dropdown .dropdown-toggle:hover {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #1e40af;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
 
 .po-form-dropdown .dropdown-menu {
@@ -818,8 +818,8 @@
 }
 
 .po-form-dropdown .dropdown-toggle:hover {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #1e40af;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
 
 .po-form-dropdown .dropdown-menu {
@@ -849,12 +849,12 @@
 }
 
 .po-form-dropdown .dropdown-item.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
   color: white;
 }
 
 [data-theme="dark"] .po-form-dropdown .dropdown-item.active {
-  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #06b6d4 100%);
 }
 
 .po-form-dropdown .dropdown-item-text {
