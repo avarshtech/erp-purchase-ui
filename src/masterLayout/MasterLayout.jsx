@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
 import {
   getCurrentUser,
   getSidebarPages,
   hasPageAccess,
 } from "../utils/permissions";
+import { logoutUser } from "../utils/authHelper";
 import "../assets/css/master-layout.css";
 
 // Initialize tooltips when component mounts
@@ -31,6 +32,13 @@ const MasterLayout = ({ children }) => {
   const [sidebarActive, setSidebarActive] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const currentUser = getCurrentUser();
+
+  const handleLogout = () => {
+    logoutUser();
+    navigate("/login");
+  };
 
   useEffect(() => {
     // Initialize tooltips after a short delay to ensure Bootstrap is loaded
@@ -257,10 +265,10 @@ const MasterLayout = ({ children }) => {
                     <div className="py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
                       <div>
                         <h6 className="text-lg text-primary-light fw-semibold mb-2">
-                          Shaidul Islam
+                          {currentUser?.name || "User"}
                         </h6>
                         <span className="text-secondary-light fw-medium text-sm">
-                          Admin
+                          {currentUser?.role || "N/A"}
                         </span>
                       </div>
                       <button type="button" className="hover-text-danger">
@@ -284,13 +292,20 @@ const MasterLayout = ({ children }) => {
                         </Link>
                       </li>
                       <li>
-                        <Link
+                        <button
+                          onClick={handleLogout}
                           className="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-danger d-flex align-items-center gap-3"
-                          to="#"
+                          style={{
+                            background: "none",
+                            border: "none",
+                            width: "100%",
+                            textAlign: "left",
+                            cursor: "pointer",
+                          }}
                         >
                           <Icon icon="lucide:power" className="icon text-xl" />{" "}
                           Log Out
-                        </Link>
+                        </button>
                       </li>
                     </ul>
                   </div>

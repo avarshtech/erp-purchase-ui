@@ -2,6 +2,108 @@ import { setCurrentUser, getAdminPermissions } from "../utils/permissions";
 import { getRoles } from "../mocks/server";
 
 /**
+ * Mock user database
+ * In production, this would be replaced with actual API calls
+ */
+const MOCK_USERS = [
+  {
+    id: 1,
+    username: "admin",
+    password: "admin123",
+    name: "Admin User",
+    email: "admin@example.com",
+    role: "Admin",
+    permissions: null, // Will be set to admin permissions
+  },
+  {
+    id: 2,
+    username: "manager",
+    password: "manager123",
+    name: "Manager User",
+    email: "manager@example.com",
+    role: "Manager",
+    permissions: {}, // Custom permissions
+  },
+  {
+    id: 3,
+    username: "user",
+    password: "user123",
+    name: "Regular User",
+    email: "user@example.com",
+    role: "User",
+    permissions: {}, // Custom permissions
+  },
+];
+
+/**
+ * Authenticate user with username and password
+ * @param {string} username - Username
+ * @param {string} password - Password
+ * @returns {Object} Authentication result with success status and user data or error message
+ */
+export const authenticateUser = async (username, password) => {
+  // Simulate API delay
+  await new Promise((resolve) => setTimeout(resolve, 300));
+
+  // Find user by username
+  const user = MOCK_USERS.find((u) => u.username === username);
+
+  if (!user) {
+    return {
+      success: false,
+      message: "Invalid username or password",
+    };
+  }
+
+  // Verify password
+  if (user.password !== password) {
+    return {
+      success: false,
+      message: "Invalid username or password",
+    };
+  }
+
+  // Create user session
+  const userSession = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    permissions:
+      user.role === "Admin" ? getAdminPermissions() : user.permissions,
+  };
+
+  // Save to localStorage
+  setCurrentUser(userSession);
+
+  // Dispatch custom event to notify app of auth change
+  window.dispatchEvent(new Event("authChange"));
+
+  return {
+    success: true,
+    user: userSession,
+  };
+};
+
+/**
+ * Logout user
+ */
+export const logoutUser = () => {
+  localStorage.removeItem("currentUser");
+  // Dispatch custom event to notify app of auth change
+  window.dispatchEvent(new Event("authChange"));
+};
+
+/**
+ * Check if user is authenticated
+ * @returns {boolean} True if user is logged in
+ */
+export const isAuthenticated = () => {
+  const user = localStorage.getItem("currentUser");
+  return !!user;
+};
+
+/**
  * Initialize a default user for development/testing
  * In production, this would come from authentication
  */
@@ -10,17 +112,8 @@ export const initializeDefaultUser = () => {
   const existingUser = localStorage.getItem("currentUser");
 
   if (!existingUser) {
-    // Set default Admin user for development
-    const defaultUser = {
-      id: 1,
-      name: "Admin User",
-      email: "admin@example.com",
-      role: "Admin",
-      permissions: getAdminPermissions(),
-    };
-
-    setCurrentUser(defaultUser);
-    console.log("Default Admin user initialized");
+    // Don't auto-login in production, redirect to login page
+    console.log("No user session found. Please login.");
   }
 };
 
