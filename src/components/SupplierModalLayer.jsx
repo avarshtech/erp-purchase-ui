@@ -131,10 +131,13 @@ const SupplierModalLayer = () => {
     try {
       setLoading(true);
       const response = await getSuppliers();
-      setAllSuppliers(response.data);
-      setFilteredSuppliers(response.data);
+      const suppliers = Array.isArray(response) ? response : (response.data || []);
+      setAllSuppliers(suppliers);
+      setFilteredSuppliers(suppliers);
     } catch (err) {
       console.error("Error fetching suppliers:", err);
+      setAllSuppliers([]);
+      setFilteredSuppliers([]);
     } finally {
       setLoading(false);
     }

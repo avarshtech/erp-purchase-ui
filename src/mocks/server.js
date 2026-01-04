@@ -1,6 +1,7 @@
 // Simple mock server implementation (alternative to Mirage.js)
 import poListData from "./poListData.json";
 import poApprovalData from "./poApprovalData.json";
+import { getToken } from "../utils/authHelper";
 
 // Seed data for Item Master
 const categories = [
@@ -1388,7 +1389,8 @@ server.start = () => {
 };
 
 // Start the server
-server.start();
+// server.start();
+
 
 // Define routes
 server.get("/po-list", () => {
@@ -2032,17 +2034,29 @@ server.put("/purchase-orders/:id/notes/:noteIndex", (data, params) => {
 // Export server instance
 export default server;
 
+
+
 // Export convenience function for making requests
 export const makeRequest = async (method, path, data = null) => {
   try {
+    const headers = { "Content-Type": "application/json" };
+    
+    // Add Bearer token if available
+    const token = getToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const options = {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers
     };
     if (data) {
       options.body = JSON.stringify(data);
     }
-    const response = await fetch(`/api${path}`, options);
+    const API_BASE_URL = "http://localhost:8088";
+    const response = await fetch(`${API_BASE_URL}/api/v1${path}`, options);
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
