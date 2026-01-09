@@ -1,5 +1,5 @@
-import React from 'react';
-import { Icon } from '@iconify/react/dist/iconify.js';
+import React from "react";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
 const POLineItemsTable = ({
   lineItems,
@@ -9,8 +9,7 @@ const POLineItemsTable = ({
   handleLineItemChange,
   addLineItem,
   removeLineItem,
-  uomOptions,
-  taxOptions
+  taxOptions,
 }) => {
   return (
     <div className="row gy-3 mb-4">
@@ -28,19 +27,67 @@ const POLineItemsTable = ({
           </button>
         </div>
 
-        <div className="table-responsive" style={{ overflowX: 'auto' }}>
-          <table className="table table-bordered" style={{ minWidth: '1000px' }}>
+        <div className="table-responsive" style={{ overflowX: "auto" }}>
+          <table
+            className="table table-bordered"
+            style={{ minWidth: "1000px" }}
+          >
             <thead className="table-header-custom">
               <tr>
-                <th style={{ width: '180px', minWidth: '180px' }} className="text-center">Item</th>
-                <th style={{ width: '200px', minWidth: '200px' }} className="text-center">Description</th>
-                <th style={{ width: '100px', minWidth: '100px' }} className="text-center">Qty</th>
-                <th style={{ width: '106px', minWidth: '106px' }} className="text-center">UOM</th>
-                <th style={{ width: '100px', minWidth: '100px' }} className="text-center">Unit Price</th>
-                <th style={{ width: '75px', minWidth: '75px' }} className="text-center">SGST %</th>
-                <th style={{ width: '75px', minWidth: '75px' }} className="text-center">CGST %</th>
-                <th style={{ width: '90px', minWidth: '90px' }} className="text-center">Amount</th>
-                <th style={{ width: '60px', minWidth: '60px' }} className="text-center">Action</th>
+                <th
+                  style={{ width: "180px", minWidth: "180px" }}
+                  className="text-center"
+                >
+                  Item
+                </th>
+                <th
+                  style={{ width: "200px", minWidth: "200px" }}
+                  className="text-center"
+                >
+                  Description
+                </th>
+                <th
+                  style={{ width: "100px", minWidth: "100px" }}
+                  className="text-center"
+                >
+                  Qty
+                </th>
+                <th
+                  style={{ width: "106px", minWidth: "106px" }}
+                  className="text-center"
+                >
+                  UOM
+                </th>
+                <th
+                  style={{ width: "100px", minWidth: "100px" }}
+                  className="text-center"
+                >
+                  Unit Price
+                </th>
+                <th
+                  style={{ width: "75px", minWidth: "75px" }}
+                  className="text-center"
+                >
+                  SGST %
+                </th>
+                <th
+                  style={{ width: "75px", minWidth: "75px" }}
+                  className="text-center"
+                >
+                  CGST %
+                </th>
+                <th
+                  style={{ width: "90px", minWidth: "90px" }}
+                  className="text-center"
+                >
+                  Amount
+                </th>
+                <th
+                  style={{ width: "60px", minWidth: "60px" }}
+                  className="text-center"
+                >
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -49,73 +96,125 @@ const POLineItemsTable = ({
                   <td>
                     <select
                       className="form-select form-select-sm"
-                      value={item.itemId || ''}
-                      onChange={(e) => selectItem(parseInt(e.target.value), item.id)}
+                      value={item.itemId || ""}
+                      onChange={(e) =>
+                        selectItem(parseInt(e.target.value), item.id)
+                      }
                       aria-label={`Select item for line ${index + 1}`}
                     >
                       <option value="">Select an item...</option>
-                      {filteredItems.map(filteredItem => (
+                      {filteredItems.map((filteredItem) => (
                         <option key={filteredItem.id} value={filteredItem.id}>
-                          {filteredItem.name} - {filteredItem.code} (${(filteredItem.unitPrice || 0).toFixed(2)})
+                          {filteredItem.name} - {filteredItem.code} ($
+                          {(filteredItem.unitPrice || 0).toFixed(2)})
                         </option>
                       ))}
                     </select>
-                    {errors[`item_${index}`] && <div className="invalid-feedback d-block" style={{ fontSize: '12px' }}>{errors[`item_${index}`]}</div>}
+                    {errors[`item_${index}`] && (
+                      <div
+                        className="invalid-feedback d-block"
+                        style={{ fontSize: "12px" }}
+                      >
+                        {errors[`item_${index}`]}
+                      </div>
+                    )}
                   </td>
                   <td>
                     <input
                       type="text"
                       className="form-control form-control-sm"
-                      placeholder='Enter Description'
+                      placeholder="Enter Description"
                       value={item.description}
-                      onChange={(e) => handleLineItemChange(item.id, 'description', e.target.value)}
+                      onChange={(e) =>
+                        handleLineItemChange(
+                          item.id,
+                          "description",
+                          e.target.value
+                        )
+                      }
                       aria-label={`Description for line ${index + 1}`}
                     />
                   </td>
                   <td>
                     <input
                       type="number"
-                      className={`form-control form-control-sm ${errors[`qty_${index}`] ? 'is-invalid' : ''}`}
+                      className={`form-control form-control-sm ${
+                        errors[`qty_${index}`] ? "is-invalid" : ""
+                      }`}
                       value={item.qty || 1}
-                      onChange={(e) => handleLineItemChange(item.id, 'qty', parseInt(e.target.value) || 1)}
+                      onChange={(e) =>
+                        handleLineItemChange(
+                          item.id,
+                          "qty",
+                          parseInt(e.target.value) || 1
+                        )
+                      }
                       min="1"
                       aria-label={`Quantity for line ${index + 1}`}
                     />
-                    {errors[`qty_${index}`] && <div className="invalid-feedback d-block" style={{ fontSize: '12px' }}>{errors[`qty_${index}`]}</div>}
+                    {errors[`qty_${index}`] && (
+                      <div
+                        className="invalid-feedback d-block"
+                        style={{ fontSize: "12px" }}
+                      >
+                        {errors[`qty_${index}`]}
+                      </div>
+                    )}
                   </td>
                   <td>
-                    <select
-                      className="form-select form-select-sm"
-                      value={item.uom}
-                      onChange={(e) => handleLineItemChange(item.id, 'uom', e.target.value)}
+                    <input
+                      type="text"
+                      className="form-control form-control-sm"
+                      value={item.uom || ""}
+                      readOnly
+                      disabled
                       aria-label={`Unit of measure for line ${index + 1}`}
-                    >
-                      {uomOptions.map(option => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
+                    />
                   </td>
                   <td>
                     <input
                       type="number"
-                      className={`form-control form-control-sm ${errors[`unitPrice_${index}`] ? 'is-invalid' : ''}`}
+                      className={`form-control form-control-sm ${
+                        errors[`unitPrice_${index}`] ? "is-invalid" : ""
+                      }`}
                       value={item.unitPrice || 0}
-                      onChange={(e) => handleLineItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                      onChange={(e) =>
+                        handleLineItemChange(
+                          item.id,
+                          "unitPrice",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
                       min="0"
                       step="0.01"
                       aria-label={`Unit price for line ${index + 1}`}
                     />
-                    {errors[`unitPrice_${index}`] && <div className="invalid-feedback d-block" style={{ fontSize: '12px' }}>{errors[`unitPrice_${index}`]}</div>}
+                    {errors[`unitPrice_${index}`] && (
+                      <div
+                        className="invalid-feedback d-block"
+                        style={{ fontSize: "12px" }}
+                      >
+                        {errors[`unitPrice_${index}`]}
+                      </div>
+                    )}
                   </td>
                   <td>
                     <select
                       className="form-select form-select-sm"
                       value={item.sgstPercent}
-                      onChange={(e) => handleLineItemChange(item.id, 'sgstPercent', parseInt(e.target.value))}
+                      onChange={(e) =>
+                        handleLineItemChange(
+                          item.id,
+                          "sgstPercent",
+                          parseInt(e.target.value)
+                        )
+                      }
                       aria-label={`SGST percentage for line ${index + 1}`}
                     >
-                      {taxOptions.map(option => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
+                      {taxOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
                       ))}
                     </select>
                   </td>
@@ -123,11 +222,19 @@ const POLineItemsTable = ({
                     <select
                       className="form-select form-select-sm"
                       value={item.cgstPercent}
-                      onChange={(e) => handleLineItemChange(item.id, 'cgstPercent', parseInt(e.target.value))}
+                      onChange={(e) =>
+                        handleLineItemChange(
+                          item.id,
+                          "cgstPercent",
+                          parseInt(e.target.value)
+                        )
+                      }
                       aria-label={`CGST percentage for line ${index + 1}`}
                     >
-                      {taxOptions.map(option => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
+                      {taxOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
                       ))}
                     </select>
                   </td>
@@ -157,7 +264,11 @@ const POLineItemsTable = ({
             </tbody>
           </table>
         </div>
-        {errors.lineItems && <div className="text-danger mt-2" style={{ fontSize: '14px' }}>{errors.lineItems}</div>}
+        {errors.lineItems && (
+          <div className="text-danger mt-2" style={{ fontSize: "14px" }}>
+            {errors.lineItems}
+          </div>
+        )}
       </div>
     </div>
   );

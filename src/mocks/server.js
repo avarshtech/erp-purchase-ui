@@ -1,7 +1,6 @@
 // Simple mock server implementation (alternative to Mirage.js)
 import poListData from "./poListData.json";
 import poApprovalData from "./poApprovalData.json";
-import { getToken } from "../utils/authHelper";
 
 // Seed data for Item Master
 const categories = [
@@ -25,437 +24,69 @@ const itemTypes = [
   { id: 6, subCategoryId: 3, name: "Plastic" },
 ];
 
-const attributes = [
-  {
-    id: 1,
-    subCategoryId: 1,
-    attribute_name: "GSM",
-    data_type: "Number",
-    applicable_type_ids: [1, 2],
-    is_common: true,
-  },
-  {
-    id: 2,
-    subCategoryId: 1,
-    attribute_name: "Width",
-    data_type: "Text",
-    applicable_type_ids: [1, 2],
-    is_common: true,
-  },
-  {
-    id: 3,
-    subCategoryId: 1,
-    attribute_name: "Color",
-    data_type: "Text",
-    applicable_type_ids: [1, 2],
-    is_common: true,
-  },
-  {
-    id: 4,
-    subCategoryId: 3,
-    attribute_name: "Size",
-    data_type: "Number",
-    applicable_type_ids: [3, 4, 5, 6],
-    is_common: true,
-  },
-  {
-    id: 5,
-    subCategoryId: 3,
-    attribute_name: "Holes",
-    data_type: "Number",
-    applicable_type_ids: [3, 4, 5, 6],
-    is_common: true,
-  },
-  {
-    id: 6,
-    subCategoryId: 3,
-    attribute_name: "Color",
-    data_type: "Text",
-    applicable_type_ids: [3, 4, 5, 6],
-    is_common: true,
-  },
-  {
-    id: 7,
-    subCategoryId: 3,
-    attribute_name: "Extra Specification",
-    data_type: "Text",
-    applicable_type_ids: [3, 4, 5, 6],
-    is_common: false,
-  },
-];
 
 const items = [
   {
-    id: 1,
-    itemCode: "BTN001",
-    itemName: "Button - Shell 10L Red",
-    categoryId: 2,
-    subCategoryId: 3,
-    itemTypeId: 3,
-    uomId: "Pcs",
-    hsnCode: "96062100",
-    attributes: {
-      4: "10",
-      5: "2",
-      6: "Red",
-      7: "Logo embossed",
-    },
-    isActive: true,
-    createdAt: "2024-01-15T10:30:00Z",
-    unitPrice: 0.50,
+    "id": 1,
+    "itemCode": "T-BUT-001",
+    "itemName": "Button",
+    "categoryId": 2,
+    "categoryName": "Trims",
+    "subCategoryId": 2,
+    "subCategoryName": "Woven",
+    "itemTypeId": 2,
+    "itemTypeName": "Rib",
+    "uomId": 2,
+    "uomName": "Kg",
+    "attributes": null,
+    "isActive": true,
+    "hsnCode": "234567",
+    "createdAt": "2026-01-06T18:07:14"
   },
   {
-    id: 2,
-    itemCode: "BTN002",
-    itemName: "Button - Shell 12L Blue",
-    categoryId: 2,
-    subCategoryId: 3,
-    itemTypeId: 3,
-    uomId: "Pcs",
-    hsnCode: "96062100",
-    attributes: {
-      4: "12",
-      5: "4",
-      6: "Blue",
-      7: "Matte finish",
+    "id": 2,
+    "itemCode": "ITM-001",
+    "itemName": "Dell Latitude 5420",
+    "categoryId": 1,
+    "categoryName": "Fabric",
+    "subCategoryId": 1,
+    "subCategoryName": "Knit",
+    "itemTypeId": 1,
+    "itemTypeName": "Single Jersey",
+    "uomId": 1,
+    "uomName": "Pcs",
+    "attributes": {
+      "RAM": "16GB",
+      "Color": "Silver",
+      "Storage": "512GB SSD",
+      "Processor": "Intel Core i7"
     },
-    isActive: true,
-    createdAt: "2024-01-16T11:20:00Z",
-    unitPrice: 0.60,
+    "isActive": true,
+    "hsnCode": "8471",
+    "createdAt": "2026-01-06T18:27:13.967151"
   },
   {
-    id: 3,
-    itemCode: "BTN003",
-    itemName: "Button - Snap 14L Black",
-    categoryId: 2,
-    subCategoryId: 3,
-    itemTypeId: 4,
-    uomId: "Pcs",
-    hsnCode: "96062200",
-    attributes: {
-      4: "14",
-      5: "0",
-      6: "Black",
-      7: "Metal snap",
+    "id": 3,
+    "itemCode": "ITM-002",
+    "itemName": "Ergonomic Mesh Chair",
+    "categoryId": 2,
+    "categoryName": "Trims",
+    "subCategoryId": 2,
+    "subCategoryName": "Woven",
+    "itemTypeId": 2,
+    "itemTypeName": "Rib",
+    "uomId": 1,
+    "uomName": "Pcs",
+    "attributes": {
+      "Color": "Black",
+      "MaxLoad": "120kg",
+      "Material": "Mesh",
+      "Adjustable": true
     },
-    isActive: true,
-    createdAt: "2024-01-18T09:15:00Z",
-    unitPrice: 0.75,
-  },
-  {
-    id: 4,
-    itemCode: "BTN004",
-    itemName: "Button - Horn 16L Brown",
-    categoryId: 2,
-    subCategoryId: 3,
-    itemTypeId: 5,
-    uomId: "Pcs",
-    hsnCode: "96062900",
-    attributes: {
-      4: "16",
-      5: "2",
-      6: "Brown",
-      7: "Natural horn",
-    },
-    isActive: true,
-    createdAt: "2024-01-20T14:45:00Z",
-    unitPrice: 1.20,
-  },
-  {
-    id: 5,
-    itemCode: "BTN005",
-    itemName: "Button - Plastic 18L White",
-    categoryId: 2,
-    subCategoryId: 3,
-    itemTypeId: 6,
-    uomId: "Pcs",
-    hsnCode: "96062100",
-    attributes: {
-      4: "18",
-      5: "4",
-      6: "White",
-      7: "Glossy finish",
-    },
-    isActive: true,
-    createdAt: "2024-01-22T16:30:00Z",
-    unitPrice: 0.30,
-  },
-  {
-    id: 6,
-    itemCode: "FAB001",
-    itemName: "Single Jersey 180 GSM Navy",
-    categoryId: 1,
-    subCategoryId: 1,
-    itemTypeId: 1,
-    uomId: "Kg",
-    hsnCode: "60019200",
-    attributes: {
-      1: "180",
-      2: "72 inches",
-      3: "Navy Blue",
-    },
-    isActive: true,
-    createdAt: "2024-02-01T10:00:00Z",
-    unitPrice: 12.50,
-  },
-  {
-    id: 7,
-    itemCode: "FAB002",
-    itemName: "Single Jersey 160 GSM White",
-    categoryId: 1,
-    subCategoryId: 1,
-    itemTypeId: 1,
-    uomId: "Kg",
-    hsnCode: "60019200",
-    attributes: {
-      1: "160",
-      2: "60 inches",
-      3: "White",
-    },
-    isActive: true,
-    createdAt: "2024-02-03T11:30:00Z",
-    unitPrice: 11.00,
-  },
-  {
-    id: 8,
-    itemCode: "FAB003",
-    itemName: "French Terry 240 GSM Grey",
-    categoryId: 1,
-    subCategoryId: 1,
-    itemTypeId: 2,
-    uomId: "Kg",
-    hsnCode: "60019200",
-    attributes: {
-      1: "240",
-      2: "72 inches",
-      3: "Grey Melange",
-    },
-    isActive: true,
-    createdAt: "2024-02-05T09:45:00Z",
-    unitPrice: 15.00,
-  },
-  {
-    id: 9,
-    itemCode: "FAB004",
-    itemName: "French Terry 220 GSM Black",
-    categoryId: 1,
-    subCategoryId: 1,
-    itemTypeId: 2,
-    uomId: "Kg",
-    hsnCode: "60019200",
-    attributes: {
-      1: "220",
-      2: "72 inches",
-      3: "Black",
-    },
-    isActive: true,
-    createdAt: "2024-02-07T13:20:00Z",
-    unitPrice: 14.50,
-  },
-  {
-    id: 10,
-    itemCode: "BTN006",
-    itemName: "Button - Shell 20L Green",
-    categoryId: 2,
-    subCategoryId: 3,
-    itemTypeId: 3,
-    uomId: "Pcs",
-    hsnCode: "96062100",
-    attributes: {
-      4: "20",
-      5: "2",
-      6: "Green",
-      7: "Eco-friendly",
-    },
-    isActive: true,
-    createdAt: "2024-02-10T15:10:00Z",
-    unitPrice: 0.80,
-  },
-  {
-    id: 11,
-    itemCode: "FAB005",
-    itemName: "Single Jersey 200 GSM Red",
-    categoryId: 1,
-    subCategoryId: 1,
-    itemTypeId: 1,
-    uomId: "Kg",
-    hsnCode: "60019200",
-    attributes: {
-      1: "200",
-      2: "72 inches",
-      3: "Red",
-    },
-    isActive: true,
-    createdAt: "2024-02-12T10:30:00Z",
-    unitPrice: 13.00,
-  },
-  {
-    id: 12,
-    itemCode: "BTN007",
-    itemName: "Button - Plastic 22L Yellow",
-    categoryId: 2,
-    subCategoryId: 3,
-    itemTypeId: 6,
-    uomId: "Pcs",
-    hsnCode: "96062100",
-    attributes: {
-      4: "22",
-      5: "4",
-      6: "Yellow",
-      7: "UV resistant",
-    },
-    isActive: true,
-    createdAt: "2024-02-14T12:00:00Z",
-    unitPrice: 0.40,
-  },
-  {
-    id: 13,
-    itemCode: "FAB006",
-    itemName: "French Terry 260 GSM Maroon",
-    categoryId: 1,
-    subCategoryId: 1,
-    itemTypeId: 2,
-    uomId: "Kg",
-    hsnCode: "60019200",
-    attributes: {
-      1: "260",
-      2: "72 inches",
-      3: "Maroon",
-    },
-    isActive: true,
-    createdAt: "2024-02-16T14:30:00Z",
-    unitPrice: 16.00,
-  },
-  {
-    id: 14,
-    itemCode: "BTN008",
-    itemName: "Button - Horn 24L Beige",
-    categoryId: 2,
-    subCategoryId: 3,
-    itemTypeId: 5,
-    uomId: "Pcs",
-    hsnCode: "96062900",
-    attributes: {
-      4: "24",
-      5: "2",
-      6: "Beige",
-      7: "Premium quality",
-    },
-    isActive: true,
-    createdAt: "2024-02-18T16:45:00Z",
-    unitPrice: 1.50,
-  },
-  {
-    id: 15,
-    itemCode: "FAB007",
-    itemName: "Single Jersey 170 GSM Pink",
-    categoryId: 1,
-    subCategoryId: 1,
-    itemTypeId: 1,
-    uomId: "Kg",
-    hsnCode: "60019200",
-    attributes: {
-      1: "170",
-      2: "60 inches",
-      3: "Pink",
-    },
-    isActive: true,
-    createdAt: "2024-02-20T09:00:00Z",
-    unitPrice: 11.50,
-  },
-  {
-    id: 16,
-    itemCode: "BTN009",
-    itemName: "Button - Snap 26L Silver",
-    categoryId: 2,
-    subCategoryId: 3,
-    itemTypeId: 4,
-    uomId: "Pcs",
-    hsnCode: "96062200",
-    attributes: {
-      4: "26",
-      5: "0",
-      6: "Silver",
-      7: "Rust resistant",
-    },
-    isActive: false,
-    createdAt: "2024-02-22T11:15:00Z",
-    unitPrice: 0.90,
-  },
-  {
-    id: 17,
-    itemCode: "FAB008",
-    itemName: "French Terry 280 GSM Olive",
-    categoryId: 1,
-    subCategoryId: 1,
-    itemTypeId: 2,
-    uomId: "Kg",
-    hsnCode: "60019200",
-    attributes: {
-      1: "280",
-      2: "72 inches",
-      3: "Olive Green",
-    },
-    isActive: true,
-    createdAt: "2024-02-24T13:30:00Z",
-    unitPrice: 17.00,
-  },
-  {
-    id: 18,
-    itemCode: "BTN010",
-    itemName: "Button - Plastic 28L Orange",
-    categoryId: 2,
-    subCategoryId: 3,
-    itemTypeId: 6,
-    uomId: "Pcs",
-    hsnCode: "96062100",
-    attributes: {
-      4: "28",
-      5: "4",
-      6: "Orange",
-      7: "High impact",
-    },
-    isActive: true,
-    createdAt: "2024-02-26T15:45:00Z",
-    unitPrice: 0.50,
-  },
-  {
-    id: 19,
-    itemCode: "FAB009",
-    itemName: "Single Jersey 190 GSM Turquoise",
-    categoryId: 1,
-    subCategoryId: 1,
-    itemTypeId: 1,
-    uomId: "Kg",
-    hsnCode: "60019200",
-    attributes: {
-      1: "190",
-      2: "72 inches",
-      3: "Turquoise",
-    },
-    isActive: true,
-    createdAt: "2024-02-28T10:20:00Z",
-    unitPrice: 12.00,
-  },
-  {
-    id: 20,
-    itemCode: "BTN011",
-    itemName: "Button - Shell 30L Purple",
-    categoryId: 2,
-    subCategoryId: 3,
-    itemTypeId: 3,
-    uomId: "Pcs",
-    hsnCode: "96062100",
-    attributes: {
-      4: "30",
-      5: "2",
-      6: "Purple",
-      7: "Metallic sheen",
-    },
-    isActive: true,
-    createdAt: "2024-03-01T12:00:00Z",
-    unitPrice: 1.00,
-  },
+    "isActive": true,
+    "hsnCode": "9401",
+    "createdAt": "2026-01-06T18:27:13.967151"
+  }
 ];
 
 // Mock data for suppliers
@@ -862,235 +493,6 @@ const suppliersData = [
   },
 ];
 
-// Mock data for items
-const itemsData = [
-  {
-    id: 1,
-    name: "Laptop Computer",
-    code: "ITEM001",
-    description: "High-performance laptop for office use",
-    uom: "pcs",
-    unitPrice: 1200.0,
-    category: "Electronics",
-  },
-  {
-    id: 2,
-    name: "Office Chair",
-    code: "ITEM002",
-    description: "Ergonomic office chair with lumbar support",
-    uom: "pcs",
-    unitPrice: 250.0,
-    category: "Furniture",
-  },
-  {
-    id: 3,
-    name: "Printer Paper",
-    code: "ITEM003",
-    description: "A4 size printer paper, 80gsm, 500 sheets",
-    uom: "reams",
-    unitPrice: 8.5,
-    category: "Stationery",
-  },
-  {
-    id: 4,
-    name: "USB Cable",
-    code: "ITEM004",
-    description: "USB 3.0 Type-A to Type-B cable, 2m length",
-    uom: "pcs",
-    unitPrice: 12.0,
-    category: "Electronics",
-  },
-  {
-    id: 5,
-    name: "Coffee Beans",
-    code: "ITEM005",
-    description: "Premium arabica coffee beans, 1kg pack",
-    uom: "kg",
-    unitPrice: 25.0,
-    category: "Pantry",
-  },
-  {
-    id: 6,
-    name: "Whiteboard Markers",
-    code: "ITEM006",
-    description: "Set of 4 colored whiteboard markers",
-    uom: "sets",
-    unitPrice: 15.0,
-    category: "Stationery",
-  },
-  {
-    id: 7,
-    name: "Network Switch",
-    code: "ITEM007",
-    description: "24-port gigabit ethernet switch",
-    uom: "pcs",
-    unitPrice: 180.0,
-    category: "Electronics",
-  },
-  {
-    id: 8,
-    name: "Cleaning Supplies",
-    code: "ITEM008",
-    description: "All-purpose cleaning solution, 5L bottle",
-    uom: "liters",
-    unitPrice: 22.0,
-    category: "Maintenance",
-  },
-  {
-    id: 9,
-    name: "Wireless Mouse",
-    code: "ITEM009",
-    description: "Optical wireless mouse with USB receiver",
-    uom: "pcs",
-    unitPrice: 35.0,
-    category: "Electronics",
-  },
-  {
-    id: 10,
-    name: "Desk Lamp",
-    code: "ITEM010",
-    description: "LED desk lamp with adjustable brightness",
-    uom: "pcs",
-    unitPrice: 45.0,
-    category: "Furniture",
-  },
-  {
-    id: 11,
-    name: "Notebooks",
-    code: "ITEM011",
-    description: "Pack of 10 ruled notebooks, A4 size",
-    uom: "packs",
-    unitPrice: 18.0,
-    category: "Stationery",
-  },
-  {
-    id: 12,
-    name: "HDMI Cable",
-    code: "ITEM012",
-    description: "High-speed HDMI cable, 2m length",
-    uom: "pcs",
-    unitPrice: 15.0,
-    category: "Electronics",
-  },
-  {
-    id: 13,
-    name: "Green Tea",
-    code: "ITEM013",
-    description: "Premium green tea leaves, 500g pack",
-    uom: "kg",
-    unitPrice: 30.0,
-    category: "Pantry",
-  },
-  {
-    id: 14,
-    name: "Permanent Markers",
-    code: "ITEM014",
-    description: "Set of 6 permanent markers, assorted colors",
-    uom: "sets",
-    unitPrice: 12.0,
-    category: "Stationery",
-  },
-  {
-    id: 15,
-    name: "Router",
-    code: "ITEM015",
-    description: "Wireless router with 4 LAN ports",
-    uom: "pcs",
-    unitPrice: 85.0,
-    category: "Electronics",
-  },
-  {
-    id: 16,
-    name: "Floor Cleaner",
-    code: "ITEM016",
-    description: "Concentrated floor cleaning solution, 5L",
-    uom: "liters",
-    unitPrice: 28.0,
-    category: "Maintenance",
-  },
-  {
-    id: 17,
-    name: "Keyboard",
-    code: "ITEM017",
-    description: "Mechanical keyboard with RGB lighting",
-    uom: "pcs",
-    unitPrice: 95.0,
-    category: "Electronics",
-  },
-  {
-    id: 18,
-    name: "Filing Cabinet",
-    code: "ITEM018",
-    description: "4-drawer metal filing cabinet",
-    uom: "pcs",
-    unitPrice: 180.0,
-    category: "Furniture",
-  },
-  {
-    id: 19,
-    name: "Sticky Notes",
-    code: "ITEM019",
-    description: "Pack of 12 sticky note pads, various sizes",
-    uom: "packs",
-    unitPrice: 8.0,
-    category: "Stationery",
-  },
-  {
-    id: 20,
-    name: "Power Strip",
-    code: "ITEM020",
-    description: "6-outlet power strip with surge protection",
-    uom: "pcs",
-    unitPrice: 25.0,
-    category: "Electronics",
-  },
-  {
-    id: 21,
-    name: "Coffee Cups",
-    code: "ITEM021",
-    description: "Pack of 50 disposable coffee cups",
-    uom: "packs",
-    unitPrice: 12.0,
-    category: "Pantry",
-  },
-  {
-    id: 22,
-    name: "Highlighters",
-    code: "ITEM022",
-    description: "Set of 5 fluorescent highlighters",
-    uom: "sets",
-    unitPrice: 10.0,
-    category: "Stationery",
-  },
-  {
-    id: 23,
-    name: "External Hard Drive",
-    code: "ITEM023",
-    description: "1TB external hard drive with USB 3.0",
-    uom: "pcs",
-    unitPrice: 75.0,
-    category: "Electronics",
-  },
-  {
-    id: 24,
-    name: "Air Freshener",
-    code: "ITEM024",
-    description: "Room air freshener spray, 300ml",
-    uom: "bottles",
-    unitPrice: 15.0,
-    category: "Maintenance",
-  },
-  {
-    id: 25,
-    name: "Monitor Stand",
-    code: "ITEM025",
-    description: "Adjustable monitor stand with cable management",
-    uom: "pcs",
-    unitPrice: 40.0,
-    category: "Furniture",
-  },
-];
-
 // Mock data for terms and conditions
 const termsConditionsData = [
   {
@@ -1389,8 +791,7 @@ server.start = () => {
 };
 
 // Start the server
-// server.start();
-
+server.start();
 
 // Define routes
 server.get("/po-list", () => {
@@ -1477,57 +878,256 @@ server.delete("/suppliers/:id", (data, params) => {
   };
 });
 
-server.get("/items", () => {
-  return {
-    data: itemsData,
-    total: itemsData.length,
-  };
-});
-
 // Item Master routes
-server.get("/categories", () => {
+server.get("/item-meta-data", () => {
+  const metaData = [
+    {
+      "id": 1,
+      "name": "Fabric",
+      "subCategories": [
+        {
+          "id": 1,
+          "name": "Knit",
+          "itemTypes": [
+            {
+              "id": 1,
+              "name": "Single Jersey",
+              "attributes": [
+                {
+                  "id": 1,
+                  "attributeName": "GSM",
+                  "dataType": "Number"
+                },
+                {
+                  "id": 2,
+                  "attributeName": "Width",
+                  "dataType": "Text"
+                },
+                {
+                  "id": 3,
+                  "attributeName": "Color",
+                  "dataType": "Text"
+                }
+              ],
+              "uoms": [
+                {
+                  "id": 3,
+                  "name": "Mtr"
+                },
+                {
+                  "id": 2,
+                  "name": "Kg"
+                }
+              ]
+            },
+            {
+              "id": 2,
+              "name": "Rib",
+              "attributes": [
+                {
+                  "id": 1,
+                  "attributeName": "GSM",
+                  "dataType": "Number"
+                },
+                {
+                  "id": 2,
+                  "attributeName": "Width",
+                  "dataType": "Text"
+                },
+                {
+                  "id": 3,
+                  "attributeName": "Color",
+                  "dataType": "Text"
+                }
+              ],
+              "uoms": [
+                {
+                  "id": 3,
+                  "name": "Mtr"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Woven",
+          "itemTypes": []
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Trims",
+      "subCategories": [
+        {
+          "id": 3,
+          "name": "Button",
+          "itemTypes": [
+            {
+              "id": 3,
+              "name": "T-Shirt",
+              "attributes": [
+                {
+                  "id": 4,
+                  "attributeName": "Size",
+                  "dataType": "Number"
+                },
+                {
+                  "id": 5,
+                  "attributeName": "Holes",
+                  "dataType": "Number"
+                },
+                {
+                  "id": 6,
+                  "attributeName": "Color",
+                  "dataType": "Text"
+                },
+                {
+                  "id": 7,
+                  "attributeName": "Extra Specification",
+                  "dataType": "Text"
+                }
+              ],
+              "uoms": [
+                {
+                  "id": 4,
+                  "name": "Dzn"
+                }
+              ]
+            },
+            {
+              "id": 4,
+              "name": "Shirt",
+              "attributes": [
+                {
+                  "id": 4,
+                  "attributeName": "Size",
+                  "dataType": "Number"
+                },
+                {
+                  "id": 5,
+                  "attributeName": "Holes",
+                  "dataType": "Number"
+                },
+                {
+                  "id": 6,
+                  "attributeName": "Color",
+                  "dataType": "Text"
+                },
+                {
+                  "id": 7,
+                  "attributeName": "Extra Specification",
+                  "dataType": "Text"
+                }
+              ],
+              "uoms": [
+                {
+                  "id": 4,
+                  "name": "Dzn"
+                }
+              ]
+            },
+            {
+              "id": 5,
+              "name": "Trousers",
+              "attributes": [
+                {
+                  "id": 4,
+                  "attributeName": "Size",
+                  "dataType": "Number"
+                },
+                {
+                  "id": 5,
+                  "attributeName": "Holes",
+                  "dataType": "Number"
+                },
+                {
+                  "id": 6,
+                  "attributeName": "Color",
+                  "dataType": "Text"
+                },
+                {
+                  "id": 7,
+                  "attributeName": "Extra Specification",
+                  "dataType": "Text"
+                }
+              ],
+              "uoms": [
+                {
+                  "id": 4,
+                  "name": "Dzn"
+                }
+              ]
+            },
+            {
+              "id": 6,
+              "name": "Shorts",
+              "attributes": [
+                {
+                  "id": 4,
+                  "attributeName": "Size",
+                  "dataType": "Number"
+                },
+                {
+                  "id": 5,
+                  "attributeName": "Holes",
+                  "dataType": "Number"
+                },
+                {
+                  "id": 6,
+                  "attributeName": "Color",
+                  "dataType": "Text"
+                },
+                {
+                  "id": 7,
+                  "attributeName": "Extra Specification",
+                  "dataType": "Text"
+                }
+              ],
+              "uoms": [
+                {
+                  "id": 4,
+                  "name": "Dzn"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Label",
+          "itemTypes": []
+        }
+      ]
+    }
+  ];
+
   return {
-    data: categories,
-    total: categories.length,
+    success: true,
+    data: metaData,
   };
 });
 
-server.get("/subcategories", (data, params) => {
-  const categoryId = parseInt(params.categoryId);
-  const filtered = subcategories.filter((sc) => sc.categoryId === categoryId);
-  return {
-    data: filtered,
-    total: filtered.length,
-  };
-});
 
-server.get("/item-types", (data, params) => {
-  const subCategoryId = parseInt(params.subCategoryId);
-  const filtered = itemTypes.filter((it) => it.subCategoryId === subCategoryId);
-  return {
-    data: filtered,
-    total: filtered.length,
-  };
-});
-
-server.get("/attributes", (data, params) => {
-  const subCategoryId = parseInt(params.subCategoryId);
-  const typeId = parseInt(params.typeId);
-  const filtered = attributes.filter(
-    (attr) =>
-      attr.subCategoryId === subCategoryId &&
-      (attr.applicable_type_ids.includes(typeId) || attr.is_common)
-  );
-  return {
-    data: filtered,
-    total: filtered.length,
-  };
-});
 
 server.get("/items", () => {
   return {
     data: items,
     total: items.length,
+  };
+});
+
+// Single endpoint for Item Master data
+server.get("/item-master-data", () => {
+  return {
+    success: true,
+    data: {
+      items: items,
+      categories: categories,
+      subcategories: subcategories,
+      itemTypes: itemTypes,
+    },
   };
 });
 
@@ -2034,29 +1634,17 @@ server.put("/purchase-orders/:id/notes/:noteIndex", (data, params) => {
 // Export server instance
 export default server;
 
-
-
 // Export convenience function for making requests
 export const makeRequest = async (method, path, data = null) => {
   try {
-    const headers = { "Content-Type": "application/json" };
-    
-    // Add Bearer token if available
-    const token = getToken();
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
     const options = {
       method,
-      headers
+      headers: { "Content-Type": "application/json" },
     };
     if (data) {
       options.body = JSON.stringify(data);
     }
-    const API_BASE_URL = "http://localhost:8088";
-    const response = await fetch(`${API_BASE_URL}/api/v1${path}`, options);
-
+    const response = await fetch(`/api${path}`, options);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -2092,16 +1680,7 @@ export const updateSupplier = (id, data) =>
 export const deleteSupplier = (id) => makeRequest("DELETE", `/suppliers/${id}`);
 
 // Item Master API functions
-export const getCategories = () => makeRequest("GET", "/categories");
-export const getSubcategories = (categoryId) =>
-  makeRequest("GET", `/subcategories?categoryId=${categoryId}`);
-export const getItemTypes = (subCategoryId) =>
-  makeRequest("GET", `/item-types?subCategoryId=${subCategoryId}`);
-export const getAttributes = (subCategoryId, typeId) =>
-  makeRequest(
-    "GET",
-    `/attributes?subCategoryId=${subCategoryId}&typeId=${typeId}`
-  );
+export const getItemMasterData = () => makeRequest("GET", "/item-master-data");
 export const getItems = () => makeRequest("GET", "/items");
 export const getItemById = (id) => makeRequest("GET", `/items/${id}`);
 export const checkDuplicateItem = (data) =>
@@ -2124,3 +1703,5 @@ export const createRole = (data) => makeRequest("POST", "/roles", data);
 export const updateRole = (id, data) =>
   makeRequest("PUT", `/roles/${id}`, data);
 export const deleteRole = (id) => makeRequest("DELETE", `/roles/${id}`);
+
+export const getItemMetaData = () => makeRequest("GET", "/item-meta-data");

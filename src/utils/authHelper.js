@@ -1,5 +1,6 @@
 import { setCurrentUser, getAdminPermissions } from "../utils/permissions";
 import { getRoles } from "../mocks/server";
+import axiosInstance from "../services/axiosInstance";
 
 /**
  * Mock user database
@@ -13,38 +14,17 @@ import { getRoles } from "../mocks/server";
  */
 export const authenticateUser = async (username, password) => {
   try {
-    const API_BASE_URL = "http://localhost:8088";
-    console.log(`Attempting login to: ${API_BASE_URL}/api/v1/auth/login`);
-
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username, password }),
+    const response = await axiosInstance.post("/auth/login", {
+      username,
+      password,
     });
 
-    console.log(`Login Response Status: ${response.status} ${response.statusText}`);
-    
-    const text = await response.text();
-    console.log("Login Response Body:", text);
-
-    if (!text) {
-        throw new Error("Server returned empty response");
-    }
-
-    let data;
-    try {
-        data = JSON.parse(text);
-    } catch (e) {
-        console.error("Failed to parse login response JSON:", e);
-        throw new Error(`Server returned invalid JSON: ${text.substring(0, 100)}...`);
-    }
-
-    if (!response.ok) {
+    console.log(`Login Response Status: ${response.status} ${response}`);
+    const { data, status } = response;
+    if (response.status !== 200) {
       return {
         success: false,
-        message: data.message || `Login failed with status: ${response.status}`,
+        message: data || `Login failed with status: ${status}`,
       };
     }
 
@@ -52,42 +32,53 @@ export const authenticateUser = async (username, password) => {
     const { token } = data;
 
     if (!token) {
-       console.error("Missing token in response", data);
-       return {
-         success: false,
-         message: "Invalid response from server (missing token)",
-       };
+      console.error("Missing token in response", data);
+      return {
+        success: false,
+        message: "Invalid response from server (missing token)",
+      };
     }
 
     // Decode JWT to get user details (simple decoder)
     let userFromToken = {};
     try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        userFromToken = JSON.parse(jsonPayload);
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        window
+          .atob(base64)
+          .split("")
+          .map(function (c) {
+            return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+          })
+          .join("")
+      );
+      userFromToken = JSON.parse(jsonPayload);
     } catch (e) {
-        console.error("Failed to decode token", e);
+      console.error("Failed to decode token", e);
     }
 
     // Create user session object
     // We default to "Admin" role for superadmin if not present in token, to ensure access
-    const role = userFromToken.role || (userFromToken.sub === 'superadmin' ? 'Admin' : 'User');
-    
+    const role =
+      userFromToken.role ||
+      (userFromToken.sub === "superadmin" ? "Admin" : "User");
+
     // We need to fetch the full user details to get permissions ideally, but for now we construct a session
     const userSession = {
       username: userFromToken.sub || username,
       name: userFromToken.name || username,
-      email: userFromToken.email || `${username}@example.com`,
-      role: role, 
-      permissions: role === 'Admin' ? getAdminPermissions() : {}, // We need to re-import getAdminPermissions or fetch permissions
-      token: token
+      email: userFromToken.email || `${username}@avarsh.com`,
+      role: role,
+      permissions: role === "Admin" ? getAdminPermissions() : {}, // We need to re-import getAdminPermissions or fetch permissions
+      token
     };
 
-    // Save to localStorage
+    // Save user session to localStorage
     setCurrentUser(userSession);
+
+    // Save auth token separately to sessionStorage
+    sessionStorage.setItem("authToken", token);
 
     // Dispatch custom event to notify app of auth change
     window.dispatchEvent(new Event("authChange"));
@@ -110,22 +101,27 @@ export const authenticateUser = async (username, password) => {
  * @returns {string|null} The bearer token or null if not found
  */
 export const getToken = () => {
-    const user = localStorage.getItem("currentUser");
-    if (!user) return null;
-    try {
-        const userData = JSON.parse(user);
-        return userData.token || null;
-    } catch (e) {
-        return null;
-    }
-}
+  // First try to get from sessionStorage (new key)
+  const sessionToken = sessionStorage.getItem("authToken");
+  if (sessionToken) return sessionToken;
 
+  // Fallback to localStorage for backwards compatibility
+  const user = localStorage.getItem("currentUser");
+  if (!user) return null;
+  try {
+    const userData = JSON.parse(user);
+    return userData.token || null;
+  } catch (e) {
+    return null;
+  }
+};
 
 /**
  * Logout user
  */
 export const logoutUser = () => {
   localStorage.removeItem("currentUser");
+  sessionStorage.removeItem("authToken");
   // Dispatch custom event to notify app of auth change
   window.dispatchEvent(new Event("authChange"));
 };
