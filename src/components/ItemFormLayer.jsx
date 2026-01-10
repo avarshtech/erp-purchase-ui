@@ -6,12 +6,25 @@ import {
   updateItem,
 } from "../services/ItemMaster";
 
-// Helper function to convert string to camelCase
+// Helper function to convert string to camelCase or lowercase
 const toCamelCase = (str) => {
   if (!str) return "";
-  return str
-    .replace(/\s+/g, "") // Remove spaces
-    .replace(/^[A-Z]/, (match) => match.toLowerCase()); // First char to lowercase
+  
+  // Check if the string contains spaces
+  if (str.includes(' ')) {
+    // Convert to camelCase: "Item Name" -> "itemName"
+    return str
+      .split(' ')
+      .map((word, index) =>
+        index === 0
+          ? word.toLowerCase()
+          : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      )
+      .join('');
+  } else {
+    // If no spaces, convert to lowercase: "Color" -> "color"
+    return str.toLowerCase();
+  }
 };
 
 const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast }) => {
@@ -30,8 +43,6 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
   const [itemTypes, setItemTypes] = useState([]);
 
   const [attributes, setAttributes] = useState([]);
-  // Store custom read-only attributes for items loaded from API
-  const [customAttributes, setCustomAttributes] = useState(null);
   const [formData, setFormData] = useState({
     itemName: "",
     categoryId: "",
@@ -153,59 +164,72 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
   const initializeFormData = useCallback(() => {
     if (!isEdit || !itemData) return;
 
-    // 1. Check if item has custom attributes (string keys like RAM, Color, etc.)
-    const hasCustomAttributes = itemData.attributes && Object.keys(itemData.attributes).some(
-      key => isNaN(parseInt(key))
-    );
-
-    if (hasCustomAttributes) {
-      // Store custom attributes as read-only
-      setCustomAttributes(itemData.attributes);
-      setFormData({
-        itemName: itemData.itemName || "",
-        categoryId: itemData.categoryId?.toString() || "",
-        subCategoryId: itemData.subCategoryId?.toString() || "",
-        itemTypeId: itemData.itemTypeId?.toString() || "",
-        uomId: itemData.uomName || itemData.uomId?.toString() || "",
-        hsnCode: itemData.hsnCode || "",
-        isActive: itemData.isActive ?? true,
-        attributes: {},
-      });
-      // Clear form-based attributes since we have custom ones
-      setAttributes([]);
-      setSubcategories([]);
-      setItemTypes([]);
-      setUomOptions([]);
-      return;
-    }
-
-    // 2. Set Form Data directly for items with numeric attributes
+    // Always set the basic form data first
     setFormData({
       itemName: itemData.itemName || "",
       categoryId: itemData.categoryId?.toString() || "", // Ensure string for select
       subCategoryId: itemData.subCategoryId?.toString() || "",
       itemTypeId: itemData.itemTypeId?.toString() || "",
-      uomId: itemData.uomId,
+      uomId: itemData.uomId?.toString() || "", // Ensure string for select
       hsnCode: itemData.hsnCode || "",
       isActive: itemData.isActive ?? true,
-      attributes: itemData.attributes || {},
+      attributes: {},
     });
 
     // 3. Populate Cascading Dropdowns synchronously from Metadata
-    const category = metaData.find((c) => c.id === itemData.categoryId);
+    const categoryId = parseInt(itemData.categoryId);
+    const subCategoryId = parseInt(itemData.subCategoryId);
+    const itemTypeId = parseInt(itemData.itemTypeId);
+    
+    const category = metaData.find((c) => c.id === categoryId);
     if (category) {
       setSubcategories(category.subCategories || []);
       const subcategory = category.subCategories?.find(
-        (sc) => sc.id === itemData.subCategoryId
+        (sc) => sc.id === subCategoryId
       );
       if (subcategory) {
         setItemTypes(subcategory.itemTypes || []);
         const itemType = subcategory.itemTypes?.find(
-          (it) => it.id === itemData.itemTypeId
+          (it) => it.id === itemTypeId
         );
         if (itemType) {
+          // Always set attributes from metadata for form rendering
           setAttributes(itemType.attributes || []);
           setUomOptions(itemType.uoms || []);
+          
+          // Now populate the attributes with the item data
+          const populatedAttributes = {};
+          
+          // Check if item has custom attributes (string keys like RAM, Color, etc.)
+          const hasCustomAttributes = itemData.attributes && Object.keys(itemData.attributes).some(
+            key => isNaN(parseInt(key))
+          );
+
+          if (hasCustomAttributes) {
+            // Convert custom attributes to match form attribute IDs
+            // This maps custom attribute names to the corresponding attribute IDs from metadata
+            itemType.attributes.forEach((attr) => {
+              const attributeName = attr.attributeName.toLowerCase();
+              // Look for matching custom attribute by name (case-insensitive)
+              const customKey = Object.keys(itemData.attributes).find(key =>
+                key.toLowerCase() === attributeName
+              );
+              if (customKey) {
+                populatedAttributes[attr.id] = itemData.attributes[customKey];
+              }
+            });
+          } else {
+            // Use the existing numeric attributes directly
+            Object.keys(itemData.attributes || {}).forEach(key => {
+              populatedAttributes[key] = itemData.attributes[key];
+            });
+          }
+          
+          // Update form data with populated attributes
+          setFormData(prev => ({
+            ...prev,
+            attributes: populatedAttributes
+          }));
         }
       }
     }
@@ -222,6 +246,38 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
       initializeFormData();
     }
   }, [isEdit, metaData, initializeFormData]);
+
+  // Effect to populate dropdowns when form data changes in edit mode
+  useEffect(() => {
+    if (isEdit && metaData.length > 0 && formData.categoryId) {
+      // Populate subcategories
+      const category = metaData.find((c) => c.id.toString() === formData.categoryId);
+      if (category) {
+        setSubcategories(category.subCategories || []);
+        
+        // If subcategory is set, populate item types
+        if (formData.subCategoryId) {
+          const subcategory = category.subCategories?.find(
+            (sc) => sc.id.toString() === formData.subCategoryId
+          );
+          if (subcategory) {
+            setItemTypes(subcategory.itemTypes || []);
+            
+            // If item type is set, populate attributes and UOMs
+            if (formData.itemTypeId) {
+              const itemType = subcategory.itemTypes?.find(
+                (it) => it.id.toString() === formData.itemTypeId
+              );
+              if (itemType) {
+                setAttributes(itemType.attributes || []);
+                setUomOptions(itemType.uoms || []);
+              }
+            }
+          }
+        }
+      }
+    }
+  }, [isEdit, metaData, formData.categoryId, formData.subCategoryId, formData.itemTypeId]);
 
   const handleAttributeChange = (attributeId, value) => {
     setFormData((prev) => ({
@@ -448,21 +504,19 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
 
   return (
     <>
-      {/* Loading overlay for metadata */}
-      {metaDataLoading && (
-        <div className="d-flex align-items-center justify-content-center py-5" style={{ minHeight: "200px" }}>
+      {/* Loading overlay */}
+      {(metaDataLoading || loading) && (
+        <div className="position-absolute top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center bg-base bg-opacity-75" style={{ zIndex: 10 }}>
           <div className="text-center">
-            <div className="spinner-border text-primary mb-3" style={{ width: "3rem", height: "3rem" }} role="status">
+            <div className="spinner-border text-primary mb-3" style={{ width: "3rem", height: "3rem", animation: "spin 1s linear infinite" }} role="status">
               <span className="visually-hidden">Loading...</span>
             </div>
-            <h6 className="text-muted">Loading form data...</h6>
+            <h6 className="text-muted">{metaDataLoading ? "Loading form data..." : "Saving..."}</h6>
           </div>
         </div>
       )}
 
-      {/* Form content - hidden while loading */}
-      {!metaDataLoading && (
-        <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit}>
           <div className="row gy-4">
             <div className="col-md-6 mb-20">
               <label className="form-label fw-semibold text-primary-light text-sm mb-8">
@@ -545,13 +599,16 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
                   !formData.itemTypeId ? "bg-light opacity-50" : ""
                 }`}
                 style={{ paddingRight: '2.5rem' }}
-                value={formData.uomId}
+                value={(formData.uomId || "").toString()}
                 onChange={(e) => handleInputChange("uomId", e.target.value)}
                 disabled={!formData.itemTypeId}
               >
                 <option value="">Select UOM</option>
                 {uomOptions.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
+                  <option
+                    key={opt.id}
+                    value={opt.id.toString()}
+                  >
                     {opt.name}
                   </option>
                 ))}
@@ -588,6 +645,7 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
                 </label>
               </div>
             </div>
+            {/* Always render form-based attributes section */}
             {attributes.length > 0 && (
               <div className="col-12 mb-20">
                 <h5 className="fw-bold text-primary-light mb-16">Attributes</h5>
@@ -599,28 +657,6 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
                         <span className="text-danger">*</span>
                       </label>
                       {renderAttributeField(attr)}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {/* Custom Read-Only Attributes Display (for items loaded from API) */}
-            {customAttributes && (
-              <div className="col-12 mb-20">
-                <h5 className="fw-bold text-primary-light mb-16">Attributes</h5>
-                <div className="row">
-                  {Object.entries(customAttributes).map(([key, value]) => (
-                    <div key={key} className="col-md-6 mb-20">
-                      <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                        {key}
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control radius-8 bg-light"
-                        value={typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}
-                        readOnly
-                        disabled
-                      />
                     </div>
                   ))}
                 </div>
@@ -642,7 +678,7 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
                       width="24"
                       height="24"
                     />
-                    Preview Summary
+                    {isEdit ? `Preview Summary - ${itemData.itemCode || 'Item Code'}` : "Preview Summary"}
                   </h5>
                 </div>
                 <div className="card-body p-20">
@@ -757,7 +793,7 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
                           <div className="text-neutral-600 text-xs mb-1">UOM</div>
                           <div className="fw-semibold text-neutral-900">
                             {uomOptions.find(
-                              (opt) => opt.id.toString() === formData.uomId
+                              (opt) => opt.id.toString() === (formData.uomId || "").toString()
                             )?.name ||
                               formData.uomId || (
                                 <span className="text-neutral-500 fst-italic">
@@ -819,6 +855,7 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
                       </div>
                     </div>
 
+                    {/* Always show form-based attributes preview */}
                     {attributes.length > 0 && (
                       <div className="col-12">
                         <div className="p-12 rounded bg-base-2 border border-neutral-200">
@@ -854,38 +891,6 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
                         </div>
                       </div>
                     )}
-                    {/* Custom Attributes Preview */}
-                    {customAttributes && (
-                      <div className="col-12">
-                        <div className="p-12 rounded bg-base-2 border border-neutral-200">
-                          <div className="d-flex align-items-center gap-2 mb-12">
-                            <Icon
-                              icon="mdi:format-list-bulleted"
-                              width="20"
-                              height="20"
-                              className="text-primary-600"
-                            />
-                            <div className="fw-semibold text-neutral-900">
-                              Attributes
-                            </div>
-                          </div>
-                          <div className="row g-2">
-                            {Object.entries(customAttributes).map(([key, value]) => (
-                              <div key={key} className="col-md-6">
-                                <div className="d-flex justify-content-between align-items-center py-2 px-3 rounded bg-base border border-neutral-100">
-                                  <span className="text-neutral-600 text-sm">
-                                    {key}:
-                                  </span>
-                                  <span className="fw-medium text-neutral-900 text-sm">
-                                    {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -909,7 +914,6 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
             </button>
           </div>
         </form>
-      )}
 
       {/* Duplicate Modal */}
       {showDuplicateModal && (

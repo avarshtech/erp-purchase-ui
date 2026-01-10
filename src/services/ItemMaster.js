@@ -63,7 +63,7 @@ export const createItem = async (itemData) => {
  */
 export const updateItem = async (id, itemData) => {
   try {
-    const response = await axiosInstance.put(ENDPOINTS.ITEMS, itemData);
+    const response = await axiosInstance.put(ENDPOINTS.ITEM_BY_ID(id), itemData);
     return response.data;
   } catch (error) {
     console.error(`Error updating item with ID ${id}:`, error);
@@ -71,17 +71,3 @@ export const updateItem = async (id, itemData) => {
   }
 };
 
-/**
- * Delete an item
- * @param {number} id - Item ID to delete
- * @returns {Promise<Object>} Response with deleted item
- */
-export const deleteItem = async (id) => {
-  try {
-    const response = await axiosInstance.delete(ENDPOINTS.ITEM_BY_ID(id));
-    return response.data;
-  } catch (error) {
-    console.error(`Error deleting item with ID ${id}:`, error);
-    throw error;
-  }
-};

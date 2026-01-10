@@ -76,6 +76,32 @@
   display: none !important;
 }
 
+/* Global Spinner Animation Fix */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner-border {
+  animation: spin 1s linear infinite;
+}
+
+/* Ensure spinner animations work in dark theme */
+[data-theme="dark"] .spinner-border {
+  animation: spin 1s linear infinite;
+}
+
+/* Fix for number input spinners in dark mode */
+[data-theme="dark"] input[type="number"]::-webkit-outer-spin-button,
+[data-theme="dark"] input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+[data-theme="dark"] input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 /* Modern Sidebar Toggle Button */
 .modern-toggle {
   position: relative;
