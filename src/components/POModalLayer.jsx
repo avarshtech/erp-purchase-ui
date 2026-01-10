@@ -32,7 +32,7 @@ const POModalLayer = ({
         itemId: "",
         description: "",
         qty: 1,
-        uom: "pcs",
+        uom: "",
         unitPrice: 0,
         sgstPercent: 0,
         cgstPercent: 0,
@@ -66,15 +66,6 @@ const POModalLayer = ({
     { value: 5, label: "5%" },
     { value: 10, label: "10%" },
     { value: 18, label: "18%" },
-  ];
-
-  const uomOptions = [
-    { value: "pcs", label: "Pieces" },
-    { value: "kg", label: "Kilograms" },
-    { value: "liters", label: "Liters" },
-    { value: "reams", label: "Reams" },
-    { value: "sets", label: "Sets" },
-    { value: "boxes", label: "Boxes" },
   ];
 
   const initializeFormForEdit = useCallback(
@@ -127,7 +118,7 @@ const POModalLayer = ({
           itemId: "",
           description: "",
           qty: 1,
-          uom: "pcs",
+          uom: "",
           unitPrice: 0,
           sgstPercent: 0,
           cgstPercent: 0,
@@ -169,7 +160,7 @@ const POModalLayer = ({
             itemId: "",
             description: "",
             qty: 1,
-            uom: "pcs",
+            uom: "",
             unitPrice: 0,
             sgstPercent: 0,
             cgstPercent: 0,
@@ -349,7 +340,7 @@ const POModalLayer = ({
           itemId: "",
           description: "",
           qty: 1,
-          uom: "pcs",
+          uom: "",
           unitPrice: 0,
           sgstPercent: 0,
           cgstPercent: 0,
@@ -499,7 +490,7 @@ const POModalLayer = ({
             itemId: "",
             description: "",
             qty: 1,
-            uom: "pcs",
+            uom: "",
             unitPrice: 0,
             sgstPercent: 0,
             cgstPercent: 0,
@@ -566,7 +557,7 @@ const POModalLayer = ({
             itemId: "",
             description: "",
             qty: 1,
-            uom: "pcs",
+            uom: "",
             unitPrice: 0,
             sgstPercent: 0,
             cgstPercent: 0,
@@ -627,7 +618,7 @@ const POModalLayer = ({
             itemId: "",
             description: "",
             qty: 1,
-            uom: "pcs",
+            uom: "",
             unitPrice: 0,
             sgstPercent: 0,
             cgstPercent: 0,
@@ -784,7 +775,6 @@ const POModalLayer = ({
               handleLineItemChange={handleLineItemChange}
               addLineItem={addLineItem}
               removeLineItem={removeLineItem}
-              uomOptions={uomOptions}
               taxOptions={taxOptions}
             />
 

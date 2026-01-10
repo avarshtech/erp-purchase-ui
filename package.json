@@ -21,6 +21,7 @@
     "@testing-library/user-event": "^13.5.0",
     "animate.css": "^4.1.1",
     "apexcharts": "^4.3.0",
+    "axios": "^1.13.2",
     "bootstrap": "^5.3.3",
     "datatables.net": "^2.1.8",
     "datatables.net-dt": "^2.1.8",

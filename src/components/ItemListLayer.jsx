@@ -1,12 +1,9 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  getItems,
-  getCategories,
-  getSubcategories,
-  getItemTypes,
+  getItemMasterData,
   deleteItem,
-} from "../mocks/server";
+} from "../services/ItemMaster";
 import ItemFormLayer from "./ItemFormLayer";
 import OperationControl from "./OperationControl";
 import { getCurrentUser, hasOperationPermission } from "../utils/permissions";
@@ -36,13 +33,16 @@ const ItemListLayer = () => {
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [itemTypes, setItemTypes] = useState([]);
+  const [allSubcategories, setAllSubcategories] = useState([]);
+  const [allItemTypes, setAllItemTypes] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [selectedItemType, setSelectedItemType] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
-  const [selectedItemId, setSelectedItemId] = useState(null);
+  const [selectedItemData, setSelectedItemData] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
@@ -70,13 +70,82 @@ const ItemListLayer = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [itemsResponse, categoriesResponse] = await Promise.all([
-        getItems(),
-        getCategories(),
-      ]);
-      setAllItems(itemsResponse.data);
-      setFilteredItems(itemsResponse.data);
-      setCategories(categoriesResponse.data);
+      const response = await getItemMasterData();
+      
+      // Handle both array response and object response with data property
+      let items = [];
+      if (Array.isArray(response)) {
+        items = response;
+      } else if (response.data && Array.isArray(response.data)) {
+        items = response.data;
+      } else if (response.data && response.data.items && Array.isArray(response.data.items)) {
+        items = response.data.items;
+      }
+
+      setAllItems(items);
+      setFilteredItems(items);
+
+      // Extract unique categories, subcategories, and item types from items for filters
+      const uniqueCategories = [];
+      const categoryMap = new Map();
+      const uniqueSubcategories = [];
+      const subcategoryMap = new Map();
+      const uniqueItemTypes = [];
+      const itemTypeMap = new Map();
+
+      items.forEach(item => {
+        // Extract category
+        if (item.categoryId && item.categoryName) {
+          if (!categoryMap.has(item.categoryId)) {
+            categoryMap.set(item.categoryId, {
+              id: item.categoryId,
+              name: item.categoryName
+            });
+            uniqueCategories.push({
+              id: item.categoryId,
+              name: item.categoryName
+            });
+          }
+        }
+
+        // Extract subcategory
+        if (item.subCategoryId && item.subCategoryName) {
+          if (!subcategoryMap.has(item.subCategoryId)) {
+            subcategoryMap.set(item.subCategoryId, {
+              id: item.subCategoryId,
+              name: item.subCategoryName,
+              categoryId: item.categoryId
+            });
+            uniqueSubcategories.push({
+              id: item.subCategoryId,
+              name: item.subCategoryName,
+              categoryId: item.categoryId
+            });
+          }
+        }
+
+        // Extract item type
+        if (item.itemTypeId && item.itemTypeName) {
+          if (!itemTypeMap.has(item.itemTypeId)) {
+            itemTypeMap.set(item.itemTypeId, {
+              id: item.itemTypeId,
+              name: item.itemTypeName,
+              subCategoryId: item.subCategoryId
+            });
+            uniqueItemTypes.push({
+              id: item.itemTypeId,
+              name: item.itemTypeName,
+              subCategoryId: item.subCategoryId
+            });
+          }
+        }
+      });
+
+      setCategories(uniqueCategories);
+      setAllSubcategories(uniqueSubcategories);
+      setAllItemTypes(uniqueItemTypes);
+      setSubcategories([]);
+      setItemTypes([]);
     } catch (err) {
       console.error("Error fetching data:", err);
     } finally {
@@ -84,37 +153,35 @@ const ItemListLayer = () => {
     }
   };
 
-  const handleCategoryChange = useCallback(async (categoryId) => {
+  const handleCategoryChange = useCallback((categoryId) => {
     setSelectedCategory(categoryId);
     setSelectedSubcategory("");
     setSelectedItemType("");
     if (categoryId) {
-      try {
-        const response = await getSubcategories(categoryId);
-        setSubcategories(response.data);
-      } catch (err) {
-        console.error("Error fetching subcategories:", err);
-      }
+      // Filter subcategories locally from the loaded data
+      const filteredSubcategories = allSubcategories.filter(
+        (sub) => sub.categoryId === parseInt(categoryId)
+      );
+      setSubcategories(filteredSubcategories);
     } else {
       setSubcategories([]);
     }
     setItemTypes([]);
-  }, []);
+  }, [allSubcategories]);
 
-  const handleSubcategoryChange = useCallback(async (subCategoryId) => {
+  const handleSubcategoryChange = useCallback((subCategoryId) => {
     setSelectedSubcategory(subCategoryId);
     setSelectedItemType("");
     if (subCategoryId) {
-      try {
-        const response = await getItemTypes(subCategoryId);
-        setItemTypes(response.data);
-      } catch (err) {
-        console.error("Error fetching item types:", err);
-      }
+      // Filter item types locally from the loaded data
+      const filteredItemTypes = allItemTypes.filter(
+        (itemType) => itemType.subCategoryId === parseInt(subCategoryId)
+      );
+      setItemTypes(filteredItemTypes);
     } else {
       setItemTypes([]);
     }
-  }, []);
+  }, [allItemTypes]);
 
   useEffect(() => {
     fetchData();
@@ -197,6 +264,11 @@ const ItemListLayer = () => {
       );
     }
 
+    if (selectedStatus) {
+      const isActive = selectedStatus === "active";
+      filtered = filtered.filter((item) => item.isActive === isActive);
+    }
+
     // Apply sorting
     filtered.sort((a, b) => {
       let aValue = a[sortField];
@@ -227,6 +299,7 @@ const ItemListLayer = () => {
     selectedCategory,
     selectedSubcategory,
     selectedItemType,
+    selectedStatus,
   ]);
 
   const handleItemTypeChange = (itemTypeId) => {
@@ -243,18 +316,18 @@ const ItemListLayer = () => {
   };
 
   const handleAdd = () => {
-    setSelectedItemId(null);
+    setSelectedItemData(null);
     setShowModal(true);
   };
 
   const handleModalClose = () => {
     setShowModal(false);
-    setSelectedItemId(null);
+    setSelectedItemData(null);
   };
 
   const handleItemSuccess = (message) => {
     setShowModal(false);
-    setSelectedItemId(null);
+    setSelectedItemData(null);
     if (message) {
       triggerToast(message, "success");
     }
@@ -262,7 +335,7 @@ const ItemListLayer = () => {
   };
 
   const handleEdit = (item) => {
-    setSelectedItemId(item.id);
+    setSelectedItemData(item);
     setShowModal(true);
   };
 
@@ -300,16 +373,29 @@ const ItemListLayer = () => {
   };
 
   const getCategoryName = (categoryId) => {
+    // Use categoryName directly from item if available, otherwise lookup
+    if (typeof categoryId === 'string') {
+      // categoryName was passed directly
+      return categoryId;
+    }
     const category = categories.find((c) => c.id === categoryId);
     return category ? category.name : "";
   };
 
   const getSubcategoryName = (subCategoryId) => {
+    // Use subCategoryName directly from item if available, otherwise lookup
+    if (typeof subCategoryId === 'string') {
+      return subCategoryId;
+    }
     const subcategory = subcategories.find((sc) => sc.id === subCategoryId);
     return subcategory ? subcategory.name : "";
   };
 
   const getItemTypeName = (itemTypeId) => {
+    // Use itemTypeName directly from item if available, otherwise lookup
+    if (typeof itemTypeId === 'string') {
+      return itemTypeId;
+    }
     const itemType = itemTypes.find((it) => it.id === itemTypeId);
     return itemType ? itemType.name : "";
   };
@@ -402,6 +488,15 @@ const ItemListLayer = () => {
                 </option>
               ))}
             </select>
+            <select
+              className="form-select form-select-sm w-auto"
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+            >
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
           </div>
           <OperationControl pageId="item-master" operation="add">
             <button
@@ -489,6 +584,9 @@ const ItemListLayer = () => {
                       <th scope="col" style={{ width: "150px" }}>
                         UOM
                       </th>
+                      <th scope="col" style={{ width: "100px" }}>
+                        Status
+                      </th>
                       <th
                         scope="col"
                         className="cursor-pointer"
@@ -518,10 +616,21 @@ const ItemListLayer = () => {
                       <tr key={item.id}>
                         <td>{item.itemCode}</td>
                         <td>{item.itemName}</td>
-                        <td>{getCategoryName(item.categoryId)}</td>
-                        <td>{getSubcategoryName(item.subCategoryId)}</td>
-                        <td>{getItemTypeName(item.itemTypeId)}</td>
-                        <td>{item.uomId}</td>
+                        <td>{item.categoryName || getCategoryName(item.categoryId)}</td>
+                        <td>{item.subCategoryName || getSubcategoryName(item.subCategoryId)}</td>
+                        <td>{item.itemTypeName || getItemTypeName(item.itemTypeId)}</td>
+                        <td>{item.uomName || item.uomId}</td>
+                        <td>
+                          <span
+                            className={`badge ${
+                              item.isActive
+                                ? "bg-success-600"
+                                : "bg-neutral-400"
+                            }`}
+                          >
+                            {item.isActive ? "Active" : "Inactive"}
+                          </span>
+                        </td>
                         <td>{new Date(item.createdAt).toLocaleDateString()}</td>
                         {showActionsColumn && (
                           <td className="sticky-actions">
@@ -629,7 +738,7 @@ const ItemListLayer = () => {
               style={{ flexShrink: 0 }}
             >
               <h1 className="modal-title fs-5" id="itemModalLabel">
-                {selectedItemId ? "Edit Item" : "Add Item"}
+                {selectedItemData?.id ? "Edit Item" : "Add Item"}
               </h1>
               <button
                 type="button"
@@ -644,7 +753,9 @@ const ItemListLayer = () => {
             >
               {showModal && (
                 <ItemFormLayer
-                  itemId={selectedItemId}
+                  itemId={selectedItemData?.id}
+                  itemData={selectedItemData}
+                  tableData={allItems}
                   onSuccess={handleItemSuccess}
                   onCancel={handleModalClose}
                   triggerToast={triggerToast}

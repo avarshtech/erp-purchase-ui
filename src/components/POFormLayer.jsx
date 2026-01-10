@@ -1,37 +1,39 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { v4 as uuidv4 } from 'uuid';
-import { makeRequest } from '../mocks/server';
-import POHeaderSection from './child/POHeaderSection';
-import POLineItemsTable from './child/POLineItemsTable';
-import POFooterSummary from './child/POFooterSummary';
-import POActionButtons from './child/POActionButtons';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { v4 as uuidv4 } from "uuid";
+import { makeRequest } from "../mocks/server";
+import POHeaderSection from "./child/POHeaderSection";
+import POLineItemsTable from "./child/POLineItemsTable";
+import POFooterSummary from "./child/POFooterSummary";
+import POActionButtons from "./child/POActionButtons";
 
 const POFormLayer = () => {
   // Consolidated form state
   const [formState, setFormState] = useState({
     formData: {
-      poNo: '',
-      supplierId: '',
+      poNo: "",
+      supplierId: "",
       poDate: new Date(),
       expectedDeliveryDate: null,
-      termsConditionId: '',
-      remarks: ''
+      termsConditionId: "",
+      remarks: "",
     },
-    lineItems: [{
-      id: uuidv4(),
-      itemId: '',
-      description: '',
-      qty: 1,
-      uom: 'pcs',
-      unitPrice: 0,
-      sgstPercent: 0,
-      cgstPercent: 0,
-      amount: 0
-    }],
+    lineItems: [
+      {
+        id: uuidv4(),
+        itemId: "",
+        description: "",
+        qty: 1,
+        uom: "",
+        unitPrice: 0,
+        sgstPercent: 0,
+        cgstPercent: 0,
+        amount: 0,
+      },
+    ],
     errors: {},
-    isDirty: false
+    isDirty: false,
   });
 
   // Consolidated master data state
@@ -40,31 +42,22 @@ const POFormLayer = () => {
     items: [],
     termsConditions: [],
     filteredSuppliers: [],
-    filteredItems: []
+    filteredItems: [],
   });
 
   // Consolidated UI state
   const [uiState, setUiState] = useState({
     loading: false,
-    supplierSearch: '',
-    showSupplierDropdown: false
+    supplierSearch: "",
+    showSupplierDropdown: false,
   });
 
   // Static options (moved outside state for better performance)
   const taxOptions = [
-    { value: 0, label: '0%' },
-    { value: 5, label: '5%' },
-    { value: 10, label: '10%' },
-    { value: 18, label: '18%' }
-  ];
-
-  const uomOptions = [
-    { value: 'pcs', label: 'Pieces' },
-    { value: 'kg', label: 'Kilograms' },
-    { value: 'liters', label: 'Liters' },
-    { value: 'reams', label: 'Reams' },
-    { value: 'sets', label: 'Sets' },
-    { value: 'boxes', label: 'Boxes' }
+    { value: 0, label: "0%" },
+    { value: 5, label: "5%" },
+    { value: 10, label: "10%" },
+    { value: 18, label: "18%" },
   ];
 
   // Load master data on component mount
@@ -76,242 +69,305 @@ const POFormLayer = () => {
   // Filter suppliers based on search
   useEffect(() => {
     if (uiState.supplierSearch) {
-       const filtered = masterData.suppliers.filter(supplier =>
-         (supplier.name && supplier.name.toLowerCase().includes(uiState.supplierSearch.toLowerCase())) ||
-         (supplier.code && supplier.code.toLowerCase().includes(uiState.supplierSearch.toLowerCase()))
-       );
-       setMasterData(prev => ({ ...prev, filteredSuppliers: filtered }));
-     } else {
-       setMasterData(prev => ({ ...prev, filteredSuppliers: prev.suppliers }));
-     }
-   }, [uiState.supplierSearch, masterData.suppliers]);
+      const filtered = masterData.suppliers.filter(
+        (supplier) =>
+          (supplier.name &&
+            supplier.name
+              .toLowerCase()
+              .includes(uiState.supplierSearch.toLowerCase())) ||
+          (supplier.code &&
+            supplier.code
+              .toLowerCase()
+              .includes(uiState.supplierSearch.toLowerCase()))
+      );
+      setMasterData((prev) => ({ ...prev, filteredSuppliers: filtered }));
+    } else {
+      setMasterData((prev) => ({ ...prev, filteredSuppliers: prev.suppliers }));
+    }
+  }, [uiState.supplierSearch, masterData.suppliers]);
 
   // Initialize filtered items when items are loaded
   useEffect(() => {
-    setMasterData(prev => ({ ...prev, filteredItems: prev.items }));
+    setMasterData((prev) => ({ ...prev, filteredItems: prev.items }));
   }, [masterData.items]);
 
   // Memoize line items dependency for useEffect
-  const lineItemsDependency = useMemo(() =>
-    formState.lineItems.map(item => `${item.qty}-${item.unitPrice}-${item.sgstPercent}-${item.cgstPercent}`).join(','),
+  const lineItemsDependency = useMemo(
+    () =>
+      formState.lineItems
+        .map(
+          (item) =>
+            `${item.qty}-${item.unitPrice}-${item.sgstPercent}-${item.cgstPercent}`
+        )
+        .join(","),
     [formState.lineItems]
   );
 
   // Auto-calculate amounts when line items change
   useEffect(() => {
-    const updatedLineItems = formState.lineItems.map(item => {
+    const updatedLineItems = formState.lineItems.map((item) => {
       const totalTaxPercent = item.sgstPercent + item.cgstPercent;
-      const amount = parseFloat((item.qty * item.unitPrice * (1 + totalTaxPercent / 100)).toFixed(2));
+      const amount = parseFloat(
+        (item.qty * item.unitPrice * (1 + totalTaxPercent / 100)).toFixed(2)
+      );
       return {
         ...item,
-        amount
+        amount,
       };
     });
-    setFormState(prev => ({ ...prev, lineItems: updatedLineItems }));
+    setFormState((prev) => ({ ...prev, lineItems: updatedLineItems }));
   }, [lineItemsDependency, formState.lineItems]);
 
   const loadMasterData = async () => {
     try {
-      setUiState(prev => ({ ...prev, loading: true }));
-      const [suppliersResponse, itemsResponse, termsConditionsResponse] = await Promise.all([
-        makeRequest('GET', '/suppliers'),
-        makeRequest('GET', '/items'),
-        makeRequest('GET', '/terms-conditions')
-      ]);
-      setMasterData(prev => ({
+      setUiState((prev) => ({ ...prev, loading: true }));
+      const [suppliersResponse, itemsResponse, termsConditionsResponse] =
+        await Promise.all([
+          makeRequest("GET", "/suppliers"),
+          makeRequest("GET", "/items"),
+          makeRequest("GET", "/terms-conditions"),
+        ]);
+      setMasterData((prev) => ({
         ...prev,
         suppliers: suppliersResponse.data,
         items: itemsResponse.data,
-        termsConditions: termsConditionsResponse.data
+        termsConditions: termsConditionsResponse.data,
       }));
     } catch (error) {
-      toast.error('Failed to load master data');
-      console.error('Error loading master data:', error);
+      toast.error("Failed to load master data");
+      console.error("Error loading master data:", error);
     } finally {
-      setUiState(prev => ({ ...prev, loading: false }));
+      setUiState((prev) => ({ ...prev, loading: false }));
     }
   };
 
   const generatePONumber = () => {
     const date = new Date();
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const sequence = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const sequence = String(Math.floor(Math.random() * 9999) + 1).padStart(
+      4,
+      "0"
+    );
     const poNo = `PO-${year}${month}${day}-${sequence}`;
-    setFormState(prev => ({
+    setFormState((prev) => ({
       ...prev,
       formData: { ...prev.formData, poNo },
-      isDirty: true
+      isDirty: true,
     }));
   };
 
   const handleInputChange = useCallback((field, value) => {
-    setFormState(prev => ({
+    setFormState((prev) => ({
       ...prev,
       formData: { ...prev.formData, [field]: value },
       isDirty: true,
-      errors: { ...prev.errors, [field]: '' }
+      errors: { ...prev.errors, [field]: "" },
     }));
   }, []);
 
-  const handleLineItemChange = useCallback((id, field, value) => {
-    setFormState(prev => ({
-      ...prev,
-      lineItems: prev.lineItems.map(item => {
-        if (item.id === id) {
-          const updatedItem = { ...item, [field]: value };
+  const handleLineItemChange = useCallback(
+    (id, field, value) => {
+      setFormState((prev) => ({
+        ...prev,
+        lineItems: prev.lineItems.map((item) => {
+          if (item.id === id) {
+            const updatedItem = { ...item, [field]: value };
 
-          // Auto-fill item details if item is selected
-          if (field === 'itemId' && value) {
-            const selectedItem = masterData.items.find(i => i.id === parseInt(value));
-            if (selectedItem) {
-              updatedItem.description = selectedItem.description;
-              updatedItem.uom = selectedItem.uom;
-              updatedItem.unitPrice = selectedItem.unitPrice;
+            // Auto-fill item details if item is selected
+            if (field === "itemId" && value) {
+              const selectedItem = masterData.items.find(
+                (i) => i.id === parseInt(value)
+              );
+              if (selectedItem) {
+                updatedItem.description = selectedItem.description;
+                updatedItem.uom = selectedItem.uomId;
+                updatedItem.unitPrice = selectedItem.unitPrice;
+              }
             }
-          }
 
-          return updatedItem;
-        }
-        return item;
-      }),
-      isDirty: true
-    }));
-  }, [masterData.items]);
+            return updatedItem;
+          }
+          return item;
+        }),
+        isDirty: true,
+      }));
+    },
+    [masterData.items]
+  );
 
   const addLineItem = useCallback(() => {
-    setFormState(prev => ({
+    setFormState((prev) => ({
       ...prev,
-      lineItems: [...prev.lineItems, {
-        id: uuidv4(),
-        itemId: '',
-        description: '',
-        qty: 1,
-        uom: 'pcs',
-        unitPrice: 0,
-        sgstPercent: 0,
-        cgstPercent: 0,
-        amount: 0
-      }]
+      lineItems: [
+        ...prev.lineItems,
+        {
+          id: uuidv4(),
+          itemId: "",
+          description: "",
+          qty: 1,
+          uom: "",
+          unitPrice: 0,
+          sgstPercent: 0,
+          cgstPercent: 0,
+          amount: 0,
+        },
+      ],
     }));
   }, []);
 
-  const removeLineItem = useCallback((id) => {
-    if (formState.lineItems.length > 1) {
-      setFormState(prev => ({
-        ...prev,
-        lineItems: prev.lineItems.filter(item => item.id !== id)
-      }));
-    } else {
-      toast.warning('At least one line item is required');
-    }
-  }, [formState.lineItems.length]);
+  const removeLineItem = useCallback(
+    (id) => {
+      if (formState.lineItems.length > 1) {
+        setFormState((prev) => ({
+          ...prev,
+          lineItems: prev.lineItems.filter((item) => item.id !== id),
+        }));
+      } else {
+        toast.warning("At least one line item is required");
+      }
+    },
+    [formState.lineItems.length]
+  );
 
-  const validateForm = useCallback((isSubmit = false) => {
-    const newErrors = {};
+  const validateForm = useCallback(
+    (isSubmit = false) => {
+      const newErrors = {};
 
-    if (!formState.formData.supplierId) newErrors.supplierId = 'Supplier is required';
-    if (!formState.formData.poDate) newErrors.poDate = 'PO Date is required';
-    if (formState.formData.poDate && formState.formData.poDate < new Date().setHours(0, 0, 0, 0)) {
-      newErrors.poDate = 'PO Date cannot be in the past';
-    }
-    if (!formState.formData.expectedDeliveryDate) {
-      newErrors.expectedDeliveryDate = 'Expected Delivery Date is required';
-    }
-    if (formState.formData.poDate && formState.formData.expectedDeliveryDate &&
-        formState.formData.expectedDeliveryDate <= formState.formData.poDate) {
-      newErrors.expectedDeliveryDate = 'Expected Delivery Date must be after PO Date';
-    }
-    if (formState.formData.remarks && formState.formData.remarks.length > 500) {
-      newErrors.remarks = 'Remarks cannot exceed 500 characters';
-    }
+      if (!formState.formData.supplierId)
+        newErrors.supplierId = "Supplier is required";
+      if (!formState.formData.poDate) newErrors.poDate = "PO Date is required";
+      if (
+        formState.formData.poDate &&
+        formState.formData.poDate < new Date().setHours(0, 0, 0, 0)
+      ) {
+        newErrors.poDate = "PO Date cannot be in the past";
+      }
+      if (!formState.formData.expectedDeliveryDate) {
+        newErrors.expectedDeliveryDate = "Expected Delivery Date is required";
+      }
+      if (
+        formState.formData.poDate &&
+        formState.formData.expectedDeliveryDate &&
+        formState.formData.expectedDeliveryDate <= formState.formData.poDate
+      ) {
+        newErrors.expectedDeliveryDate =
+          "Expected Delivery Date must be after PO Date";
+      }
+      if (
+        formState.formData.remarks &&
+        formState.formData.remarks.length > 500
+      ) {
+        newErrors.remarks = "Remarks cannot exceed 500 characters";
+      }
 
-    // Validate line items
-    formState.lineItems.forEach((item, index) => {
-      if (!item.itemId) newErrors[`item_${index}`] = 'Item is required';
-      if (item.qty < 1) newErrors[`qty_${index}`] = 'Quantity must be at least 1';
-      if (item.unitPrice < 0) newErrors[`unitPrice_${index}`] = 'Unit Price cannot be negative';
-    });
+      // Validate line items
+      formState.lineItems.forEach((item, index) => {
+        if (!item.itemId) newErrors[`item_${index}`] = "Item is required";
+        if (item.qty < 1)
+          newErrors[`qty_${index}`] = "Quantity must be at least 1";
+        if (item.unitPrice < 0)
+          newErrors[`unitPrice_${index}`] = "Unit Price cannot be negative";
+      });
 
-    if (isSubmit && formState.lineItems.some(item => !item.itemId || item.qty < 1 || item.unitPrice <= 0)) {
-      newErrors.lineItems = 'Please complete all line items with valid quantities and prices';
-    }
+      if (
+        isSubmit &&
+        formState.lineItems.some(
+          (item) => !item.itemId || item.qty < 1 || item.unitPrice <= 0
+        )
+      ) {
+        newErrors.lineItems =
+          "Please complete all line items with valid quantities and prices";
+      }
 
-    setFormState(prev => ({ ...prev, errors: newErrors }));
-    return Object.keys(newErrors).length === 0;
-  }, [formState.formData, formState.lineItems]);
+      setFormState((prev) => ({ ...prev, errors: newErrors }));
+      return Object.keys(newErrors).length === 0;
+    },
+    [formState.formData, formState.lineItems]
+  );
 
   const calculateTotals = useCallback(() => {
-    const subtotal = formState.lineItems.reduce((sum, item) => sum + (item.qty * item.unitPrice), 0);
+    const subtotal = formState.lineItems.reduce(
+      (sum, item) => sum + item.qty * item.unitPrice,
+      0
+    );
     const totalTax = formState.lineItems.reduce((sum, item) => {
       const totalTaxPercent = item.sgstPercent + item.cgstPercent;
-      return sum + (item.qty * item.unitPrice * totalTaxPercent / 100);
+      return sum + (item.qty * item.unitPrice * totalTaxPercent) / 100;
     }, 0);
     const grandTotal = subtotal + totalTax;
-    return { subtotal: parseFloat(subtotal.toFixed(2)), tax: parseFloat(totalTax.toFixed(2)), grandTotal: parseFloat(grandTotal.toFixed(2)) };
+    return {
+      subtotal: parseFloat(subtotal.toFixed(2)),
+      tax: parseFloat(totalTax.toFixed(2)),
+      grandTotal: parseFloat(grandTotal.toFixed(2)),
+    };
   }, [formState.lineItems]);
 
   const handleSaveDraft = async () => {
     if (!validateForm(false)) {
-      toast.error('Please fix the errors before saving');
+      toast.error("Please fix the errors before saving");
       return;
     }
 
     try {
-      setUiState(prev => ({ ...prev, loading: true }));
+      setUiState((prev) => ({ ...prev, loading: true }));
       const totals = calculateTotals();
       const poData = {
         ...formState.formData,
         lineItems: formState.lineItems,
         ...totals,
-        status: 'Draft'
+        status: "Draft",
       };
 
-      await makeRequest('POST', '/purchase-orders', poData);
-      toast.success('Purchase Order saved as draft');
-      setFormState(prev => ({ ...prev, isDirty: false }));
+      await makeRequest("POST", "/purchase-orders", poData);
+      toast.success("Purchase Order saved as draft");
+      setFormState((prev) => ({ ...prev, isDirty: false }));
     } catch (error) {
-      toast.error('Failed to save draft');
-      console.error('Error saving draft:', error);
+      toast.error("Failed to save draft");
+      console.error("Error saving draft:", error);
     } finally {
-      setUiState(prev => ({ ...prev, loading: false }));
+      setUiState((prev) => ({ ...prev, loading: false }));
     }
   };
 
   const handleSubmit = async () => {
     if (!validateForm(true)) {
-      toast.error('Please fix all errors before submitting');
+      toast.error("Please fix all errors before submitting");
       return;
     }
 
     try {
-      setUiState(prev => ({ ...prev, loading: true }));
+      setUiState((prev) => ({ ...prev, loading: true }));
       const totals = calculateTotals();
       const poData = {
         ...formState.formData,
         lineItems: formState.lineItems,
         ...totals,
-        status: 'Submitted'
+        status: "Submitted",
       };
 
-      await makeRequest('POST', '/purchase-orders', poData);
-      toast.success('Purchase Order submitted for approval');
-      setFormState(prev => ({ ...prev, isDirty: false }));
+      await makeRequest("POST", "/purchase-orders", poData);
+      toast.success("Purchase Order submitted for approval");
+      setFormState((prev) => ({ ...prev, isDirty: false }));
       // Reset form or navigate away
     } catch (error) {
-      toast.error('Failed to submit Purchase Order');
-      console.error('Error submitting PO:', error);
+      toast.error("Failed to submit Purchase Order");
+      console.error("Error submitting PO:", error);
     } finally {
-      setUiState(prev => ({ ...prev, loading: false }));
+      setUiState((prev) => ({ ...prev, loading: false }));
     }
   };
 
   const handleCancel = () => {
     if (formState.isDirty) {
-      if (window.confirm('You have unsaved changes. Are you sure you want to cancel?')) {
+      if (
+        window.confirm(
+          "You have unsaved changes. Are you sure you want to cancel?"
+        )
+      ) {
         // Reset form or navigate away
-        setFormState(prev => ({ ...prev, isDirty: false }));
+        setFormState((prev) => ({ ...prev, isDirty: false }));
       }
     } else {
       // Navigate away or reset form
@@ -319,45 +375,45 @@ const POFormLayer = () => {
   };
 
   const selectSupplier = (supplier) => {
-    handleInputChange('supplierId', supplier.id);
-    setUiState(prev => ({
+    handleInputChange("supplierId", supplier.id);
+    setUiState((prev) => ({
       ...prev,
       supplierSearch: supplier.name,
       showSupplierDropdown: false,
-      openItemDropdown: null
+      openItemDropdown: null,
     }));
   };
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.position-relative')) {
-        setUiState(prev => ({
+      if (!event.target.closest(".position-relative")) {
+        setUiState((prev) => ({
           ...prev,
-          showSupplierDropdown: false
+          showSupplierDropdown: false,
         }));
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   const selectItem = (itemId, lineItemId) => {
-    handleLineItemChange(lineItemId, 'itemId', itemId);
+    handleLineItemChange(lineItemId, "itemId", itemId);
   };
 
   const { subtotal, tax, grandTotal } = calculateTotals();
 
   // Helper functions for child components
   const setSupplierSearch = useCallback((value) => {
-    setUiState(prev => ({ ...prev, supplierSearch: value }));
+    setUiState((prev) => ({ ...prev, supplierSearch: value }));
   }, []);
 
   const setShowSupplierDropdown = useCallback((value) => {
-    setUiState(prev => ({ ...prev, showSupplierDropdown: value }));
+    setUiState((prev) => ({ ...prev, showSupplierDropdown: value }));
   }, []);
 
   return (
@@ -390,7 +446,6 @@ const POFormLayer = () => {
               handleLineItemChange={handleLineItemChange}
               addLineItem={addLineItem}
               removeLineItem={removeLineItem}
-              uomOptions={uomOptions}
               taxOptions={taxOptions}
             />
 
