@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { getLocationByPincode } from "../services/pincodeService";
 import React, { useState, useEffect } from "react";
 import {
   getSuppliers,
@@ -8,6 +9,7 @@ import {
 } from "../services/suppliers";
 import OperationControl from "./OperationControl";
 import { getCurrentUser, hasOperationPermission } from "../utils/permissions";
+import "../assets/css/modal.css";
 
 const SupplierModalLayer = () => {
   const [allSuppliers, setAllSuppliers] = useState([]);
@@ -313,6 +315,7 @@ const SupplierModalLayer = () => {
     }
   };
 
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     let newValue = type === "checkbox" ? checked : value;
@@ -320,49 +323,33 @@ const SupplierModalLayer = () => {
     // Apply field-specific restrictions
     switch (name) {
       case "name":
-        // Only characters, no numbers or special chars
         newValue = value.replace(/[^a-zA-Z\s]/g, "");
         break;
       case "address":
-        // Characters, numbers, spaces, and specific special chars (-, /)
         newValue = value.replace(/[^a-zA-Z0-9\s\-/]/g, "");
         break;
       case "city":
-        // Only characters, no numbers or special chars
         newValue = value.replace(/[^a-zA-Z\s]/g, "");
         break;
       case "pincode":
-        // Only numbers, max 6 digits
         newValue = value.replace(/[^0-9]/g, "").slice(0, 6);
         break;
       case "state":
-        // Only characters, no numbers or special chars
         newValue = value.replace(/[^a-zA-Z\s]/g, "");
         break;
       case "country":
-        // Only characters, no numbers or special chars
         newValue = value.replace(/[^a-zA-Z\s]/g, "");
         break;
       case "pan":
-        // PAN format: 10 characters, specific structure
-        newValue = value
-          .replace(/[^a-zA-Z0-9]/g, "")
-          .toUpperCase()
-          .slice(0, 10);
+        newValue = value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 10);
         break;
       case "gstin":
-        // GSTIN format: 15 characters, specific structure
-        newValue = value
-          .replace(/[^a-zA-Z0-9]/g, "")
-          .toUpperCase()
-          .slice(0, 15);
+        newValue = value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 15);
         break;
       case "email":
-        // Allow standard email characters
         newValue = value.replace(/[^a-zA-Z0-9@._-]/g, "");
         break;
       case "phone":
-        // Only numbers, max 10 digits
         newValue = value.replace(/[^0-9]/g, "").slice(0, 10);
         break;
       default:
@@ -373,6 +360,22 @@ const SupplierModalLayer = () => {
       ...prev,
       [name]: newValue,
     }));
+  };
+
+  // OnBlur handler for pincode to fetch city/state/country
+  const handlePincodeBlur = async (e) => {
+    const pincode = e.target.value;
+    if (pincode.length === 6) {
+      const location = await getLocationByPincode(pincode);
+      if (location) {
+        setFormData((prev) => ({
+          ...prev,
+          city: location.city,
+          state: location.state,
+          country: location.country,
+        }));
+      }
+    }
   };
 
   const handleSearchChange = (e) => {
@@ -595,7 +598,9 @@ const SupplierModalLayer = () => {
                         <td style={{ width: "160px" }}>{supplier.pan}</td>
                         <td style={{ width: "200px" }}>{supplier.gstin}</td>
                         <td style={{ width: "200px" }}>
-                          {supplier.createdDate}
+                          {supplier.createdAt
+                            ? new Date(supplier.createdAt).toLocaleDateString("en-CA")
+                            : "-"}
                         </td>
                         <td style={{ width: "180px" }}>
                           {renderSuppliesChips(supplier)}
@@ -801,6 +806,7 @@ const SupplierModalLayer = () => {
                       placeholder="Enter Pincode"
                       value={formData.pincode}
                       onChange={handleChange}
+                      onBlur={handlePincodeBlur}
                       maxLength="6"
                       required
                     />

@@ -1,0 +1,24 @@
+.btn-close {
+  /* Default: visible on light backgrounds */
+}
+
+/* Ensure close button is visible in both dark and light themes */
+[data-theme="dark"] .btn-close {
+  filter: none;
+  color: #fff !important;
+  opacity: 1;
+  background: none;
+  border: none;
+}
+
+[data-theme="dark"] .btn-close:before,
+[data-theme="dark"] .btn-close:after {
+  background: #fff !important;
+}
+
+[data-theme="light"] .btn-close {
+  color: #222 !important;
+  opacity: 1;
+  background: none;
+  border: none;
+}
