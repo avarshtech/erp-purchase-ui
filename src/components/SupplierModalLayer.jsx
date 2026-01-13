@@ -5,7 +5,7 @@ import {
   createSupplier,
   updateSupplier,
   deleteSupplier,
-} from "../mocks/server";
+} from "../services/suppliers";
 import OperationControl from "./OperationControl";
 import { getCurrentUser, hasOperationPermission } from "../utils/permissions";
 
@@ -294,10 +294,11 @@ const SupplierModalLayer = () => {
       return;
     }
     try {
+      const supplierData = isEdit ? { ...formData, id: currentSupplier.id } : formData;
       if (isEdit) {
-        await updateSupplier(currentSupplier.id, formData);
+        await updateSupplier(supplierData);
       } else {
-        await createSupplier(formData);
+        await createSupplier(supplierData);
       }
       setShowModal(false);
       setShowToast(false);
