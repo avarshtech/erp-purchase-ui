@@ -427,7 +427,7 @@ const ItemFormLayer = ({
       };
 
       if (isEdit) {
-        await updateItem({ itemId, ...itemDataPayload });
+        await updateItem({ id: itemId, ...itemDataPayload });
         if (onSuccess) onSuccess("Item updated successfully");
       } else {
         await createItem(itemDataPayload);
@@ -531,13 +531,35 @@ const ItemFormLayer = ({
     }
   };
 
+  // Disable modal scroll when loading spinner is active
+  useEffect(() => {
+    const modalRoot = document.querySelector('.modal.show.d-block');
+    if ((metaDataLoading || loading) && modalRoot) {
+      modalRoot.style.overflow = 'hidden';
+    } else if (modalRoot) {
+      modalRoot.style.overflow = '';
+    }
+    return () => {
+      if (modalRoot) modalRoot.style.overflow = '';
+    };
+  }, [metaDataLoading, loading]);
+
   return (
-    <>
-      {/* Loading overlay */}
+    <div style={{ position: 'relative', minHeight: '200px' }}>
+      {/* Loading overlay - covers only the form/dialog body */}
       {(metaDataLoading || loading) && (
         <div
-          className="position-absolute top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center bg-base bg-opacity-75"
-          style={{ zIndex: 10 }}
+          className="d-flex align-items-center justify-content-center bg-base"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 10,
+            background: 'rgba(255,255,255,0.85)',
+            borderRadius: '8px',
+          }}
         >
           <div className="text-center">
             <div
@@ -545,7 +567,6 @@ const ItemFormLayer = ({
               style={{
                 width: "3rem",
                 height: "3rem",
-                animation: "spin 1s linear infinite",
               }}
               role="status"
             >
@@ -1000,7 +1021,7 @@ const ItemFormLayer = ({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 
