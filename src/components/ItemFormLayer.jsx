@@ -6,15 +6,34 @@ import {
   updateItem,
 } from "../services/ItemMaster";
 
-// Helper function to convert string to camelCase
+// Helper function to convert string to camelCase or lowercase
 const toCamelCase = (str) => {
   if (!str) return "";
-  return str
-    .replace(/\s+/g, "") // Remove spaces
-    .replace(/^[A-Z]/, (match) => match.toLowerCase()); // First char to lowercase
+
+  // Check if the string contains spaces
+  if (str.includes(" ")) {
+    // Convert to camelCase: "Item Name" -> "itemName"
+    return str
+      .split(" ")
+      .map((word, index) =>
+        index === 0
+          ? word.toLowerCase()
+          : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      )
+      .join("");
+  } else {
+    // If no spaces, convert to lowercase: "Color" -> "color"
+    return str.toLowerCase();
+  }
 };
 
-const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast }) => {
+const ItemFormLayer = ({
+  itemData,
+  tableData,
+  onSuccess,
+  onCancel,
+  triggerToast,
+}) => {
   const isEdit = !!itemData;
   const itemId = itemData?.id;
 
@@ -30,8 +49,6 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
   const [itemTypes, setItemTypes] = useState([]);
 
   const [attributes, setAttributes] = useState([]);
-  // Store custom read-only attributes for items loaded from API
-  const [customAttributes, setCustomAttributes] = useState(null);
   const [formData, setFormData] = useState({
     itemName: "",
     categoryId: "",
@@ -53,7 +70,7 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
     try {
       setMetaDataLoading(true);
       const response = await getItemMetaData();
-      
+
       // Handle both array response and object response
       let metaDataArray = [];
       if (Array.isArray(response)) {
@@ -63,7 +80,7 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
       } else if (response.success && Array.isArray(response.data)) {
         metaDataArray = response.data;
       }
-      
+
       setMetaData(metaDataArray);
       setCategories(metaDataArray); // Categories are the top level
     } catch (err) {
@@ -132,7 +149,12 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
 
   const handleItemTypeChange = useCallback(
     (itemTypeId) => {
-      setFormData((prev) => ({ ...prev, itemTypeId, uomId: "", attributes: {} }));
+      setFormData((prev) => ({
+        ...prev,
+        itemTypeId,
+        uomId: "",
+        attributes: {},
+      }));
       setAttributes([]);
       setUomOptions([]);
       if (itemTypeId) {
@@ -149,63 +171,78 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
     [itemTypes]
   );
 
-// Initialize form with item data in Edit mode
+  // Initialize form with item data in Edit mode
   const initializeFormData = useCallback(() => {
     if (!isEdit || !itemData) return;
 
-    // 1. Check if item has custom attributes (string keys like RAM, Color, etc.)
-    const hasCustomAttributes = itemData.attributes && Object.keys(itemData.attributes).some(
-      key => isNaN(parseInt(key))
-    );
-
-    if (hasCustomAttributes) {
-      // Store custom attributes as read-only
-      setCustomAttributes(itemData.attributes);
-      setFormData({
-        itemName: itemData.itemName || "",
-        categoryId: itemData.categoryId?.toString() || "",
-        subCategoryId: itemData.subCategoryId?.toString() || "",
-        itemTypeId: itemData.itemTypeId?.toString() || "",
-        uomId: itemData.uomName || itemData.uomId?.toString() || "",
-        hsnCode: itemData.hsnCode || "",
-        isActive: itemData.isActive ?? true,
-        attributes: {},
-      });
-      // Clear form-based attributes since we have custom ones
-      setAttributes([]);
-      setSubcategories([]);
-      setItemTypes([]);
-      setUomOptions([]);
-      return;
-    }
-
-    // 2. Set Form Data directly for items with numeric attributes
+    // Always set the basic form data first
     setFormData({
       itemName: itemData.itemName || "",
       categoryId: itemData.categoryId?.toString() || "", // Ensure string for select
       subCategoryId: itemData.subCategoryId?.toString() || "",
       itemTypeId: itemData.itemTypeId?.toString() || "",
-      uomId: itemData.uomId,
+      uomId: itemData.uomId?.toString() || "", // Ensure string for select
       hsnCode: itemData.hsnCode || "",
       isActive: itemData.isActive ?? true,
-      attributes: itemData.attributes || {},
+      attributes: {},
     });
 
     // 3. Populate Cascading Dropdowns synchronously from Metadata
-    const category = metaData.find((c) => c.id === itemData.categoryId);
+    const categoryId = parseInt(itemData.categoryId);
+    const subCategoryId = parseInt(itemData.subCategoryId);
+    const itemTypeId = parseInt(itemData.itemTypeId);
+
+    const category = metaData.find((c) => c.id === categoryId);
     if (category) {
       setSubcategories(category.subCategories || []);
       const subcategory = category.subCategories?.find(
-        (sc) => sc.id === itemData.subCategoryId
+        (sc) => sc.id === subCategoryId
       );
       if (subcategory) {
         setItemTypes(subcategory.itemTypes || []);
         const itemType = subcategory.itemTypes?.find(
-          (it) => it.id === itemData.itemTypeId
+          (it) => it.id === itemTypeId
         );
         if (itemType) {
+          // Always set attributes from metadata for form rendering
           setAttributes(itemType.attributes || []);
           setUomOptions(itemType.uoms || []);
+
+          // Now populate the attributes with the item data
+          const populatedAttributes = {};
+
+          // Check if item has custom attributes (string keys like RAM, Color, etc.)
+          const hasCustomAttributes =
+            itemData.attributes &&
+            Object.keys(itemData.attributes).some((key) =>
+              isNaN(parseInt(key))
+            );
+
+          if (hasCustomAttributes) {
+            // Convert custom attributes to match form attribute IDs
+            // This maps custom attribute names to the corresponding attribute IDs from metadata
+            itemType.attributes.forEach((attr) => {
+              const attributeName = attr.attributeName.toLowerCase();
+              // Look for matching custom attribute by name (case-insensitive)
+              const customKey = Object.keys(itemData.attributes).find(
+                (key) => key.toLowerCase() === attributeName
+              );
+              if (customKey) {
+                populatedAttributes[attr.id] = itemData.attributes[customKey];
+              }
+            });
+          } else {
+            // Use the existing numeric attributes directly
+            Object.keys(itemData.attributes || {}).forEach((key) => {
+              populatedAttributes[key] = itemData.attributes[key];
+            });
+          }
+
+          // Update form data with populated attributes
+          setFormData((prev) => ({
+            ...prev,
+            attributes: populatedAttributes,
+          }));
         }
       }
     }
@@ -222,6 +259,46 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
       initializeFormData();
     }
   }, [isEdit, metaData, initializeFormData]);
+
+  // Effect to populate dropdowns when form data changes in edit mode
+  useEffect(() => {
+    if (isEdit && metaData.length > 0 && formData.categoryId) {
+      // Populate subcategories
+      const category = metaData.find(
+        (c) => c.id.toString() === formData.categoryId
+      );
+      if (category) {
+        setSubcategories(category.subCategories || []);
+
+        // If subcategory is set, populate item types
+        if (formData.subCategoryId) {
+          const subcategory = category.subCategories?.find(
+            (sc) => sc.id.toString() === formData.subCategoryId
+          );
+          if (subcategory) {
+            setItemTypes(subcategory.itemTypes || []);
+
+            // If item type is set, populate attributes and UOMs
+            if (formData.itemTypeId) {
+              const itemType = subcategory.itemTypes?.find(
+                (it) => it.id.toString() === formData.itemTypeId
+              );
+              if (itemType) {
+                setAttributes(itemType.attributes || []);
+                setUomOptions(itemType.uoms || []);
+              }
+            }
+          }
+        }
+      }
+    }
+  }, [
+    isEdit,
+    metaData,
+    formData.categoryId,
+    formData.subCategoryId,
+    formData.itemTypeId,
+  ]);
 
   const handleAttributeChange = (attributeId, value) => {
     setFormData((prev) => ({
@@ -263,7 +340,8 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
     // Validate mandatory attributes
     for (const attr of attributes) {
       if (!formData.attributes[attr.id]) {
-        if (triggerToast) triggerToast(`${attr.attributeName} is required`, "error");
+        if (triggerToast)
+          triggerToast(`${attr.attributeName} is required`, "error");
         return false;
       }
     }
@@ -294,7 +372,10 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
       if (item.itemTypeId !== newItemTypeId) return false;
 
       // Check if item name matches (case-insensitive comparison)
-      if (item.itemName?.toLowerCase() !== formData.itemName?.trim().toLowerCase()) return false;
+      if (
+        item.itemName?.toLowerCase() !== formData.itemName?.trim().toLowerCase()
+      )
+        return false;
 
       return true;
     });
@@ -330,7 +411,8 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
       setLoading(true);
       const attributeObject = {};
       attributes.forEach((attr) => {
-        attributeObject[toCamelCase(attr.attributeName)] = formData.attributes[attr.id] || "";
+        attributeObject[toCamelCase(attr.attributeName)] =
+          formData.attributes[attr.id] || "";
       });
 
       const itemDataPayload = {
@@ -345,7 +427,7 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
       };
 
       if (isEdit) {
-        await updateItem(itemId, itemDataPayload);
+        await updateItem({ id: itemId, ...itemDataPayload });
         if (onSuccess) onSuccess("Item updated successfully");
       } else {
         await createItem(itemDataPayload);
@@ -388,8 +470,8 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
             }}
             style={{
               // Dark mode styling for number input spinners
-              '--webkit-appearance': 'none',
-              'appearance': 'textfield'
+              "--webkit-appearance": "none",
+              appearance: "textfield",
             }}
           />
         );
@@ -427,7 +509,10 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
             value={value}
             onChange={(e) => {
               // Filter out special characters
-              const filteredValue = e.target.value.replace(/[^a-zA-Z0-9\s]/g, "");
+              const filteredValue = e.target.value.replace(
+                /[^a-zA-Z0-9\s]/g,
+                ""
+              );
               handleAttributeChange(attr.id, filteredValue);
             }}
             onKeyPress={(e) => {
@@ -446,470 +531,453 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
     }
   };
 
+  // Disable modal scroll when loading spinner is active
+  useEffect(() => {
+    const modalRoot = document.querySelector('.modal.show.d-block');
+    if ((metaDataLoading || loading) && modalRoot) {
+      modalRoot.style.overflow = 'hidden';
+    } else if (modalRoot) {
+      modalRoot.style.overflow = '';
+    }
+    return () => {
+      if (modalRoot) modalRoot.style.overflow = '';
+    };
+  }, [metaDataLoading, loading]);
+
   return (
-    <>
-      {/* Loading overlay for metadata */}
-      {metaDataLoading && (
-        <div className="d-flex align-items-center justify-content-center py-5" style={{ minHeight: "200px" }}>
+    <div style={{ position: 'relative', minHeight: '200px' }}>
+      {/* Loading overlay - covers only the form/dialog body */}
+      {(metaDataLoading || loading) && (
+        <div
+          className="d-flex align-items-center justify-content-center bg-base"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 10,
+            background: 'rgba(255,255,255,0.85)',
+            borderRadius: '8px',
+          }}
+        >
           <div className="text-center">
-            <div className="spinner-border text-primary mb-3" style={{ width: "3rem", height: "3rem" }} role="status">
+            <div
+              className="spinner-border text-primary mb-3"
+              style={{
+                width: "3rem",
+                height: "3rem",
+              }}
+              role="status"
+            >
               <span className="visually-hidden">Loading...</span>
             </div>
-            <h6 className="text-muted">Loading form data...</h6>
+            <h6 className="text-muted">
+              {metaDataLoading ? "Loading form data..." : "Saving..."}
+            </h6>
           </div>
         </div>
       )}
 
-      {/* Form content - hidden while loading */}
-      {!metaDataLoading && (
-        <form onSubmit={handleSubmit}>
-          <div className="row gy-4">
-            <div className="col-md-6 mb-20">
-              <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                Category <span className="text-danger">*</span>
-              </label>
-              <select
-                className="form-select radius-8"
-                style={{ paddingRight: '2.5rem' }}
-                value={formData.categoryId}
-                onChange={(e) => handleCategoryChange(e.target.value)}
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-6 mb-20">
-              <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                Subcategory <span className="text-danger">*</span>
-              </label>
-              <select
-                className={`form-select radius-8 ${
-                  !formData.categoryId ? "bg-light opacity-50" : ""
-                }`}
-                style={{ paddingRight: '2.5rem' }}
-                value={formData.subCategoryId}
-                onChange={(e) => handleSubcategoryChange(e.target.value)}
-                disabled={!formData.categoryId}
-              >
-                <option value="">Select Subcategory</option>
-                {subcategories.map((sc) => (
-                  <option key={sc.id} value={sc.id}>
-                    {sc.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-6 mb-20">
-              <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                Item Type <span className="text-danger">*</span>
-              </label>
-              <select
-                className={`form-select radius-8 ${
-                  !formData.subCategoryId ? "bg-light opacity-50" : ""
-                }`}
-                style={{ paddingRight: '2.5rem' }}
-                value={formData.itemTypeId}
-                onChange={(e) => handleItemTypeChange(e.target.value)}
-                disabled={!formData.subCategoryId}
-              >
-                <option value="">Select Item Type</option>
-                {itemTypes.map((it) => (
-                  <option key={it.id} value={it.id}>
-                    {it.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-6 mb-20">
-              <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                Item Name <span className="text-danger">*</span>
-              </label>
+      <form onSubmit={handleSubmit}>
+        <div className="row gy-4">
+          <div className="col-md-6 mb-20">
+            <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+              Category <span className="text-danger">*</span>
+            </label>
+            <select
+              className="form-select radius-8"
+              style={{ paddingRight: "2.5rem" }}
+              value={formData.categoryId}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+            >
+              <option value="">Select Category</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="col-md-6 mb-20">
+            <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+              Subcategory <span className="text-danger">*</span>
+            </label>
+            <select
+              className={`form-select radius-8 ${
+                !formData.categoryId ? "bg-light opacity-50" : ""
+              }`}
+              style={{ paddingRight: "2.5rem" }}
+              value={formData.subCategoryId}
+              onChange={(e) => handleSubcategoryChange(e.target.value)}
+              disabled={!formData.categoryId}
+            >
+              <option value="">Select Subcategory</option>
+              {subcategories.map((sc) => (
+                <option key={sc.id} value={sc.id}>
+                  {sc.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="col-md-6 mb-20">
+            <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+              Item Type <span className="text-danger">*</span>
+            </label>
+            <select
+              className={`form-select radius-8 ${
+                !formData.subCategoryId ? "bg-light opacity-50" : ""
+              }`}
+              style={{ paddingRight: "2.5rem" }}
+              value={formData.itemTypeId}
+              onChange={(e) => handleItemTypeChange(e.target.value)}
+              disabled={!formData.subCategoryId}
+            >
+              <option value="">Select Item Type</option>
+              {itemTypes.map((it) => (
+                <option key={it.id} value={it.id}>
+                  {it.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="col-md-6 mb-20">
+            <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+              Item Name <span className="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              className="form-control radius-8"
+              placeholder="Enter Item Name"
+              value={formData.itemName}
+              onChange={(e) => handleInputChange("itemName", e.target.value)}
+            />
+          </div>
+          <div className="col-md-6 mb-20">
+            <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+              UOM <span className="text-danger">*</span>
+            </label>
+            <select
+              className={`form-select radius-8 ${
+                !formData.itemTypeId ? "bg-light opacity-50" : ""
+              }`}
+              style={{ paddingRight: "2.5rem" }}
+              value={(formData.uomId || "").toString()}
+              onChange={(e) => handleInputChange("uomId", e.target.value)}
+              disabled={!formData.itemTypeId}
+            >
+              <option value="">Select UOM</option>
+              {uomOptions.map((opt) => (
+                <option key={opt.id} value={opt.id.toString()}>
+                  {opt.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="col-md-6 mb-20">
+            <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+              HSN Code <span className="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              className="form-control radius-8"
+              placeholder="Enter HSN Code"
+              value={formData.hsnCode}
+              onChange={(e) => handleInputChange("hsnCode", e.target.value)}
+            />
+          </div>
+          <div className="col-md-6 mb-20">
+            <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+              Active
+            </label>
+            <div className="form-check d-flex align-items-center gap-2">
               <input
-                type="text"
-                className="form-control radius-8"
-                placeholder="Enter Item Name"
-                value={formData.itemName}
-                onChange={(e) => handleInputChange("itemName", e.target.value)}
+                className="form-check-input"
+                type="checkbox"
+                id="isActive"
+                checked={formData.isActive}
+                onChange={(e) =>
+                  handleInputChange("isActive", e.target.checked)
+                }
               />
-            </div>
-            <div className="col-md-6 mb-20">
-              <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                UOM <span className="text-danger">*</span>
+              <label className="form-check-label mb-0" htmlFor="isActive">
+                Is Active
               </label>
-              <select
-                className={`form-select radius-8 ${
-                  !formData.itemTypeId ? "bg-light opacity-50" : ""
-                }`}
-                style={{ paddingRight: '2.5rem' }}
-                value={formData.uomId}
-                onChange={(e) => handleInputChange("uomId", e.target.value)}
-                disabled={!formData.itemTypeId}
-              >
-                <option value="">Select UOM</option>
-                {uomOptions.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.name}
-                  </option>
-                ))}
-              </select>
             </div>
-            <div className="col-md-6 mb-20">
-              <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                HSN Code <span className="text-danger">*</span>
-              </label>
-              <input
-                type="text"
-                className="form-control radius-8"
-                placeholder="Enter HSN Code"
-                value={formData.hsnCode}
-                onChange={(e) => handleInputChange("hsnCode", e.target.value)}
-              />
-            </div>
-            <div className="col-md-6 mb-20">
-              <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                Active
-              </label>
-              <div className="form-check d-flex align-items-center gap-2">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id="isActive"
-                  checked={formData.isActive}
-                  onChange={(e) =>
-                    handleInputChange("isActive", e.target.checked)
-                  }
-                />
-                <label className="form-check-label mb-0" htmlFor="isActive">
-                  Is Active
-                </label>
-              </div>
-            </div>
-            {attributes.length > 0 && (
-              <div className="col-12 mb-20">
-                <h5 className="fw-bold text-primary-light mb-16">Attributes</h5>
-                <div className="row">
-                  {attributes.map((attr) => (
-                    <div key={attr.id} className="col-md-6 mb-20">
-                      <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                        {attr.attributeName}{" "}
-                        <span className="text-danger">*</span>
-                      </label>
-                      {renderAttributeField(attr)}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {/* Custom Read-Only Attributes Display (for items loaded from API) */}
-            {customAttributes && (
-              <div className="col-12 mb-20">
-                <h5 className="fw-bold text-primary-light mb-16">Attributes</h5>
-                <div className="row">
-                  {Object.entries(customAttributes).map(([key, value]) => (
-                    <div key={key} className="col-md-6 mb-20">
-                      <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                        {key}
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control radius-8 bg-light"
-                        value={typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}
-                        readOnly
-                        disabled
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+          </div>
+          {/* Always render form-based attributes section */}
+          {attributes.length > 0 && (
             <div className="col-12 mb-20">
-              <div className="card border-0 shadow-sm bg-base radius-12">
-                <div
-                  className="card-header border-0 py-16 px-20"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, var(--bs-primary, #6366f1) 0%, var(--bs-primary-dark, #4f46e5) 100%)",
-                    borderRadius: "12px 12px 0 0",
-                  }}
-                >
-                  <h5 className="card-title mb-0 text-white d-flex align-items-center gap-2">
-                    <Icon
-                      icon="mdi:file-document-outline"
-                      width="24"
-                      height="24"
-                    />
-                    Preview Summary
-                  </h5>
-                </div>
-                <div className="card-body p-20">
-                  <div className="row g-3">
-                    <div className="col-md-6">
-                      <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
-                        <Icon
-                          icon="mdi:folder-outline"
-                          width="20"
-                          height="20"
-                          className="text-primary-600 mt-1"
-                        />
-                        <div className="flex-grow-1">
-                          <div className="text-neutral-600 text-xs mb-1">
-                            Category
-                          </div>
-                          <div className="fw-semibold text-neutral-900">
-                            {categories.find(
-                              (c) => c.id === parseInt(formData.categoryId)
-                            )?.name || (
-                              <span className="text-neutral-500 fst-italic">
-                                Not selected
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-md-6">
-                      <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
-                        <Icon
-                          icon="mdi:folder-multiple-outline"
-                          width="20"
-                          height="20"
-                          className="text-primary-600 mt-1"
-                        />
-                        <div className="flex-grow-1">
-                          <div className="text-neutral-600 text-xs mb-1">
-                            Subcategory
-                          </div>
-                          <div className="fw-semibold text-neutral-900">
-                            {subcategories.find(
-                              (sc) => sc.id === parseInt(formData.subCategoryId)
-                            )?.name || (
-                              <span className="text-neutral-500 fst-italic">
-                                Not selected
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-md-6">
-                      <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
-                        <Icon
-                          icon="mdi:tag-outline"
-                          width="20"
-                          height="20"
-                          className="text-primary-600 mt-1"
-                        />
-                        <div className="flex-grow-1">
-                          <div className="text-neutral-600 text-xs mb-1">
-                            Item Type
-                          </div>
-                          <div className="fw-semibold text-neutral-900">
-                            {itemTypes.find(
-                              (it) => it.id === parseInt(formData.itemTypeId)
-                            )?.name || (
-                              <span className="text-neutral-500 fst-italic">
-                                Not selected
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-md-6">
-                      <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
-                        <Icon
-                          icon="mdi:package-variant"
-                          width="20"
-                          height="20"
-                          className="text-primary-600 mt-1"
-                        />
-                        <div className="flex-grow-1">
-                          <div className="text-neutral-600 text-xs mb-1">
-                            Item Name
-                          </div>
-                          <div className="fw-semibold text-neutral-900">
-                            {formData.itemName || (
-                              <span className="text-neutral-500 fst-italic">
-                                Not entered
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-md-6">
-                      <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
-                        <Icon
-                          icon="mdi:scale-balance"
-                          width="20"
-                          height="20"
-                          className="text-primary-600 mt-1"
-                        />
-                        <div className="flex-grow-1">
-                          <div className="text-neutral-600 text-xs mb-1">UOM</div>
-                          <div className="fw-semibold text-neutral-900">
-                            {uomOptions.find(
-                              (opt) => opt.id.toString() === formData.uomId
-                            )?.name ||
-                              formData.uomId || (
-                                <span className="text-neutral-500 fst-italic">
-                                  Not selected
-                                </span>
-                              )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-md-6">
-                      <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
-                        <Icon
-                          icon="mdi:barcode"
-                          width="20"
-                          height="20"
-                          className="text-primary-600 mt-1"
-                        />
-                        <div className="flex-grow-1">
-                          <div className="text-neutral-600 text-xs mb-1">
-                            HSN Code
-                          </div>
-                          <div className="fw-semibold text-neutral-900">
-                            {formData.hsnCode || (
-                              <span className="text-neutral-500 fst-italic">
-                                Not entered
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-md-12">
-                      <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
-                        <Icon
-                          icon="mdi:toggle-switch-outline"
-                          width="20"
-                          height="20"
-                          className="text-primary-600 mt-1"
-                        />
-                        <div className="flex-grow-1">
-                          <div className="text-neutral-600 text-xs mb-1">
-                            Status
-                          </div>
-                          <div>
-                            <span
-                              className={`badge ${
-                                formData.isActive
-                                  ? "bg-success-600"
-                                  : "bg-neutral-400"
-                              }`}
-                            >
-                              {formData.isActive ? "Active" : "Inactive"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {attributes.length > 0 && (
-                      <div className="col-12">
-                        <div className="p-12 rounded bg-base-2 border border-neutral-200">
-                          <div className="d-flex align-items-center gap-2 mb-12">
-                            <Icon
-                              icon="mdi:format-list-bulleted"
-                              width="20"
-                              height="20"
-                              className="text-primary-600"
-                            />
-                            <div className="fw-semibold text-neutral-900">
-                              Attributes
-                            </div>
-                          </div>
-                          <div className="row g-2">
-                            {attributes.map((attr) => (
-                              <div key={attr.id} className="col-md-6">
-                                <div className="d-flex justify-content-between align-items-center py-2 px-3 rounded bg-base border border-neutral-100">
-                                  <span className="text-neutral-600 text-sm">
-                                    {attr.attributeName}:
-                                  </span>
-                                  <span className="fw-medium text-neutral-900 text-sm">
-                                    {formData.attributes[attr.id] || (
-                                      <span className="text-neutral-500 fst-italic">
-                                        Not entered
-                                      </span>
-                                    )}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {/* Custom Attributes Preview */}
-                    {customAttributes && (
-                      <div className="col-12">
-                        <div className="p-12 rounded bg-base-2 border border-neutral-200">
-                          <div className="d-flex align-items-center gap-2 mb-12">
-                            <Icon
-                              icon="mdi:format-list-bulleted"
-                              width="20"
-                              height="20"
-                              className="text-primary-600"
-                            />
-                            <div className="fw-semibold text-neutral-900">
-                              Attributes
-                            </div>
-                          </div>
-                          <div className="row g-2">
-                            {Object.entries(customAttributes).map(([key, value]) => (
-                              <div key={key} className="col-md-6">
-                                <div className="d-flex justify-content-between align-items-center py-2 px-3 rounded bg-base border border-neutral-100">
-                                  <span className="text-neutral-600 text-sm">
-                                    {key}:
-                                  </span>
-                                  <span className="fw-medium text-neutral-900 text-sm">
-                                    {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
+              <h5 className="fw-bold text-primary-light mb-16">Attributes</h5>
+              <div className="row">
+                {attributes.map((attr) => (
+                  <div key={attr.id} className="col-md-6 mb-20">
+                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                      {attr.attributeName}{" "}
+                      <span className="text-danger">*</span>
+                    </label>
+                    {renderAttributeField(attr)}
                   </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="col-12 mb-20">
+            <div className="card border-0 shadow-sm bg-base radius-12">
+              <div
+                className="card-header border-0 py-16 px-20"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--bs-primary, #6366f1) 0%, var(--bs-primary-dark, #4f46e5) 100%)",
+                  borderRadius: "12px 12px 0 0",
+                }}
+              >
+                <h5 className="card-title mb-0 text-white d-flex align-items-center gap-2">
+                  <Icon
+                    icon="mdi:file-document-outline"
+                    width="24"
+                    height="24"
+                  />
+                  {isEdit
+                    ? `Preview Summary - ${itemData.itemCode || "Item Code"}`
+                    : "Preview Summary"}
+                </h5>
+              </div>
+              <div className="card-body p-20">
+                <div className="row g-3">
+                  <div className="col-md-6">
+                    <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
+                      <Icon
+                        icon="mdi:folder-outline"
+                        width="20"
+                        height="20"
+                        className="text-primary-600 mt-1"
+                      />
+                      <div className="flex-grow-1">
+                        <div className="text-neutral-600 text-xs mb-1">
+                          Category
+                        </div>
+                        <div className="fw-semibold text-neutral-900">
+                          {categories.find(
+                            (c) => c.id === parseInt(formData.categoryId)
+                          )?.name || (
+                            <span className="text-neutral-500 fst-italic">
+                              Not selected
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
+                      <Icon
+                        icon="mdi:folder-multiple-outline"
+                        width="20"
+                        height="20"
+                        className="text-primary-600 mt-1"
+                      />
+                      <div className="flex-grow-1">
+                        <div className="text-neutral-600 text-xs mb-1">
+                          Subcategory
+                        </div>
+                        <div className="fw-semibold text-neutral-900">
+                          {subcategories.find(
+                            (sc) => sc.id === parseInt(formData.subCategoryId)
+                          )?.name || (
+                            <span className="text-neutral-500 fst-italic">
+                              Not selected
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
+                      <Icon
+                        icon="mdi:tag-outline"
+                        width="20"
+                        height="20"
+                        className="text-primary-600 mt-1"
+                      />
+                      <div className="flex-grow-1">
+                        <div className="text-neutral-600 text-xs mb-1">
+                          Item Type
+                        </div>
+                        <div className="fw-semibold text-neutral-900">
+                          {itemTypes.find(
+                            (it) => it.id === parseInt(formData.itemTypeId)
+                          )?.name || (
+                            <span className="text-neutral-500 fst-italic">
+                              Not selected
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
+                      <Icon
+                        icon="mdi:package-variant"
+                        width="20"
+                        height="20"
+                        className="text-primary-600 mt-1"
+                      />
+                      <div className="flex-grow-1">
+                        <div className="text-neutral-600 text-xs mb-1">
+                          Item Name
+                        </div>
+                        <div className="fw-semibold text-neutral-900">
+                          {formData.itemName || (
+                            <span className="text-neutral-500 fst-italic">
+                              Not entered
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
+                      <Icon
+                        icon="mdi:scale-balance"
+                        width="20"
+                        height="20"
+                        className="text-primary-600 mt-1"
+                      />
+                      <div className="flex-grow-1">
+                        <div className="text-neutral-600 text-xs mb-1">UOM</div>
+                        <div className="fw-semibold text-neutral-900">
+                          {uomOptions.find(
+                            (opt) =>
+                              opt.id.toString() ===
+                              (formData.uomId || "").toString()
+                          )?.name ||
+                            formData.uomId || (
+                              <span className="text-neutral-500 fst-italic">
+                                Not selected
+                              </span>
+                            )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
+                      <Icon
+                        icon="mdi:barcode"
+                        width="20"
+                        height="20"
+                        className="text-primary-600 mt-1"
+                      />
+                      <div className="flex-grow-1">
+                        <div className="text-neutral-600 text-xs mb-1">
+                          HSN Code
+                        </div>
+                        <div className="fw-semibold text-neutral-900">
+                          {formData.hsnCode || (
+                            <span className="text-neutral-500 fst-italic">
+                              Not entered
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-md-12">
+                    <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
+                      <Icon
+                        icon="mdi:toggle-switch-outline"
+                        width="20"
+                        height="20"
+                        className="text-primary-600 mt-1"
+                      />
+                      <div className="flex-grow-1">
+                        <div className="text-neutral-600 text-xs mb-1">
+                          Status
+                        </div>
+                        <div>
+                          <span
+                            className={`badge ${
+                              formData.isActive
+                                ? "bg-success-600"
+                                : "bg-neutral-400"
+                            }`}
+                          >
+                            {formData.isActive ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Always show form-based attributes preview */}
+                  {attributes.length > 0 && (
+                    <div className="col-12">
+                      <div className="p-12 rounded bg-base-2 border border-neutral-200">
+                        <div className="d-flex align-items-center gap-2 mb-12">
+                          <Icon
+                            icon="mdi:format-list-bulleted"
+                            width="20"
+                            height="20"
+                            className="text-primary-600"
+                          />
+                          <div className="fw-semibold text-neutral-900">
+                            Attributes
+                          </div>
+                        </div>
+                        <div className="row g-2">
+                          {attributes.map((attr) => (
+                            <div key={attr.id} className="col-md-6">
+                              <div className="d-flex justify-content-between align-items-center py-2 px-3 rounded bg-base border border-neutral-100">
+                                <span className="text-neutral-600 text-sm">
+                                  {attr.attributeName}:
+                                </span>
+                                <span className="fw-medium text-neutral-900 text-sm">
+                                  {formData.attributes[attr.id] || (
+                                    <span className="text-neutral-500 fst-italic">
+                                      Not entered
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-          {/* Button styling matches Supplier Info dialog */}
-          <div className="d-flex align-items-center justify-content-center gap-3 w-100 mt-24">
-            <button
-              type="button"
-              className="border border-gray-300 bg-hover-gray-50 text-gray-700 text-md px-40 py-11 radius-8"
-              onClick={onCancel}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary border border-primary-600 text-md px-48 py-12 radius-8"
-              disabled={loading}
-            >
-              {loading ? "Saving..." : isEdit ? "Update" : "Save"}
-            </button>
-          </div>
-        </form>
-      )}
+        </div>
+        {/* Button styling matches Supplier Info dialog */}
+        <div className="d-flex align-items-center justify-content-center gap-3 w-100 mt-24">
+          <button
+            type="button"
+            className="border border-gray-300 bg-hover-gray-50 text-gray-700 text-md px-40 py-11 radius-8"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="btn btn-primary border border-primary-600 text-md px-48 py-12 radius-8"
+            disabled={loading}
+          >
+            {loading ? "Saving..." : isEdit ? "Update" : "Save"}
+          </button>
+        </div>
+      </form>
 
       {/* Duplicate Modal */}
       {showDuplicateModal && (
@@ -931,10 +999,13 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
                   Duplicate Item Found
                 </h6>
                 <p className="text-sm text-neutral-600 mb-16">
-                  An item with the same combination already exists: <strong>{duplicateInfo?.existingItemCode}</strong>
+                  An item with the same combination already exists:{" "}
+                  <strong>{duplicateInfo?.existingItemCode}</strong>
                 </p>
                 <p className="text-sm text-neutral-600 mb-24">
-                  Please update the existing record <strong>'{duplicateInfo?.existingItemName}'</strong> before creating a new record with the same combination.
+                  Please update the existing record{" "}
+                  <strong>'{duplicateInfo?.existingItemName}'</strong> before
+                  creating a new record with the same combination.
                 </p>
                 <div className="d-flex align-items-center justify-content-center gap-3">
                   <button
@@ -950,7 +1021,7 @@ const ItemFormLayer = ({ itemData, tableData, onSuccess, onCancel, triggerToast 
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

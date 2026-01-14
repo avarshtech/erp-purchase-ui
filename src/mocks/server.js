@@ -811,57 +811,60 @@ server.get("/suppliers", () => {
 });
 
 server.post("/suppliers", (data) => {
-  const newSupplier = {
-    id: Math.max(...suppliersData.map((s) => s.id)) + 1,
-    name: data.name,
-    address: data.address,
-    city: data.city,
-    pincode: data.pincode,
-    state: data.state,
-    country: data.country,
-    pan: data.pan,
-    gstin: data.gstin,
-    email: data.email,
-    phone: data.phone,
-    fabric: data.fabric || false,
-    trims: data.trims || false,
-    createdDate: new Date().toISOString().split("T")[0],
-  };
-  suppliersData.push(newSupplier);
-  return {
-    success: true,
-    data: newSupplier,
-    message: "Supplier created successfully",
-  };
-});
-
-server.put("/suppliers/:id", (data, params) => {
-  const supplierId = parseInt(params.id);
-  const supplierIndex = suppliersData.findIndex((s) => s.id === supplierId);
-  if (supplierIndex === -1) {
-    throw new Error("Supplier not found");
+  // Check if data has an id - if yes, it's an update; if no, it's a create
+  if (data.id) {
+    // Update existing supplier
+    const supplierId = parseInt(data.id);
+    const supplierIndex = suppliersData.findIndex((s) => s.id === supplierId);
+    if (supplierIndex === -1) {
+      throw new Error("Supplier not found");
+    }
+    const updatedSupplier = {
+      ...suppliersData[supplierIndex],
+      name: data.name,
+      address: data.address,
+      city: data.city,
+      pincode: data.pincode,
+      state: data.state,
+      country: data.country,
+      pan: data.pan,
+      gstin: data.gstin,
+      email: data.email,
+      phone: data.phone,
+      fabric: data.fabric || false,
+      trims: data.trims || false,
+    };
+    suppliersData[supplierIndex] = updatedSupplier;
+    return {
+      success: true,
+      data: updatedSupplier,
+      message: "Supplier updated successfully",
+    };
+  } else {
+    // Create new supplier
+    const newSupplier = {
+      id: Math.max(...suppliersData.map((s) => s.id)) + 1,
+      name: data.name,
+      address: data.address,
+      city: data.city,
+      pincode: data.pincode,
+      state: data.state,
+      country: data.country,
+      pan: data.pan,
+      gstin: data.gstin,
+      email: data.email,
+      phone: data.phone,
+      fabric: data.fabric || false,
+      trims: data.trims || false,
+      createdDate: new Date().toISOString().split("T")[0],
+    };
+    suppliersData.push(newSupplier);
+    return {
+      success: true,
+      data: newSupplier,
+      message: "Supplier created successfully",
+    };
   }
-  const updatedSupplier = {
-    ...suppliersData[supplierIndex],
-    name: data.name,
-    address: data.address,
-    city: data.city,
-    pincode: data.pincode,
-    state: data.state,
-    country: data.country,
-    pan: data.pan,
-    gstin: data.gstin,
-    email: data.email,
-    phone: data.phone,
-    fabric: data.fabric || false,
-    trims: data.trims || false,
-  };
-  suppliersData[supplierIndex] = updatedSupplier;
-  return {
-    success: true,
-    data: updatedSupplier,
-    message: "Supplier updated successfully",
-  };
 });
 
 server.delete("/suppliers/:id", (data, params) => {
@@ -1675,8 +1678,7 @@ export const exportPOList = (format) =>
 // Supplier API functions
 export const getSuppliers = () => makeRequest("GET", "/suppliers");
 export const createSupplier = (data) => makeRequest("POST", "/suppliers", data);
-export const updateSupplier = (id, data) =>
-  makeRequest("PUT", `/suppliers/${id}`, data);
+export const updateSupplier = (data) => makeRequest("POST", "/suppliers", data);
 export const deleteSupplier = (id) => makeRequest("DELETE", `/suppliers/${id}`);
 
 // Item Master API functions

@@ -8,8 +8,7 @@ import axiosInstance from "./axiosInstance";
 // API endpoints
 const ENDPOINTS = {
   ITEM_META_DATA: "/items/meta",
-  ITEMS: "/items",
-  ITEM_BY_ID: (id) => `/items/${id}`,
+  ITEMS: "/items"
 };
 
 /**
@@ -41,47 +40,34 @@ export const getItemMetaData = async () => {
 };
 
 /**
+ * Create or update an item
+ * @param {Object} itemData - Item data to create or update
+ * @returns {Promise<Object>} Response with created/updated item
+ */
+export const saveItem = async (itemData) => {
+  try {
+    const response = await axiosInstance.post(ENDPOINTS.ITEMS, itemData);
+    return response.data;
+  } catch (error) {
+    console.error(`Error saving item${itemData.id ? ` with ID ${itemData.id}` : ''}:`, error);
+    throw error;
+  }
+};
+
+/**
  * Create a new item
  * @param {Object} itemData - Item data to create
  * @returns {Promise<Object>} Response with created item
  */
 export const createItem = async (itemData) => {
-  try {
-    const response = await axiosInstance.post(ENDPOINTS.ITEMS, itemData);
-    return response.data;
-  } catch (error) {
-    console.error("Error creating item:", error);
-    throw error;
-  }
+  return saveItem(itemData);
 };
 
 /**
  * Update an existing item
- * @param {number} id - Item ID
  * @param {Object} itemData - Updated item data
  * @returns {Promise<Object>} Response with updated item
  */
-export const updateItem = async (id, itemData) => {
-  try {
-    const response = await axiosInstance.put(ENDPOINTS.ITEMS, itemData);
-    return response.data;
-  } catch (error) {
-    console.error(`Error updating item with ID ${id}:`, error);
-    throw error;
-  }
-};
-
-/**
- * Delete an item
- * @param {number} id - Item ID to delete
- * @returns {Promise<Object>} Response with deleted item
- */
-export const deleteItem = async (id) => {
-  try {
-    const response = await axiosInstance.delete(ENDPOINTS.ITEM_BY_ID(id));
-    return response.data;
-  } catch (error) {
-    console.error(`Error deleting item with ID ${id}:`, error);
-    throw error;
-  }
+export const updateItem = async (itemData) => {
+  return saveItem(itemData);
 };

@@ -2,7 +2,6 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   getItemMasterData,
-  deleteItem,
 } from "../services/ItemMaster";
 import ItemFormLayer from "./ItemFormLayer";
 import OperationControl from "./OperationControl";
@@ -43,8 +42,6 @@ const ItemListLayer = () => {
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [selectedItemData, setSelectedItemData] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState(null);
 
   // Toast state
   const [showToast, setShowToast] = useState(false);
@@ -339,29 +336,6 @@ const ItemListLayer = () => {
     setShowModal(true);
   };
 
-  const handleDeleteClick = (item) => {
-    setItemToDelete(item);
-    setShowDeleteModal(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    try {
-      await deleteItem(itemToDelete.id);
-      setShowDeleteModal(false);
-      setItemToDelete(null);
-      triggerToast("Item deleted successfully", "success");
-      fetchData(); // Refresh list
-    } catch (err) {
-      console.error("Error deleting item:", err);
-      triggerToast("Failed to delete item", "error");
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setShowDeleteModal(false);
-    setItemToDelete(null);
-  };
-
   // Pagination logic
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -647,18 +621,6 @@ const ItemListLayer = () => {
                                   <Icon icon="lucide:edit" />
                                 </button>
                               </OperationControl>
-                              <OperationControl
-                                pageId="item-master"
-                                operation="delete"
-                              >
-                                <button
-                                  type="button"
-                                  className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                  onClick={() => handleDeleteClick(item)}
-                                >
-                                  <Icon icon="mingcute:delete-2-line" />
-                                </button>
-                              </OperationControl>
                             </div>
                           </td>
                         )}
@@ -724,11 +686,10 @@ const ItemListLayer = () => {
         }}
         data-bs-backdrop="static"
       >
-        <div className="modal-dialog modal-xl modal-dialog-centered">
+        <div className="modal-dialog modal-xl modal-dialog-centered" style={{ height: '80vh' }}>
           <div
-            className="modal-content radius-16 bg-base"
+            className="modal-content radius-16 bg-base h-100"
             style={{
-              maxHeight: "90vh",
               display: "flex",
               flexDirection: "column",
             }}
@@ -738,7 +699,7 @@ const ItemListLayer = () => {
               style={{ flexShrink: 0 }}
             >
               <h1 className="modal-title fs-5" id="itemModalLabel">
-                {selectedItemData?.id ? "Edit Item" : "Add Item"}
+                {selectedItemData?.id ? `Edit Item - ${selectedItemData.itemCode}` : "Add Item"}
               </h1>
               <button
                 type="button"
@@ -748,7 +709,7 @@ const ItemListLayer = () => {
               />
             </div>
             <div
-              className="modal-body p-24"
+              className="modal-body p-24 position-relative"
               style={{ flex: 1, overflowY: "auto" }}
             >
               {showModal && (
@@ -766,47 +727,6 @@ const ItemListLayer = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      <div
-        className={`modal fade ${showDeleteModal ? "show d-block" : ""}`}
-        style={{
-          backgroundColor: showDeleteModal ? "rgba(0,0,0,0.5)" : "transparent",
-        }}
-        data-bs-backdrop="static"
-      >
-        <div className="modal-dialog modal-sm modal-dialog-centered">
-          <div className="modal-content radius-16 bg-base">
-            <div className="modal-body p-24 text-center">
-              <div className="mb-16">
-                <Icon
-                  icon="mingcute:delete-2-line"
-                  className="text-danger-600 text-4xl"
-                />
-              </div>
-              <h6 className="text-lg text-neutral-900 mb-8">Delete Item</h6>
-              <p className="text-sm text-neutral-600 mb-24">
-                Are you sure you want to delete this item?
-              </p>
-              <div className="d-flex align-items-center justify-content-center gap-3">
-                <button
-                  type="button"
-                  className="border border-neutral-300 bg-hover-neutral-100 text-neutral-600 text-md px-32 py-11 radius-8"
-                  onClick={handleDeleteCancel}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-danger border border-danger-600 text-md px-32 py-12 radius-8"
-                  onClick={handleDeleteConfirm}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </>
   );
 };

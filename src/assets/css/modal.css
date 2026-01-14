@@ -1,0 +1,36 @@
+.btn-close {
+  /* Default: visible on light backgrounds */
+}
+
+/* Ensure close button is visible in both dark and light themes */
+
+/* Support both [data-theme="dark"] and body.dark-mode for dark theme detection */
+
+
+[data-theme="dark"] .btn-close,
+body.dark-mode .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+  opacity: 1;
+  border: none;
+}
+
+[data-theme="dark"] .btn-close:before,
+[data-theme="dark"] .btn-close:after,
+body.dark-mode .btn-close:before,
+body.dark-mode .btn-close:after {
+  background: #fff !important;
+}
+
+/* For SVG or font icons inside the button */
+[data-theme="dark"] .btn-close svg,
+body.dark-mode .btn-close svg {
+  color: #fff !important;
+  fill: #fff !important;
+}
+
+[data-theme="light"] .btn-close,
+body:not([data-theme="dark"]) .btn-close {
+  filter: none;
+  opacity: 1;
+  border: none;
+}

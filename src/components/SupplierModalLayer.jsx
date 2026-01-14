@@ -1,152 +1,30 @@
-import { Icon } from "@iconify/react/dist/iconify.js";
-import React, { useState, useEffect } from "react";
-import {
-  getSuppliers,
-  createSupplier,
-  updateSupplier,
-  deleteSupplier,
-} from "../mocks/server";
-import OperationControl from "./OperationControl";
-import { getCurrentUser, hasOperationPermission } from "../utils/permissions";
+
+  import React, { useState, useEffect } from "react";
+  import { Icon } from "@iconify/react/dist/iconify.js";
+  import { getLocationByPincode } from "../services/pincodeService";
+  import {
+    getSuppliers,
+    createSupplier,
+    updateSupplier,
+    deleteSupplier,
+  } from "../services/suppliers";
+  import OperationControl from "./OperationControl";
+  import { getCurrentUser, hasOperationPermission } from "../utils/permissions";
+  import "../assets/css/modal.css";
+
 
 const SupplierModalLayer = () => {
-  const [allSuppliers, setAllSuppliers] = useState([]);
-  const [filteredSuppliers, setFilteredSuppliers] = useState([]);
-
-  // Calculate permissions
-  const user = getCurrentUser();
-  const canUpdate = user?.permissions
-    ? hasOperationPermission(user.permissions, "supplier-info", "update")
-    : false;
-  const canDelete = user?.permissions
-    ? hasOperationPermission(user.permissions, "supplier-info", "delete")
-    : false;
-  const showActionsColumn = canUpdate || canDelete;
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  const [isEdit, setIsEdit] = useState(false);
-  const [currentSupplier, setCurrentSupplier] = useState(null);
-  const [supplierToDelete, setSupplierToDelete] = useState(null);
-  const [originalSupplier, setOriginalSupplier] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    address: "",
-    city: "",
-    pincode: "",
-    state: "",
-    country: "",
-    pan: "",
-    gstin: "",
-    email: "",
-    phone: "",
-    fabric: false,
-    trims: false,
-  });
-  const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
-  const [sortField, setSortField] = useState("createdDate");
-  const [sortDirection, setSortDirection] = useState("desc");
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState("error");
-  const [hasChanges, setHasChanges] = useState(false);
-
-  useEffect(() => {
-    fetchSuppliers();
-  }, []);
-
-  useEffect(() => {
-    if (isEdit && originalSupplier) {
-      const changed = Object.keys(formData).some((key) => {
-        if (key === "fabric" || key === "trims") {
-          return formData[key] !== originalSupplier[key];
-        }
-        return formData[key] !== originalSupplier[key];
-      });
-      setHasChanges(changed);
-    }
-  }, [formData, originalSupplier, isEdit]);
-
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (showModal) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-
-    // Cleanup on unmount
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [showModal]);
-
-  useEffect(() => {
-    let filtered = allSuppliers;
-
-    if (searchTerm) {
-      filtered = allSuppliers.filter(
-        (supplier) =>
-          supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          supplier.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          supplier.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          supplier.state.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          supplier.country.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          supplier.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          supplier.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          supplier.pan.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          supplier.gstin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          supplier.createdDate.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let aValue = a[sortField];
-      let bValue = b[sortField];
-
-      if (sortField === "createdDate") {
-        aValue = new Date(aValue);
-        bValue = new Date(bValue);
-      } else if (typeof aValue === "string") {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-
-      if (sortDirection === "asc") {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-    setFilteredSuppliers(filtered);
-    setCurrentPage(1);
-  }, [searchTerm, allSuppliers, sortField, sortDirection]);
-
-  const fetchSuppliers = async () => {
-    try {
-      setLoading(true);
-      const response = await getSuppliers();
-      const suppliers = Array.isArray(response) ? response : (response.data || []);
-      setAllSuppliers(suppliers);
-      setFilteredSuppliers(suppliers);
-    } catch (err) {
-      console.error("Error fetching suppliers:", err);
-      setAllSuppliers([]);
-      setFilteredSuppliers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAdd = () => {
-    setIsEdit(false);
-    setCurrentSupplier(null);
-    setFormData({
+    // --- State for suppliers, modal, edit, delete, pagination, sorting, etc. ---
+    const [allSuppliers, setAllSuppliers] = useState([]);
+    const [filteredSuppliers, setFilteredSuppliers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [isEdit, setIsEdit] = useState(false);
+    const [currentSupplier, setCurrentSupplier] = useState(null);
+    const [supplierToDelete, setSupplierToDelete] = useState(null);
+    const [originalSupplier, setOriginalSupplier] = useState(null);
+    const [formData, setFormData] = useState({
       name: "",
       address: "",
       city: "",
@@ -160,157 +38,290 @@ const SupplierModalLayer = () => {
       fabric: false,
       trims: false,
     });
-    setShowModal(true);
-  };
+    const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
+    const [sortField, setSortField] = useState("createdDate");
+    const [sortDirection, setSortDirection] = useState("desc");
+    const [pendingSuccessToast, setPendingSuccessToast] = useState(null);
+    const [hasChanges, setHasChanges] = useState(false);
 
-  const handleEdit = (supplier) => {
-    setIsEdit(true);
-    setCurrentSupplier(supplier);
-    setOriginalSupplier(supplier);
-    setFormData({
-      name: supplier.name,
-      address: supplier.address,
-      city: supplier.city,
-      pincode: supplier.pincode,
-      state: supplier.state,
-      country: supplier.country,
-      pan: supplier.pan,
-      gstin: supplier.gstin,
-      email: supplier.email,
-      phone: supplier.phone,
-      fabric: supplier.fabric,
-      trims: supplier.trims,
-    });
-    setShowModal(true);
-  };
+    // --- Permissions (if needed for actions column) ---
+    const user = getCurrentUser && getCurrentUser();
+    const canUpdate = user?.permissions
+      ? hasOperationPermission(user.permissions, "supplier-info", "update")
+      : false;
+    const canDelete = user?.permissions
+      ? hasOperationPermission(user.permissions, "supplier-info", "delete")
+      : false;
+    const showActionsColumn = canUpdate || canDelete;
 
-  const handleDelete = (supplier) => {
-    setSupplierToDelete(supplier);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDelete = async () => {
-    try {
-      await deleteSupplier(supplierToDelete.id);
-      setShowDeleteModal(false);
-      setSupplierToDelete(null);
+    // --- Fetch suppliers on mount ---
+    useEffect(() => {
       fetchSuppliers();
-    } catch (err) {
-      console.error("Error deleting supplier:", err);
-    }
-  };
+    }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    // Field-by-field validation in order
-    if (!formData.name.trim()) {
-      setToastMessage("Supplier Name is required.");
-      setToastType("error");
-      setShowToast(true);
-      return;
-    }
-    if (!formData.address.trim()) {
-      setToastMessage("Address is required.");
-      setToastType("error");
-      setShowToast(true);
-      return;
-    }
-    if (!formData.city.trim()) {
-      setToastMessage("City is required.");
-      setToastType("error");
-      setShowToast(true);
-      return;
-    }
-    if (!formData.pincode.trim()) {
-      setToastMessage("Pincode is required.");
-      setToastType("error");
-      setShowToast(true);
-      return;
-    }
-    if (!formData.state.trim()) {
-      setToastMessage("State is required.");
-      setToastType("error");
-      setShowToast(true);
-      return;
-    }
-    if (!formData.country.trim()) {
-      setToastMessage("Country is required.");
-      setToastType("error");
-      setShowToast(true);
-      return;
-    }
-    if (!formData.pan.trim()) {
-      setToastMessage("PAN is required.");
-      setToastType("error");
-      setShowToast(true);
-      return;
-    }
-    if (
-      !/^[A-Z]{3}[PCAFHTBLJG]{1}[A-Z]{1}[0-9]{4}[A-Z]{1}$/.test(formData.pan)
-    ) {
-      setToastMessage(
-        "PAN must be in the format: AAAX9999X (e.g., ABCDE1234F)"
-      );
-      setToastType("error");
-      setShowToast(true);
-      return;
-    }
-    if (!formData.gstin.trim()) {
-      setToastMessage("GSTIN is required.");
-      setToastType("error");
-      setShowToast(true);
-      return;
-    }
-    if (
-      !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(
-        formData.gstin
-      )
-    ) {
-      setToastMessage(
-        "GSTIN must be in the format: 22AAAAA0000A1Z5 (15 digits)"
-      );
-      setToastType("error");
-      setShowToast(true);
-      return;
-    }
-    if (!formData.email.trim()) {
-      setToastMessage("Email is required.");
-      setToastType("error");
-      setShowToast(true);
-      return;
-    }
-    if (!formData.phone.trim()) {
-      setToastMessage("Phone Number is required.");
-      setToastType("error");
-      setShowToast(true);
-      return;
-    }
-    if (!formData.fabric && !formData.trims) {
-      setToastMessage(
-        "At least one supply product (Fabric or Trims) must be selected."
-      );
-      setToastType("error");
-      setShowToast(true);
-      return;
-    }
-    try {
-      if (isEdit) {
-        await updateSupplier(currentSupplier.id, formData);
-      } else {
-        await createSupplier(formData);
+    // --- Track form changes for edit mode ---
+    useEffect(() => {
+      if (isEdit && originalSupplier) {
+        const changed = Object.keys(formData).some((key) => {
+          return formData[key] !== originalSupplier[key];
+        });
+        setHasChanges(changed);
       }
-      setShowModal(false);
+    }, [formData, originalSupplier, isEdit]);
+
+    // --- Show pending toast after modal closes ---
+    useEffect(() => {
+      if (!showModal && pendingSuccessToast) {
+        setToastMessage(pendingSuccessToast.message);
+        setToastType(pendingSuccessToast.type);
+        setShowToast(true);
+        setPendingSuccessToast(null);
+      }
+    }, [showModal, pendingSuccessToast]);
+
+    // --- Filter and sort suppliers ---
+    useEffect(() => {
+      let filtered = allSuppliers;
+      if (searchTerm) {
+        filtered = allSuppliers.filter(
+          (supplier) =>
+            supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            supplier.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            supplier.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            supplier.state.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            supplier.country.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            supplier.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            supplier.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            supplier.pan.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            supplier.gstin.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+      const sorted = [...filtered].sort((a, b) => {
+        let aValue = a[sortField];
+        let bValue = b[sortField];
+        if (sortField === "createdDate") {
+          aValue = new Date(aValue);
+          bValue = new Date(bValue);
+        } else if (typeof aValue === "string") {
+          aValue = aValue.toLowerCase();
+          bValue = bValue.toLowerCase();
+        }
+        if (sortDirection === "asc") {
+          return aValue > bValue ? 1 : -1;
+        } else {
+          return aValue < bValue ? 1 : -1;
+        }
+      });
+      setFilteredSuppliers(sorted);
+      setCurrentPage(1);
+    }, [searchTerm, allSuppliers, sortField, sortDirection]);
+
+    // --- Fetch suppliers from API ---
+    const fetchSuppliers = async () => {
+      try {
+        setLoading(true);
+        const response = await getSuppliers();
+        const suppliers = Array.isArray(response) ? response : (response.data || []);
+        setAllSuppliers(suppliers);
+        setFilteredSuppliers(suppliers);
+      } catch (err) {
+        setAllSuppliers([]);
+        setFilteredSuppliers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // --- Modal handlers ---
+    const handleAdd = () => {
+      setIsEdit(false);
+      setCurrentSupplier(null);
+      setFormData({
+        name: "",
+        address: "",
+        city: "",
+        pincode: "",
+        state: "",
+        country: "",
+        pan: "",
+        gstin: "",
+        email: "",
+        phone: "",
+        fabric: false,
+        trims: false,
+      });
+      setPendingSuccessToast(null);
       setShowToast(false);
-      await fetchSuppliers(); // Ensure fresh data is loaded
-    } catch (err) {
-      setToastMessage(
-        `Failed to ${isEdit ? "update" : "create"} supplier. Please try again.`
-      );
-      setToastType("error");
-      setShowToast(true);
-      console.error(`Error ${isEdit ? "updating" : "creating"} supplier:`, err);
+      setShowModal(true);
+    };
+
+    const handleEdit = (supplier) => {
+      const foundSupplier = allSuppliers.find((s) => s.id === supplier.id) || supplier;
+      setIsEdit(true);
+      setCurrentSupplier(foundSupplier);
+      setOriginalSupplier(foundSupplier);
+      setFormData({
+        name: foundSupplier.name,
+        address: foundSupplier.address,
+        city: foundSupplier.city,
+        pincode: foundSupplier.pincode,
+        state: foundSupplier.state,
+        country: foundSupplier.country,
+        pan: foundSupplier.pan,
+        gstin: foundSupplier.gstin,
+        email: foundSupplier.email,
+        phone: foundSupplier.phone,
+        fabric: foundSupplier.fabric,
+        trims: foundSupplier.trims,
+      });
+      setPendingSuccessToast(null);
+      setShowToast(false);
+      setShowModal(true);
+    };
+
+    const handleDelete = (supplier) => {
+      setSupplierToDelete(supplier);
+      setShowDeleteModal(true);
+    };
+
+    const confirmDelete = async () => {
+      try {
+        await deleteSupplier(supplierToDelete.id);
+        setShowDeleteModal(false);
+        setSupplierToDelete(null);
+        fetchSuppliers();
+        // Show success toast after delete
+        setToastMessage("Supplier deleted successfully.");
+        setToastType("success");
+        setShowToast(true);
+      } catch (err) {
+        setToastMessage("Failed to delete supplier. Please try again.");
+        setToastType("error");
+        setShowToast(true);
+      }
+    };
+
+    // --- Submit handler ---
+    const handleSubmit = async (e) => {
+      if (e) e.preventDefault();
+      // Field-by-field validation (handle null values safely)
+      if (!(formData.name || '').trim()) {
+        setToastMessage("Supplier Name is required.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      if (!(formData.address || '').trim()) {
+        setToastMessage("Address is required.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      if (!(formData.city || '').trim()) {
+        setToastMessage("City is required.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      if (!(formData.pincode || '').trim()) {
+        setToastMessage("Pincode is required.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      if (!(formData.state || '').trim()) {
+        setToastMessage("State is required.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      if (!(formData.country || '').trim()) {
+        setToastMessage("Country is required.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      if (!(formData.pan || '').trim()) {
+        setToastMessage("PAN is required.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      if (!/^[A-Z]{3}[PCAFHTBLJG]{1}[A-Z]{1}[0-9]{4}[A-Z]{1}$/.test(formData.pan || '')) {
+        setToastMessage("PAN must be in the format: AAAX9999X (e.g., ABCDE1234F)");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      if (!(formData.gstin || '').trim()) {
+        setToastMessage("GSTIN is required.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(formData.gstin || '')) {
+        setToastMessage("GSTIN must be in the format: 22AAAAA0000A1Z5 (15 digits)");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      if (!(formData.email || '').trim()) {
+        setToastMessage("Email is required.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      if (!(formData.phone || '').trim()) {
+        setToastMessage("Phone Number is required.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      if (!formData.fabric && !formData.trims) {
+        setToastMessage("At least one supply product (Fabric or Trims) must be selected.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      try {
+        const supplierData = isEdit ? { ...formData, id: currentSupplier.id } : formData;
+        if (isEdit) {
+          await updateSupplier(supplierData);
+          setPendingSuccessToast({ message: "Supplier updated successfully.", type: "success" });
+        } else {
+          await createSupplier(supplierData);
+          setPendingSuccessToast({ message: "Supplier added successfully.", type: "success" });
+        }
+        setShowModal(false);
+        await fetchSuppliers();
+      } catch (err) {
+        setToastMessage(`Failed to ${isEdit ? "update" : "create"} supplier. Please try again.`);
+        setToastType("error");
+        setShowToast(true);
+        console.error(`Error ${isEdit ? "updating" : "creating"} supplier:`, err);
+      }
+    };
+
+  // Toast state (must be defined before any use)
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState("error");
+
+  // Auto-hide success toast after 2.5 seconds (similar to item toast)
+  useEffect(() => {
+    let timer;
+    if (showToast && toastType === "success") {
+      timer = setTimeout(() => {
+        setShowToast(false);
+      }, 2500);
     }
-  };
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [showToast, toastType]);
+
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -319,49 +330,33 @@ const SupplierModalLayer = () => {
     // Apply field-specific restrictions
     switch (name) {
       case "name":
-        // Only characters, no numbers or special chars
         newValue = value.replace(/[^a-zA-Z\s]/g, "");
         break;
       case "address":
-        // Characters, numbers, spaces, and specific special chars (-, /)
         newValue = value.replace(/[^a-zA-Z0-9\s\-/]/g, "");
         break;
       case "city":
-        // Only characters, no numbers or special chars
         newValue = value.replace(/[^a-zA-Z\s]/g, "");
         break;
       case "pincode":
-        // Only numbers, max 6 digits
         newValue = value.replace(/[^0-9]/g, "").slice(0, 6);
         break;
       case "state":
-        // Only characters, no numbers or special chars
         newValue = value.replace(/[^a-zA-Z\s]/g, "");
         break;
       case "country":
-        // Only characters, no numbers or special chars
         newValue = value.replace(/[^a-zA-Z\s]/g, "");
         break;
       case "pan":
-        // PAN format: 10 characters, specific structure
-        newValue = value
-          .replace(/[^a-zA-Z0-9]/g, "")
-          .toUpperCase()
-          .slice(0, 10);
+        newValue = value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 10);
         break;
       case "gstin":
-        // GSTIN format: 15 characters, specific structure
-        newValue = value
-          .replace(/[^a-zA-Z0-9]/g, "")
-          .toUpperCase()
-          .slice(0, 15);
+        newValue = value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 15);
         break;
       case "email":
-        // Allow standard email characters
         newValue = value.replace(/[^a-zA-Z0-9@._-]/g, "");
         break;
       case "phone":
-        // Only numbers, max 10 digits
         newValue = value.replace(/[^0-9]/g, "").slice(0, 10);
         break;
       default:
@@ -372,6 +367,22 @@ const SupplierModalLayer = () => {
       ...prev,
       [name]: newValue,
     }));
+  };
+
+  // OnBlur handler for pincode to fetch city/state/country
+  const handlePincodeBlur = async (e) => {
+    const pincode = e.target.value;
+    if (pincode.length === 6) {
+      const location = await getLocationByPincode(pincode);
+      if (location) {
+        setFormData((prev) => ({
+          ...prev,
+          city: location.city,
+          state: location.state,
+          country: location.country,
+        }));
+      }
+    }
   };
 
   const handleSearchChange = (e) => {
@@ -428,6 +439,29 @@ const SupplierModalLayer = () => {
 
   return (
     <>
+      {/* Toast Notification (global, outside modal) */}
+      {showToast && (
+        <div
+          className="position-fixed top-0 start-50 translate-middle-x mt-3"
+          style={{ zIndex: 2000 }}
+        >
+          <div
+            className={`toast-custom ${
+              toastType === "error" ? "toast-error" : "toast-success"
+            }`}
+          >
+            <span>{toastMessage}</span>
+            <button
+              type="button"
+              className="toast-close"
+              onClick={() => setShowToast(false)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+      )}
       <h6 className="page-title">Supplier / Vendor Details</h6>
       <div className="card">
         <div className="card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -594,7 +628,9 @@ const SupplierModalLayer = () => {
                         <td style={{ width: "160px" }}>{supplier.pan}</td>
                         <td style={{ width: "200px" }}>{supplier.gstin}</td>
                         <td style={{ width: "200px" }}>
-                          {supplier.createdDate}
+                          {supplier.createdAt
+                            ? new Date(supplier.createdAt).toLocaleDateString("en-CA")
+                            : "-"}
                         </td>
                         <td style={{ width: "180px" }}>
                           {renderSuppliesChips(supplier)}
@@ -699,29 +735,6 @@ const SupplierModalLayer = () => {
               flexDirection: "column",
             }}
           >
-            {/* Toast Notification */}
-            {showToast && (
-              <div
-                className="position-absolute top-0 start-50 translate-middle-x mt-3"
-                style={{ zIndex: 10 }}
-              >
-                <div
-                  className={`toast-custom ${
-                    toastType === "error" ? "toast-error" : "toast-success"
-                  }`}
-                >
-                  <span>{toastMessage}</span>
-                  <button
-                    type="button"
-                    className="toast-close"
-                    onClick={() => setShowToast(false)}
-                    aria-label="Close"
-                  >
-                    &times;
-                  </button>
-                </div>
-              </div>
-            )}
             <div
               className="modal-header py-16 px-24 border border-top-0 border-start-0 border-end-0"
               style={{ flexShrink: 0 }}
@@ -800,6 +813,7 @@ const SupplierModalLayer = () => {
                       placeholder="Enter Pincode"
                       value={formData.pincode}
                       onChange={handleChange}
+                      onBlur={handlePincodeBlur}
                       maxLength="6"
                       required
                     />
