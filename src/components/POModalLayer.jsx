@@ -3,7 +3,10 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { v4 as uuidv4 } from "uuid";
-import { makeRequest } from "../mocks/server";
+import { createPurchaseOrder, updatePurchaseOrder } from "../services/purchaseOrders";
+import { getSuppliers } from "../services/suppliers";
+import { getItemMasterData } from "../services/ItemMaster";
+import axiosInstance from "../services/axiosInstance";
 import POHeaderSection from "./child/POHeaderSection";
 import POLineItemsTable from "./child/POLineItemsTable";
 import POFooterSummary from "./child/POFooterSummary";
@@ -256,15 +259,15 @@ const POModalLayer = ({
       setUiState((prev) => ({ ...prev, loading: true }));
       const [suppliersResponse, itemsResponse, termsConditionsResponse] =
         await Promise.all([
-          makeRequest("GET", "/suppliers"),
-          makeRequest("GET", "/items"),
-          makeRequest("GET", "/terms-conditions"),
+          getSuppliers(),
+          getItemMasterData(),
+          axiosInstance.get("/terms-conditions"),
         ]);
       setMasterData((prev) => ({
         ...prev,
-        suppliers: suppliersResponse.data,
-        items: itemsResponse.data,
-        termsConditions: termsConditionsResponse.data,
+        suppliers: suppliersResponse.content || suppliersResponse.data || suppliersResponse || [],
+        items: itemsResponse.content || itemsResponse.data || itemsResponse || [],
+        termsConditions: termsConditionsResponse.data?.content || termsConditionsResponse.data?.data || termsConditionsResponse.data || [],
       }));
     } catch (error) {
       toast.error("Failed to load master data");
@@ -314,9 +317,44 @@ const POModalLayer = ({
                 (i) => i.id === parseInt(value)
               );
               if (selectedItem) {
-                updatedItem.description = selectedItem.itemName; // Map itemName to description
-                updatedItem.uom = selectedItem.uomId; // Map uomId to uom
-                updatedItem.unitPrice = selectedItem.unitPrice; // Map unitPrice
+                // Build description from sub-category, item-type, and attributes
+                const descriptionParts = [];
+                
+                // Add item name
+                if (selectedItem.itemName) {
+                  descriptionParts.push(selectedItem.itemName);
+                }
+                
+                // Add sub-category and item-type
+                const categoryInfo = [];
+                if (selectedItem.subCategoryName) {
+                  categoryInfo.push(selectedItem.subCategoryName);
+                }
+                if (selectedItem.itemTypeName) {
+                  categoryInfo.push(selectedItem.itemTypeName);
+                }
+                if (categoryInfo.length > 0) {
+                  descriptionParts.push(`(${categoryInfo.join(" - ")})`);
+                }
+                
+                // Add attributes in a readable format
+                if (selectedItem.attributes && typeof selectedItem.attributes === 'object') {
+                  const attributeStrings = Object.entries(selectedItem.attributes)
+                    .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+                    .map(([key, value]) => {
+                      // Format the key to be more readable (capitalize first letter)
+                      const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
+                      return `${formattedKey}: ${value}`;
+                    });
+                  
+                  if (attributeStrings.length > 0) {
+                    descriptionParts.push(`[${attributeStrings.join(', ')}]`);
+                  }
+                }
+                
+                updatedItem.description = descriptionParts.join(' ');
+                updatedItem.uom = selectedItem.uomName || "";
+                updatedItem.unitPrice = selectedItem.unitPrice || 0;
               }
             }
 
@@ -450,6 +488,40 @@ const POModalLayer = ({
     };
   }, [formState.lineItems]);
 
+  const resetForm = () => {
+    setFormState({
+      formData: {
+        poNo: "",
+        supplierId: "",
+        poDate: new Date(),
+        expectedDeliveryDate: null,
+        termsConditionId: "",
+        remarks: "",
+      },
+      lineItems: [
+        {
+          id: uuidv4(),
+          itemId: "",
+          description: "",
+          qty: 1,
+          uom: "",
+          unitPrice: 0,
+          sgstPercent: 0,
+          cgstPercent: 0,
+          amount: 0,
+        },
+      ],
+      errors: {},
+      isDirty: false,
+    });
+
+    setUiState((prev) => ({
+      ...prev,
+      supplierSearch: "",
+      showSupplierDropdown: false,
+    }));
+  };
+
   const handleSaveDraft = async () => {
     if (!validateForm(false)) {
       toast.error("Please fix the errors before saving");
@@ -459,54 +531,69 @@ const POModalLayer = ({
     try {
       setUiState((prev) => ({ ...prev, loading: "saving" }));
       const totals = calculateTotals();
+      
+      // Get supplier details
+      const selectedSupplier = masterData.suppliers.find(
+        (s) => s.id === formState.formData.supplierId
+      );
+      
+      // Get terms and conditions details
+      const selectedTerms = masterData.termsConditions.find(
+        (tc) => tc.id === parseInt(formState.formData.termsConditionId)
+      );
+      
+      // Format line items to match API structure
+      const formattedLineItems = formState.lineItems.map((item) => {
+        const selectedItem = masterData.items.find(
+          (i) => i.id === parseInt(item.itemId)
+        );
+        
+        return {
+          itemId: parseInt(item.itemId) || 0,
+          itemName: selectedItem?.itemName || "",
+          uomId: selectedItem?.uomId || 0,
+          uomName: selectedItem?.uomName || item.uom || "",
+          description: item.description || "",
+          quantity: item.qty || 0,
+          unitPrice: item.unitPrice || 0,
+          cgst: item.cgstPercent || 0,
+          sgst: item.sgstPercent || 0,
+          igst: 0,
+          totalAmount: item.amount || 0,
+        };
+      });
+      
+      // Format dates to YYYY-MM-DD
+      const formatDateForAPI = (date) => {
+        if (!date) return null;
+        const d = new Date(date);
+        return d.toISOString().split('T')[0];
+      };
+      
       const poData = {
-        ...formState.formData,
-        lineItems: formState.lineItems,
-        ...totals,
+        poNumber: formState.formData.poNo,
+        supplierId: formState.formData.supplierId || 0,
+        supplierName: selectedSupplier?.name || "",
+        poDate: formatDateForAPI(formState.formData.poDate),
+        deliveryDate: formatDateForAPI(formState.formData.expectedDeliveryDate),
         status: "Draft",
+        subtotal: totals.subtotal,
+        taxAmount: totals.tax,
+        grandTotal: totals.grandTotal,
+        lineItems: formattedLineItems,
+        termsConditionsId: parseInt(formState.formData.termsConditionId) || 0,
+        termsConditionsTitle: selectedTerms?.name || "",
       };
 
       if (editingPO) {
-        await makeRequest("PUT", `/purchase-orders/${editingPO.id}`, poData);
+        await updatePurchaseOrder(editingPO.id, poData);
         toast.success("Purchase Order updated as draft");
       } else {
-        await makeRequest("POST", "/purchase-orders", poData);
+        await createPurchaseOrder(poData);
         toast.success("Purchase Order saved as draft");
       }
 
-      // Reset form after successful save
-      setFormState({
-        formData: {
-          poNo: "",
-          supplierId: "",
-          poDate: new Date(),
-          expectedDeliveryDate: null,
-          termsConditionId: "",
-          remarks: "",
-        },
-        lineItems: [
-          {
-            id: uuidv4(),
-            itemId: "",
-            description: "",
-            qty: 1,
-            uom: "",
-            unitPrice: 0,
-            sgstPercent: 0,
-            cgstPercent: 0,
-            amount: 0,
-          },
-        ],
-        errors: {},
-        isDirty: false,
-      });
-
-      setUiState((prev) => ({
-        ...prev,
-        supplierSearch: "",
-        showSupplierDropdown: false,
-      }));
-
+      resetForm();
       onPOUpdated();
       onClose();
     } catch (error) {
@@ -526,54 +613,69 @@ const POModalLayer = ({
     try {
       setUiState((prev) => ({ ...prev, loading: "submitting" }));
       const totals = calculateTotals();
+      
+      // Get supplier details
+      const selectedSupplier = masterData.suppliers.find(
+        (s) => s.id === formState.formData.supplierId
+      );
+      
+      // Get terms and conditions details
+      const selectedTerms = masterData.termsConditions.find(
+        (tc) => tc.id === parseInt(formState.formData.termsConditionId)
+      );
+      
+      // Format line items to match API structure
+      const formattedLineItems = formState.lineItems.map((item) => {
+        const selectedItem = masterData.items.find(
+          (i) => i.id === parseInt(item.itemId)
+        );
+        
+        return {
+          itemId: parseInt(item.itemId) || 0,
+          itemName: selectedItem?.itemName || "",
+          uomId: selectedItem?.uomId || 0,
+          uomName: selectedItem?.uomName || item.uom || "",
+          description: item.description || "",
+          quantity: item.qty || 0,
+          unitPrice: item.unitPrice || 0,
+          cgst: item.cgstPercent || 0,
+          sgst: item.sgstPercent || 0,
+          igst: 0,
+          totalAmount: item.amount || 0,
+        };
+      });
+      
+      // Format dates to YYYY-MM-DD
+      const formatDateForAPI = (date) => {
+        if (!date) return null;
+        const d = new Date(date);
+        return d.toISOString().split('T')[0];
+      };
+      
       const poData = {
-        ...formState.formData,
-        lineItems: formState.lineItems,
-        ...totals,
+        poNumber: formState.formData.poNo,
+        supplierId: formState.formData.supplierId || 0,
+        supplierName: selectedSupplier?.name || "",
+        poDate: formatDateForAPI(formState.formData.poDate),
+        deliveryDate: formatDateForAPI(formState.formData.expectedDeliveryDate),
         status: "Submitted",
+        subtotal: totals.subtotal,
+        taxAmount: totals.tax,
+        grandTotal: totals.grandTotal,
+        lineItems: formattedLineItems,
+        termsConditionsId: parseInt(formState.formData.termsConditionId) || 0,
+        termsConditionsTitle: selectedTerms?.name || "",
       };
 
       if (editingPO) {
-        await makeRequest("PUT", `/purchase-orders/${editingPO.id}`, poData);
+        await updatePurchaseOrder(editingPO.id, poData);
         toast.success("Purchase Order updated and submitted for approval");
       } else {
-        await makeRequest("POST", "/purchase-orders", poData);
+        await createPurchaseOrder(poData);
         toast.success("Purchase Order submitted for approval");
       }
 
-      // Reset form after successful submit
-      setFormState({
-        formData: {
-          poNo: "",
-          supplierId: "",
-          poDate: new Date(),
-          expectedDeliveryDate: null,
-          termsConditionId: "",
-          remarks: "",
-        },
-        lineItems: [
-          {
-            id: uuidv4(),
-            itemId: "",
-            description: "",
-            qty: 1,
-            uom: "",
-            unitPrice: 0,
-            sgstPercent: 0,
-            cgstPercent: 0,
-            amount: 0,
-          },
-        ],
-        errors: {},
-        isDirty: false,
-      });
-
-      setUiState((prev) => ({
-        ...prev,
-        supplierSearch: "",
-        showSupplierDropdown: false,
-      }));
-
+      resetForm();
       onPOUpdated();
       onClose();
     } catch (error) {
@@ -602,40 +704,8 @@ const POModalLayer = ({
 
   const handleConfirmDialog = (confirmed) => {
     if (confirmed) {
-      // Reset form before closing
-      setFormState({
-        formData: {
-          poNo: "",
-          supplierId: "",
-          poDate: new Date(),
-          expectedDeliveryDate: null,
-          termsConditionId: "",
-          remarks: "",
-        },
-        lineItems: [
-          {
-            id: uuidv4(),
-            itemId: "",
-            description: "",
-            qty: 1,
-            uom: "",
-            unitPrice: 0,
-            sgstPercent: 0,
-            cgstPercent: 0,
-            amount: 0,
-          },
-        ],
-        errors: {},
-        isDirty: false,
-      });
-
-      setUiState((prev) => ({
-        ...prev,
-        supplierSearch: "",
-        showSupplierDropdown: false,
-        showConfirmDialog: false,
-      }));
-
+      resetForm();
+      setUiState((prev) => ({ ...prev, showConfirmDialog: false }));
       onClose();
     } else {
       setUiState((prev) => ({ ...prev, showConfirmDialog: false }));
@@ -643,7 +713,6 @@ const POModalLayer = ({
   };
 
   const selectSupplier = (supplier) => {
-    console.log("supplier", supplier);
     handleInputChange("supplierId", supplier.id);
     setUiState((prev) => ({
       ...prev,
@@ -765,6 +834,7 @@ const POModalLayer = ({
               selectSupplier={selectSupplier}
               handleInputChange={handleInputChange}
               termsConditions={masterData.termsConditions}
+              loading={uiState.loading}
             />
 
             <POLineItemsTable
