@@ -30,6 +30,8 @@ const Users = () => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    username: "",
+    password: "",
     email: "",
     roleId: "",
     isActive: true,
@@ -143,6 +145,8 @@ const Users = () => {
     setFormData({
       firstName: "",
       lastName: "",
+      username: "",
+      password: "",
       email: "",
       roleId: "",
       isActive: true,
@@ -161,6 +165,8 @@ const Users = () => {
     setFormData({
       firstName: firstName,
       lastName: lastName,
+      username: user.username || "",
+      password: "",
       email: user.email,
       roleId: user.roleId ? String(user.roleId) : "",
       isActive: user.isActive,
@@ -185,7 +191,7 @@ const Users = () => {
       fetchUsers();
     } catch (err) {
       console.error("Error deleting user:", err);
-      setToastMessage("Failed to delete user");
+      setToastMessage(err.errorMessage || "Failed to delete user");
       setToastType("error");
       setShowToast(true);
     }
@@ -203,6 +209,30 @@ const Users = () => {
     }
     if (!formData.lastName.trim()) {
       setToastMessage("Last Name is required.");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    }
+    if (!formData.username.trim()) {
+      setToastMessage("Username is required.");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    }
+    if (formData.username.length < 3) {
+      setToastMessage("Username must be at least 3 characters.");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    }
+    if (!isEdit && !formData.password.trim()) {
+      setToastMessage("Password is required.");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    }
+    if (!isEdit && formData.password.length < 6) {
+      setToastMessage("Password must be at least 6 characters.");
       setToastType("error");
       setShowToast(true);
       return;
@@ -228,33 +258,28 @@ const Users = () => {
 
     try {
       // Construct payload with concatenated name
-      const name = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
-      
-      // Get roleName from fetched roles
-      const selectedRole = roles.find(r => String(r.id) === formData.roleId);
-      const roleName = selectedRole?.name || "";
-      
+      const name = `${formData.firstName.trim()} ${formData.lastName.trim()}`;      
       if (isEdit) {
-        // Update payload includes id, keeps existing username
+        // Update payload for PUT /users/{id}
         const payload = {
           id: currentUser.id,
           name: name,
-          username: currentUser.username,
-          password: null,
+          username: formData.username.trim(),
           email: formData.email.trim(),
           roleId: parseInt(formData.roleId),
-          roleName: roleName,
           isActive: formData.isActive,
         };
-        await updateUser(payload);
+        await updateUser(currentUser.id, payload);
         setToastMessage("User updated successfully");
       } else {
-        // Create payload without id, generate new username
-        const username = generateUsername(formData.firstName, formData.lastName);
+        // Get roleName from fetched roles for create
+        const selectedRole = roles.find(r => String(r.id) === formData.roleId);
+        const roleName = selectedRole?.name || "";
+        // Create payload without id, use username from form
         const payload = {
           name: name,
-          username: username,
-          password: null,
+          username: formData.username.trim(),
+          password: formData.password,
           email: formData.email.trim(),
           roleId: parseInt(formData.roleId),
           roleName: roleName,
@@ -269,7 +294,7 @@ const Users = () => {
       await fetchUsers();
     } catch (err) {
       setToastMessage(
-        `Failed to ${isEdit ? "update" : "create"} user. Please try again.`
+        err.errorMessage || `Failed to ${isEdit ? "update" : "create"} user. Please try again.`
       );
       setToastType("error");
       setShowToast(true);
@@ -291,6 +316,17 @@ const Users = () => {
       return;
     }
 
+    // Validation: username should only contain alphanumeric characters and underscores
+    if (name === "username") {
+      if (value === "" || /^[a-zA-Z0-9_]+$/.test(value)) {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: value,
+        }));
+      }
+      return;
+    }
+
     // Handle isActive as boolean
     if (name === "isActive") {
       setFormData((prev) => ({
@@ -304,6 +340,21 @@ const Users = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  // Auto-generate username when both firstName and lastName are filled (only in add mode)
+  const handleNameBlur = () => {
+    if (!isEdit && formData.firstName.trim() && formData.lastName.trim()) {
+      try {
+        const generatedUsername = generateUsername(formData.firstName, formData.lastName);
+        setFormData((prev) => ({
+          ...prev,
+          username: generatedUsername,
+        }));
+      } catch (error) {
+        console.error("Error generating username:", error);
+      }
+    }
   };
 
   const handleSearchChange = (e) => {
@@ -652,6 +703,7 @@ const Users = () => {
                       placeholder="Enter First Name"
                       value={formData.firstName}
                       onChange={handleChange}
+                      onBlur={handleNameBlur}
                       required
                     />
                   </div>
@@ -666,9 +718,40 @@ const Users = () => {
                       placeholder="Enter Last Name"
                       value={formData.lastName}
                       onChange={handleChange}
+                      onBlur={handleNameBlur}
                       required
                     />
                   </div>
+                  <div className={`${isEdit ? 'col-12' : 'col-6'} mb-20`}>
+                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                      Username <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="username"
+                      className="form-control radius-8"
+                      placeholder="Enter Username"
+                      value={formData.username}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  {!isEdit && (
+                    <div className="col-6 mb-20">
+                      <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                        Password <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        type="password"
+                        name="password"
+                        className="form-control radius-8"
+                        placeholder="Enter Password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                  )}
                   <div className="col-12 mb-20">
                     <label className="form-label fw-semibold text-primary-light text-sm mb-8">
                       Email <span className="text-danger">*</span>

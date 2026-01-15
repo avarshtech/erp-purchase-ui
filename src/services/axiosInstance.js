@@ -33,36 +33,68 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle specific error codes
+    // Extract error message from response
+    let errorMessage = 'An unexpected error occurred';
+    
     if (error.response) {
-      const { status } = error.response;
+      const { status, data } = error.response;
       
-      switch (status) {
-        case 401:
-          // Unauthorized - redirect to login
-          localStorage.removeItem('authToken');
-          sessionStorage.removeItem('authToken');
+      // Extract message from response data - prioritize API's message field
+      if (data) {
+        if (typeof data === 'string') {
+          errorMessage = data;
+        } else if (data.message) {
+          // Use the message from API response (e.g., "Bad credentials")
+          errorMessage = data.message;
+        } else if (data.error) {
+          errorMessage = data.error;
+        } else if (data.errors && Array.isArray(data.errors)) {
+          errorMessage = data.errors.join(', ');
+        }
+      }
+      
+      // Only set default messages if no message was extracted from API response
+      if (!data?.message && !data?.error) {
+        switch (status) {
+          case 401:
+            errorMessage = 'Session expired. Please login again.';
+            break;
+          case 403:
+            errorMessage = 'Access denied. You do not have permission to perform this action.';
+            break;
+          case 404:
+            errorMessage = 'Resource not found.';
+            break;
+          case 409:
+            errorMessage = 'A conflict occurred. The resource may already exist.';
+            break;
+          case 422:
+            errorMessage = 'Validation failed. Please check your input.';
+            break;
+          case 500:
+            errorMessage = 'Server error occurred. Please try again later.';
+            break;
+          default:
+            break;
+        }
+      }
+      
+      // Handle 401 redirect separately (after setting message)
+      if (status === 401) {
+        localStorage.removeItem('authToken');
+        sessionStorage.removeItem('authToken');
+        // Don't redirect if already on login page
+        if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login';
-          break;
-        case 403:
-          // Forbidden - show access denied
-          console.error('Access denied');
-          break;
-        case 404:
-          // Not found
-          console.error('Resource not found');
-          break;
-        case 500:
-          // Server error
-          console.error('Server error occurred');
-          break;
-        default:
-          break;
+        }
       }
     } else if (error.request) {
       // Network error
-      console.error('Network error - please check your connection');
+      errorMessage = 'Network error - please check your connection';
     }
+    
+    // Attach the extracted message to the error object for easy access
+    error.errorMessage = errorMessage;
     
     return Promise.reject(error);
   }

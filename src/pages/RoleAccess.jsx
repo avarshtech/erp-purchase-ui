@@ -164,7 +164,7 @@ const RoleAccess = () => {
       fetchRoles();
     } catch (err) {
       console.error("Error deleting role:", err);
-      setToastMessage("Failed to delete role");
+      setToastMessage(err.errorMessage || "Failed to delete role");
       setToastType("error");
       setShowToast(true);
     }
@@ -201,7 +201,7 @@ const RoleAccess = () => {
       await fetchRoles();
     } catch (err) {
       setToastMessage(
-        `Failed to ${isEdit ? "update" : "create"} role. Please try again.`
+        err.errorMessage || `Failed to ${isEdit ? "update" : "create"} role. Please try again.`
       );
       setToastType("error");
       setShowToast(true);

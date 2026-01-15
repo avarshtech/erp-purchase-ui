@@ -91,7 +91,7 @@ export const authenticateUser = async (username, password) => {
     console.error("Login Error Details:", error);
     return {
       success: false,
-      message: error.message || "Network error. Please try again.",
+      message: error.errorMessage || error.response?.data?.message || "Network error. Please try again.",
     };
   }
 };

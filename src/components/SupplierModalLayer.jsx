@@ -35,8 +35,8 @@ const SupplierModalLayer = () => {
       gstin: "",
       email: "",
       phone: "",
-      fabric: false,
-      trims: false,
+      suppliesFabric: false,
+      suppliesTrims: false,
       active: true
     });
     const [searchTerm, setSearchTerm] = useState("");
@@ -150,8 +150,8 @@ const SupplierModalLayer = () => {
         gstin: "",
         email: "",
         phone: "",
-        fabric: false,
-        trims: false,
+        suppliesFabric: false,
+        suppliesTrims: false,
         active: true
       });
       setPendingSuccessToast(null);
@@ -175,8 +175,8 @@ const SupplierModalLayer = () => {
         gstin: foundSupplier.gstin,
         email: foundSupplier.email,
         phone: foundSupplier.phone,
-        fabric: foundSupplier.fabric,
-        trims: foundSupplier.trims,
+        suppliesFabric: foundSupplier.suppliesFabric,
+        suppliesTrims: foundSupplier.suppliesTrims,
         active: foundSupplier.active,
       });
       setPendingSuccessToast(null);
@@ -200,7 +200,7 @@ const SupplierModalLayer = () => {
         setToastType("success");
         setShowToast(true);
       } catch (err) {
-        setToastMessage("Failed to delete supplier. Please try again.");
+        setToastMessage(err.errorMessage || "Failed to delete supplier. Please try again.");
         setToastType("error");
         setShowToast(true);
       }
@@ -333,7 +333,7 @@ const SupplierModalLayer = () => {
         setShowModal(false);
         await fetchSuppliers();
       } catch (err) {
-        setToastMessage(`Failed to ${isEdit ? "update" : "create"} supplier. Please try again.`);
+        setToastMessage(err.errorMessage || `Failed to ${isEdit ? "update" : "create"} supplier. Please try again.`);
         setToastType("error");
         setShowToast(true);
         console.error(`Error ${isEdit ? "updating" : "creating"} supplier:`, err);
@@ -446,7 +446,7 @@ const SupplierModalLayer = () => {
 
   const renderSuppliesChips = (supplier) => {
     const chips = [];
-    if (supplier.fabric) {
+    if (supplier.suppliesFabric) {
       chips.push(
         <span
           key="fabric"
@@ -456,7 +456,7 @@ const SupplierModalLayer = () => {
         </span>
       );
     }
-    if (supplier.trims) {
+    if (supplier.suppliesTrims) {
       chips.push(
         <span
           key="trims"

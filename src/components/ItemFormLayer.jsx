@@ -434,7 +434,7 @@ const ItemFormLayer = ({
         if (onSuccess) onSuccess("Item created successfully");
       }
     } catch (err) {
-      if (triggerToast) triggerToast("Failed to save item", "error");
+      if (triggerToast) triggerToast(err.errorMessage || "Failed to save item", "error");
       console.error("Error saving item:", err);
     } finally {
       setLoading(false);

@@ -50,11 +50,18 @@ export const createUser = async (userData) => {
 
 /**
  * Update an existing user
+ * @param {number} userId - ID of user to update
  * @param {Object} userData - Updated user data
  * @returns {Promise<Object>} Response with updated user
  */
-export const updateUser = async (userData) => {
-  return saveUser(userData);
+export const updateUser = async (userId, userData) => {
+  try {
+    const response = await axiosInstance.put(`${ENDPOINTS.USERS}/${userId}`, userData);
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating user with ID ${userId}:`, error);
+    throw error;
+  }
 };
 
 /**

@@ -197,7 +197,7 @@ const POApprovalListLayer = () => {
       }
     } catch (err) {
       console.error("Error approving PO:", err);
-      alert("Failed to approve PO. Please try again.");
+      alert(err.errorMessage || "Failed to approve PO. Please try again.");
     } finally {
       setActionLoading(false);
     }
@@ -229,7 +229,7 @@ const POApprovalListLayer = () => {
       }
     } catch (err) {
       console.error("Error rejecting PO:", err);
-      alert("Failed to reject PO. Please try again.");
+      alert(err.errorMessage || "Failed to reject PO. Please try again.");
     } finally {
       setActionLoading(false);
     }
@@ -259,7 +259,7 @@ const POApprovalListLayer = () => {
       }
     } catch (err) {
       console.error("Error bulk approving POs:", err);
-      alert("Failed to approve POs. Please try again.");
+      alert(err.errorMessage || "Failed to approve POs. Please try again.");
     } finally {
       setActionLoading(false);
     }
@@ -296,7 +296,7 @@ const POApprovalListLayer = () => {
       }
     } catch (err) {
       console.error("Error bulk rejecting POs:", err);
-      alert("Failed to reject POs. Please try again.");
+      alert(err.errorMessage || "Failed to reject POs. Please try again.");
     } finally {
       setActionLoading(false);
     }

@@ -15351,6 +15351,7 @@ td.fc-header-center {
   height: 100vh;
   background-color: var(--white);
   z-index: 3;
+  transition: width 0.3s ease, inset-inline-start 0.3s ease;
 }
 
 @media (min-width: 1200px) {
@@ -15468,6 +15469,14 @@ td.fc-header-center {
   margin-inline-end: 0;
 }
 
+.sidebar-menu li a span {
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-menu li a .menu-icon {
+  transition: margin 0.3s ease;
+}
+
 .sidebar.active .sidebar-menu li.sidebar-menu-group-title {
   display: none;
 }
@@ -15489,10 +15498,12 @@ td.fc-header-center {
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  overflow: hidden;
 }
 
 .sidebar-logo img {
   max-height: 3.4375rem;
+  transition: opacity 0.2s ease;
 }
 
 .sidebar-logo img.dark-logo {
