@@ -16,6 +16,8 @@ import SupplierInfo from "./pages/SupplierInfo";
 import ItemMaster from "./pages/ItemMaster";
 import Profile from "./pages/Profile";
 import Users from "./pages/Users";
+import MasterDataEntry from "./pages/MasterDataEntry";
+
 import RoleAccess from "./pages/RoleAccess";
 import Unauthorized from "./pages/Unauthorized";
 import PermissionsDebug from "./pages/PermissionsDebug";
@@ -140,6 +142,16 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    exact
+                    path="/master-data-entry"
+                    element={
+                      <ProtectedRoute pageId="item-master">
+                         <MasterDataEntry />
+                      </ProtectedRoute>
+                    }
+                  />
+
                   <Route
                     exact
                     path="/roles"
