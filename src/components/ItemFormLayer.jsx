@@ -434,7 +434,7 @@ const ItemFormLayer = ({
         if (onSuccess) onSuccess("Item created successfully");
       }
     } catch (err) {
-      if (triggerToast) triggerToast("Failed to save item", "error");
+      if (triggerToast) triggerToast(err.errorMessage || "Failed to save item", "error");
       console.error("Error saving item:", err);
     } finally {
       setLoading(false);
@@ -548,31 +548,15 @@ const ItemFormLayer = ({
     <div style={{ position: 'relative', minHeight: '200px' }}>
       {/* Loading overlay - covers only the form/dialog body */}
       {(metaDataLoading || loading) && (
-        <div
-          className="d-flex align-items-center justify-content-center bg-base"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 10,
-            background: 'rgba(255,255,255,0.85)',
-            borderRadius: '8px',
-          }}
-        >
+        <div className="item-form-loading-overlay">
           <div className="text-center">
             <div
               className="spinner-border text-primary mb-3"
-              style={{
-                width: "3rem",
-                height: "3rem",
-              }}
               role="status"
             >
               <span className="visually-hidden">Loading...</span>
             </div>
-            <h6 className="text-muted">
+            <h6>
               {metaDataLoading ? "Loading form data..." : "Saving..."}
             </h6>
           </div>

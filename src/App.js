@@ -28,26 +28,28 @@ import { initializeDefaultUser, isAuthenticated } from "./utils/authHelper";
 // Auth wrapper component to handle authentication redirects
 function AuthWrapper({ children }) {
   const [loading, setLoading] = useState(true);
+  const [isAuth, setIsAuth] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // Initialize and check auth
+    // Initialize and check auth synchronously before any render
     initializeDefaultUser();
-    // Check auth status (not storing in state as we use navigate)
-    isAuthenticated();
+    const authStatus = isAuthenticated();
+    setIsAuth(authStatus);
     setLoading(false);
 
     // Listen for storage changes (when user logs in/out)
     const handleStorageChange = () => {
-      const isAuth = isAuthenticated();
+      const currentAuthStatus = isAuthenticated();
+      setIsAuth(currentAuthStatus);
 
       // If user logged out, redirect to login
-      if (!isAuth && location.pathname !== "/login") {
+      if (!currentAuthStatus && location.pathname !== "/login") {
         navigate("/login");
       }
       // If user logged in and on login page, redirect to purchase orders
-      if (isAuth && location.pathname === "/login") {
+      if (currentAuthStatus && location.pathname === "/login") {
         navigate("/purchase-orders");
       }
     };
@@ -62,8 +64,19 @@ function AuthWrapper({ children }) {
     };
   }, [navigate, location.pathname]);
 
+  // Show nothing while checking auth - prevents flicker
   if (loading) {
     return null;
+  }
+
+  // If not authenticated and not on login page, redirect to login immediately
+  if (!isAuth && location.pathname !== "/login") {
+    return <Navigate to="/login" replace />;
+  }
+
+  // If authenticated and on login page, redirect to purchase orders
+  if (isAuth && location.pathname === "/login") {
+    return <Navigate to="/purchase-orders" replace />;
   }
 
   return children;

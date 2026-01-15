@@ -1,8 +1,10 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useState, useEffect } from "react";
-import { getUsers, createUser, updateUser, deleteUser } from "../mocks/server";
+import { getUsers, createUser, updateUser, deleteUser, formatCreatedDate } from "../services/users";
+import { getRoles } from "../services/roles";
 import OperationControl from "../components/OperationControl";
 import { getCurrentUser, hasOperationPermission } from "../utils/permissions";
+import { generateUsername } from "../utils/usernameGenerator";
 import "../assets/css/users-page.css";
 
 const Users = () => {
@@ -26,19 +28,24 @@ const Users = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
+    username: "",
+    password: "",
     email: "",
-    role: "",
-    status: "Active",
+    roleId: "",
+    isActive: true,
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [sortField, setSortField] = useState("createdDate");
+  const [sortField, setSortField] = useState("createdAt");
   const [sortDirection, setSortDirection] = useState("desc");
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState("error");
+  const [roles, setRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -74,8 +81,9 @@ const Users = () => {
         (user) =>
           user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.status.toLowerCase().includes(searchTerm.toLowerCase())
+          user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.roleName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (user.isActive ? "active" : "inactive").includes(searchTerm.toLowerCase())
       );
     }
 
@@ -84,7 +92,7 @@ const Users = () => {
       let aValue = a[sortField];
       let bValue = b[sortField];
 
-      if (sortField === "createdDate") {
+      if (sortField === "createdAt") {
         aValue = new Date(aValue);
         bValue = new Date(bValue);
       } else if (typeof aValue === "string") {
@@ -106,9 +114,9 @@ const Users = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await getUsers();
-      setAllUsers(response.data);
-      setFilteredUsers(response.data);
+      const users = await getUsers();
+      setAllUsers(users);
+      setFilteredUsers(users);
     } catch (err) {
       console.error("Error fetching users:", err);
     } finally {
@@ -116,28 +124,55 @@ const Users = () => {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      setRolesLoading(true);
+      const response = await getRoles();
+      // Handle both array response and object response with data property
+      const rolesData = Array.isArray(response) ? response : (response.data || []);
+      setRoles(rolesData);
+    } catch (err) {
+      console.error("Error fetching roles:", err);
+      setRoles([]);
+    } finally {
+      setRolesLoading(false);
+    }
+  };
+
   const handleAdd = () => {
     setIsEdit(false);
     setCurrentUser(null);
     setFormData({
-      name: "",
+      firstName: "",
+      lastName: "",
+      username: "",
+      password: "",
       email: "",
-      role: "",
-      status: "Active",
+      roleId: "",
+      isActive: true,
     });
     setShowModal(true);
+    fetchRoles();
   };
 
   const handleEdit = (user) => {
     setIsEdit(true);
     setCurrentUser(user);
+    // Split name into firstName and lastName
+    const nameParts = (user.name || "").trim().split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
     setFormData({
-      name: user.name,
+      firstName: firstName,
+      lastName: lastName,
+      username: user.username || "",
+      password: "",
       email: user.email,
-      role: user.role,
-      status: user.status,
+      roleId: user.roleId ? String(user.roleId) : "",
+      isActive: user.isActive,
     });
     setShowModal(true);
+    fetchRoles();
   };
 
   const handleDelete = (user) => {
@@ -156,7 +191,7 @@ const Users = () => {
       fetchUsers();
     } catch (err) {
       console.error("Error deleting user:", err);
-      setToastMessage("Failed to delete user");
+      setToastMessage(err.errorMessage || "Failed to delete user");
       setToastType("error");
       setShowToast(true);
     }
@@ -166,8 +201,38 @@ const Users = () => {
     e.preventDefault();
 
     // Validation
-    if (!formData.name.trim()) {
-      setToastMessage("Name is required.");
+    if (!formData.firstName.trim()) {
+      setToastMessage("First Name is required.");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    }
+    if (!formData.lastName.trim()) {
+      setToastMessage("Last Name is required.");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    }
+    if (!formData.username.trim()) {
+      setToastMessage("Username is required.");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    }
+    if (formData.username.length < 3) {
+      setToastMessage("Username must be at least 3 characters.");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    }
+    if (!isEdit && !formData.password.trim()) {
+      setToastMessage("Password is required.");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    }
+    if (!isEdit && formData.password.length < 6) {
+      setToastMessage("Password must be at least 6 characters.");
       setToastType("error");
       setShowToast(true);
       return;
@@ -184,7 +249,7 @@ const Users = () => {
       setShowToast(true);
       return;
     }
-    if (!formData.role.trim()) {
+    if (!formData.roleId) {
       setToastMessage("Role is required.");
       setToastType("error");
       setShowToast(true);
@@ -192,11 +257,35 @@ const Users = () => {
     }
 
     try {
+      // Construct payload with concatenated name
+      const name = `${formData.firstName.trim()} ${formData.lastName.trim()}`;      
       if (isEdit) {
-        await updateUser(currentUser.id, formData);
+        // Update payload for PUT /users/{id}
+        const payload = {
+          id: currentUser.id,
+          name: name,
+          username: formData.username.trim(),
+          email: formData.email.trim(),
+          roleId: parseInt(formData.roleId),
+          isActive: formData.isActive,
+        };
+        await updateUser(currentUser.id, payload);
         setToastMessage("User updated successfully");
       } else {
-        await createUser(formData);
+        // Get roleName from fetched roles for create
+        const selectedRole = roles.find(r => String(r.id) === formData.roleId);
+        const roleName = selectedRole?.name || "";
+        // Create payload without id, use username from form
+        const payload = {
+          name: name,
+          username: formData.username.trim(),
+          password: formData.password,
+          email: formData.email.trim(),
+          roleId: parseInt(formData.roleId),
+          roleName: roleName,
+          isActive: formData.isActive,
+        };
+        await createUser(payload);
         setToastMessage("User created successfully");
       }
       setToastType("success");
@@ -205,7 +294,7 @@ const Users = () => {
       await fetchUsers();
     } catch (err) {
       setToastMessage(
-        `Failed to ${isEdit ? "update" : "create"} user. Please try again.`
+        err.errorMessage || `Failed to ${isEdit ? "update" : "create"} user. Please try again.`
       );
       setToastType("error");
       setShowToast(true);
@@ -216,8 +305,8 @@ const Users = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Validation: Name should only contain letters and spaces
-    if (name === "name") {
+    // Validation: firstName and lastName should only contain letters and spaces
+    if (name === "firstName" || name === "lastName") {
       if (value === "" || /^[a-zA-Z\s]+$/.test(value)) {
         setFormData((prev) => ({
           ...prev,
@@ -227,10 +316,45 @@ const Users = () => {
       return;
     }
 
+    // Validation: username should only contain alphanumeric characters and underscores
+    if (name === "username") {
+      if (value === "" || /^[a-zA-Z0-9_]+$/.test(value)) {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: value,
+        }));
+      }
+      return;
+    }
+
+    // Handle isActive as boolean
+    if (name === "isActive") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value === "true",
+      }));
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+  };
+
+  // Auto-generate username when both firstName and lastName are filled (only in add mode)
+  const handleNameBlur = () => {
+    if (!isEdit && formData.firstName.trim() && formData.lastName.trim()) {
+      try {
+        const generatedUsername = generateUsername(formData.firstName, formData.lastName);
+        setFormData((prev) => ({
+          ...prev,
+          username: generatedUsername,
+        }));
+      } catch (error) {
+        console.error("Error generating username:", error);
+      }
+    }
   };
 
   const handleSearchChange = (e) => {
@@ -362,8 +486,8 @@ const Users = () => {
                 <table className="table bordered-table mb-0">
                   <thead>
                     <tr>
-                      <th scope="col" style={{ width: "100px" }}>
-                        ID
+                      <th scope="col" style={{ width: "150px" }}>
+                        UserId
                       </th>
                       <th
                         scope="col"
@@ -394,12 +518,12 @@ const Users = () => {
                       <th
                         scope="col"
                         className="cursor-pointer"
-                        onClick={() => handleSort("createdDate")}
+                        onClick={() => handleSort("createdAt")}
                         style={{ width: "150px" }}
                       >
                         <div className="d-flex align-items-center gap-1">
                           Created Date
-                          {sortField === "createdDate" && (
+                          {sortField === "createdAt" && (
                             <Icon
                               icon={`mdi:arrow-${
                                 sortDirection === "asc" ? "up" : "down"
@@ -418,25 +542,25 @@ const Users = () => {
                   <tbody>
                     {currentUsers.map((user) => (
                       <tr key={user.id}>
-                        <td>{user.id}</td>
+                        <td>{user.username}</td>
                         <td>{user.name}</td>
                         <td>{user.email}</td>
-                        <td>{user.role}</td>
+                        <td>{user.roleName}</td>
                         <td>
                           <span
                             className={`badge ${
-                              user.status === "Active"
+                              user.isActive
                                 ? "bg-success-focus text-success-main"
                                 : "bg-danger-focus text-danger-main"
                             } px-16 py-4 radius-4 fw-medium text-sm`}
                           >
-                            {user.status}
+                            {user.isActive ? "Active" : "Inactive"}
                           </span>
                         </td>
-                        <td>{user.createdDate}</td>
+                        <td>{formatCreatedDate(user.createdAt)}</td>
                         {showActionsColumn && (
                           <td className="sticky-actions">
-                            {user.role !== "Admin" && (
+                            {user.roleName !== "Super Admin" && (
                               <>
                                 <OperationControl
                                   pageId="users"
@@ -464,7 +588,7 @@ const Users = () => {
                                 </OperationControl>
                               </>
                             )}
-                            {user.role === "Admin" && (
+                            {user.roleName === "Super Admin" && (
                               <span className="text-muted text-sm">
                                 Protected
                               </span>
@@ -534,7 +658,7 @@ const Users = () => {
         data-bs-backdrop="static"
       >
         <div className="modal-dialog modal-lg modal-dialog-centered">
-          <div className="modal-content radius-16 bg-base">
+          <div className="modal-content radius-16 bg-base" style={{ position: 'relative' }}>
             <div className="modal-header py-16 px-24 border border-top-0 border-start-0 border-end-0">
               <h1 className="modal-title fs-5">
                 {isEdit ? "Update User" : "Add User"}
@@ -549,23 +673,85 @@ const Users = () => {
                 aria-label="Close"
               />
             </div>
+            
+            {/* Loading overlay - covers modal body and footer */}
+            {rolesLoading && (
+              <div className="modal-loading-overlay">
+                <div className="text-center">
+                  <div
+                    className="spinner-border text-primary mb-3"
+                    role="status"
+                  >
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <h6>Loading roles...</h6>
+                </div>
+              </div>
+            )}
+
             <div className="modal-body p-24">
               <form onSubmit={handleSubmit}>
                 <div className="row">
-                  <div className="col-12 mb-20">
+                  <div className="col-6 mb-20">
                     <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                      Name <span className="text-danger">*</span>
+                      First Name <span className="text-danger">*</span>
                     </label>
                     <input
                       type="text"
-                      name="name"
+                      name="firstName"
                       className="form-control radius-8"
-                      placeholder="Enter Name"
-                      value={formData.name}
+                      placeholder="Enter First Name"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      onBlur={handleNameBlur}
+                      required
+                    />
+                  </div>
+                  <div className="col-6 mb-20">
+                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                      Last Name <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      className="form-control radius-8"
+                      placeholder="Enter Last Name"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      onBlur={handleNameBlur}
+                      required
+                    />
+                  </div>
+                  <div className={`${isEdit ? 'col-12' : 'col-6'} mb-20`}>
+                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                      Username <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="username"
+                      className="form-control radius-8"
+                      placeholder="Enter Username"
+                      value={formData.username}
                       onChange={handleChange}
                       required
                     />
                   </div>
+                  {!isEdit && (
+                    <div className="col-6 mb-20">
+                      <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                        Password <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        type="password"
+                        name="password"
+                        className="form-control radius-8"
+                        placeholder="Enter Password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                  )}
                   <div className="col-12 mb-20">
                     <label className="form-label fw-semibold text-primary-light text-sm mb-8">
                       Email <span className="text-danger">*</span>
@@ -585,16 +771,18 @@ const Users = () => {
                       Role <span className="text-danger">*</span>
                     </label>
                     <select
-                      name="role"
-                      className="form-control radius-8"
-                      value={formData.role}
+                      name="roleId"
+                      className="form-select radius-8"
+                      value={formData.roleId}
                       onChange={handleChange}
                       required
                     >
                       <option value="">Select Role</option>
-                      <option value="Admin">Admin</option>
-                      <option value="Manager">Manager</option>
-                      <option value="Viewer">Viewer</option>
+                      {roles.map((role) => (
+                        <option key={role.id} value={role.id}>
+                          {role.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="col-6 mb-20">
@@ -602,13 +790,13 @@ const Users = () => {
                       Status
                     </label>
                     <select
-                      name="status"
-                      className="form-control radius-8"
-                      value={formData.status}
+                      name="isActive"
+                      className="form-select radius-8"
+                      value={formData.isActive.toString()}
                       onChange={handleChange}
                     >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
+                      <option value="true">Active</option>
+                      <option value="false">Inactive</option>
                     </select>
                   </div>
                 </div>
@@ -630,6 +818,7 @@ const Users = () => {
                   type="button"
                   className="btn btn-primary border border-primary-600 text-md px-48 py-12 radius-8"
                   onClick={handleSubmit}
+                  disabled={rolesLoading}
                 >
                   {isEdit ? "Update" : "Save"}
                 </button>

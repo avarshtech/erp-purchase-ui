@@ -1423,6 +1423,29 @@ server.get("/roles", () => {
 });
 
 server.post("/roles", (data) => {
+  // If data has an id, this is an update operation
+  if (data.id) {
+    const roleId = parseInt(data.id);
+    const roleIndex = rolesData.findIndex((r) => r.id === roleId);
+    if (roleIndex === -1) {
+      throw new Error("Role not found");
+    }
+    const updatedRole = {
+      ...rolesData[roleIndex],
+      name: data.name,
+      description: data.description,
+      status: data.status,
+      permissions: data.permissions || rolesData[roleIndex].permissions || {},
+    };
+    rolesData[roleIndex] = updatedRole;
+    return {
+      success: true,
+      data: updatedRole,
+      message: "Role updated successfully",
+    };
+  }
+  
+  // Otherwise, create a new role
   const newRole = {
     id: Math.max(...rolesData.map((r) => r.id), 0) + 1,
     name: data.name,

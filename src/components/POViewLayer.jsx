@@ -225,6 +225,7 @@ const POViewLayer = ({ showModal, onClose, po }) => {
             maxHeight: "90vh",
             display: "flex",
             flexDirection: "column",
+            position: "relative",
           }}
         >
           <div
@@ -241,17 +242,40 @@ const POViewLayer = ({ showModal, onClose, po }) => {
               aria-label="Close"
             />
           </div>
+          
+          {/* Loading overlay - covers modal body */}
+          {loading && (
+            <div
+              className="d-flex align-items-center justify-content-center"
+              style={{
+                position: 'absolute',
+                top: '56px',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 10,
+                background: 'var(--loading-overlay-bg, rgba(255,255,255,0.85))',
+                borderRadius: '0 0 16px 16px',
+              }}
+            >
+              <div className="text-center">
+                <div
+                  className="spinner-border text-primary mb-3"
+                  style={{ width: "3rem", height: "3rem" }}
+                  role="status"
+                >
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <h6 className="text-muted">Loading PO details...</h6>
+              </div>
+            </div>
+          )}
+          
           <div
             className="modal-body p-24"
             style={{ flex: 1, overflowY: "auto" }}
           >
-            {loading ? (
-              <div className="text-center py-5">
-                <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
-              </div>
-            ) : (
+            {!loading && (
               <>
                 {/* Header Info */}
                 <div className="row gy-3 mb-4">

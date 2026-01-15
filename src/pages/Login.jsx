@@ -93,7 +93,7 @@ const Login = () => {
         setLoading(false);
       }
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
+      setError(err.errorMessage || "An unexpected error occurred. Please try again.");
       setShake(true);
       setTimeout(() => setShake(false), 500);
       setLoading(false);

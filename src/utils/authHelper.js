@@ -1,5 +1,5 @@
 import { setCurrentUser, getAdminPermissions } from "../utils/permissions";
-import { getRoles } from "../mocks/server";
+import { getRoles } from "../services/roles";
 import axiosInstance from "../services/axiosInstance";
 
 /**
@@ -91,7 +91,7 @@ export const authenticateUser = async (username, password) => {
     console.error("Login Error Details:", error);
     return {
       success: false,
-      message: error.message || "Network error. Please try again.",
+      message: error.errorMessage || error.response?.data?.message || "Network error. Please try again.",
     };
   }
 };
@@ -157,7 +157,8 @@ export const switchUserRole = async (roleName) => {
   try {
     // Fetch roles from the server
     const response = await getRoles();
-    const roles = response.data;
+    // Handle both array response and object response with data property
+    const roles = Array.isArray(response) ? response : (response.data || []);
 
     // Find the role by name
     const role = roles.find((r) => r.name === roleName);
