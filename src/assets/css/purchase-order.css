@@ -774,55 +774,6 @@
 }
 
 .po-form-dropdown .dropdown-menu {
-  color: #f9fafb;
-}
-
-[data-theme="dark"] .table.table-bordered tbody tr:nth-child(even) {
-  background-color: #4b5563;
-}
-
-[data-theme="dark"] .table.table-bordered tbody tr:hover {
-  background-color: #4b5563;
-}
-
-/* Item dropdown styling for PO line items */
-.dropdown-menu.show {
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-[data-theme="dark"] .dropdown-menu.show {
-  background-color: #374151;
-  border-color: #6b7280;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-}
-
-[data-theme="dark"] .dropdown-item {
-  color: #f9fafb !important;
-}
-
-[data-theme="dark"] .dropdown-item:hover {
-  background-color: #4b5563;
-  color: #ffffff !important;
-}
-
-[data-theme="dark"] .dropdown-item .text-muted {
-  color: #9ca3af !important;
-}
-
-
-/* PO Form Dropdown Styling */
-.po-form-dropdown .dropdown-toggle {
-  border-color: #ced4da;
-  transition: all 0.3s ease;
-}
-
-.po-form-dropdown .dropdown-toggle:hover {
-  border-color: #1e40af;
-  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
-}
-
-.po-form-dropdown .dropdown-menu {
   border: 1px solid #e5e7eb;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
@@ -1032,4 +983,235 @@
 
 [data-theme="dark"] {
   --loading-overlay-bg: rgba(55, 65, 81, 0.9);
+}
+
+/* PO Table Alignment and Responsive Styles */
+.table.bordered-table {
+  width: 100%;
+  table-layout: auto;
+}
+
+.table.bordered-table th,
+.table.bordered-table td {
+  vertical-align: middle;
+  padding: 12px 16px;
+  white-space: nowrap;
+}
+
+.table.bordered-table td .text-truncate {
+  max-width: 200px;
+}
+
+/* Responsive table adjustments */
+@media (max-width: 1200px) {
+  .table.bordered-table th,
+  .table.bordered-table td {
+    padding: 10px 12px;
+  }
+  
+  .table.bordered-table td .text-truncate {
+    max-width: 150px;
+  }
+}
+
+@media (max-width: 992px) {
+  .table.bordered-table th,
+  .table.bordered-table td {
+    padding: 8px 10px;
+    font-size: 0.875rem;
+  }
+  
+  .table.bordered-table td .text-truncate {
+    max-width: 120px;
+  }
+  
+  .status-pill {
+    padding: 4px 10px !important;
+  }
+  
+  .status-text {
+    display: none;
+  }
+  
+  .status-icon {
+    font-size: 1.25rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .table.bordered-table {
+    min-width: 800px;
+  }
+  
+  .table.bordered-table th,
+  .table.bordered-table td {
+    padding: 8px;
+  }
+}
+
+/* Remove old po-list specific classes if they exist */
+.po-list-value-cell,
+.po-list-status-cell,
+.po-list-actions-cell,
+.po-list-cell-center {
+  /* Reset any conflicting styles */
+}
+
+/* Date Filter Dropdown Styles */
+.dropdown-menu.p-3 {
+  z-index: 1050;
+}
+
+.dropdown-menu.p-3 .form-label {
+  margin-bottom: 0.25rem;
+}
+
+.dropdown-menu.p-3 .flex-grow-1 {
+  min-width: 120px;
+}
+
+/* Prevent dropdown from closing when clicking inside */
+.dropdown-menu.p-3 input,
+.dropdown-menu.p-3 button {
+  cursor: pointer;
+}
+
+/* Date Filter Popover Styles */
+.position-relative > .position-absolute {
+  animation: fadeIn 0.15s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ensure date picker calendar appears above the popover */
+.position-absolute .react-datepicker-popper {
+  z-index: 1060 !important;
+}
+
+/* Active filter button highlight */
+.btn.border-primary {
+  border-width: 2px !important;
+}
+
+/* Date filter popover responsive */
+@media (max-width: 576px) {
+  .position-absolute[style*="minWidth: 340px"] {
+    min-width: 280px !important;
+    left: -50px !important;
+  }
+}
+
+/* Date Filter Popover Styles - Dark Mode Adapted */
+.date-filter-popover {
+  background-color: var(--bg-color, #1a1a2e);
+  border-color: var(--border-color, #2d2d44) !important;
+}
+
+.date-filter-popover .form-label {
+  color: var(--text-secondary-light, #a0aec0);
+}
+
+.date-filter-popover .form-label.fw-semibold {
+  color: var(--text-primary, #e2e8f0);
+}
+
+/* Ensure date picker calendar appears above other elements */
+.date-filter-popover .react-datepicker-popper {
+  z-index: 1060 !important;
+}
+
+.date-filter-popover .react-datepicker-wrapper {
+  width: 100%;
+}
+
+/* Dark mode calendar styles */
+.date-filter-popover .react-datepicker {
+  background-color: var(--bg-color, #1a1a2e);
+  border-color: var(--border-color, #2d2d44);
+}
+
+.date-filter-popover .react-datepicker__header {
+  background-color: var(--bg-secondary, #242442);
+  border-bottom-color: var(--border-color, #2d2d44);
+}
+
+.date-filter-popover .react-datepicker__current-month,
+.date-filter-popover .react-datepicker__day-name {
+  color: var(--text-primary, #e2e8f0);
+}
+
+.date-filter-popover .react-datepicker__day {
+  color: var(--text-secondary-light, #a0aec0);
+}
+
+.date-filter-popover .react-datepicker__day:hover {
+  background-color: var(--primary-light, #3b82f6);
+  color: #fff;
+}
+
+.date-filter-popover .react-datepicker__day--selected {
+  background-color: var(--primary-600, #2563eb);
+  color: #fff;
+}
+
+.date-filter-popover .react-datepicker__day--keyboard-selected {
+  background-color: var(--primary-light, #3b82f6);
+  color: #fff;
+}
+
+.date-filter-popover .react-datepicker__navigation-icon::before {
+  border-color: var(--text-secondary-light, #a0aec0);
+}
+
+.date-filter-popover .react-datepicker__today-button {
+  background-color: var(--bg-secondary, #242442);
+  border-top-color: var(--border-color, #2d2d44);
+  color: var(--primary-600, #2563eb);
+}
+
+/* Date filter popover animation */
+.date-filter-popover {
+  animation: fadeInDown 0.15s ease-in-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Date filter popover responsive */
+@media (max-width: 576px) {
+  .date-filter-popover {
+    min-width: 280px !important;
+    left: -50px !important;
+  }
+}
+
+/* Fix z-index stacking for date pickers in filter */
+.date-filter-popover .col-12:first-child .react-datepicker-popper {
+  z-index: 1070 !important;
+}
+
+.date-filter-popover .col-12:last-child .react-datepicker-popper {
+  z-index: 1065 !important;
 }

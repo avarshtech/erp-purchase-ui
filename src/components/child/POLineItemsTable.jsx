@@ -47,7 +47,7 @@ const POLineItemsTable = ({
                   Description
                 </th>
                 <th
-                  style={{ width: "100px", minWidth: "100px" }}
+                  style={{ width: "120px", minWidth: "120px" }}
                   className="text-center"
                 >
                   Qty
@@ -59,7 +59,7 @@ const POLineItemsTable = ({
                   UOM
                 </th>
                 <th
-                  style={{ width: "100px", minWidth: "100px" }}
+                  style={{ width: "140px", minWidth: "140px" }}
                   className="text-center"
                 >
                   Unit Price
@@ -105,8 +105,7 @@ const POLineItemsTable = ({
                       <option value="">Select an item...</option>
                       {filteredItems.map((filteredItem) => (
                         <option key={filteredItem.id} value={filteredItem.id}>
-                          {filteredItem.name} - {filteredItem.code} ($
-                          {(filteredItem.unitPrice || 0).toFixed(2)})
+                          {filteredItem.itemCode} - {filteredItem.itemName}
                         </option>
                       ))}
                     </select>
@@ -136,22 +135,53 @@ const POLineItemsTable = ({
                     />
                   </td>
                   <td>
-                    <input
-                      type="number"
-                      className={`form-control form-control-sm ${
-                        errors[`qty_${index}`] ? "is-invalid" : ""
-                      }`}
-                      value={item.qty || 1}
-                      onChange={(e) =>
-                        handleLineItemChange(
-                          item.id,
-                          "qty",
-                          parseInt(e.target.value) || 1
-                        )
-                      }
-                      min="1"
-                      aria-label={`Quantity for line ${index + 1}`}
-                    />
+                    <div className="input-group input-group-sm">
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() =>
+                          handleLineItemChange(
+                            item.id,
+                            "qty",
+                            Math.max(1, (item.qty || 1) - 1)
+                          )
+                        }
+                        aria-label={`Decrease quantity for line ${index + 1}`}
+                      >
+                        <Icon icon="mdi:minus" />
+                      </button>
+                      <input
+                        type="number"
+                        className={`form-control form-control-sm text-center ${
+                          errors[`qty_${index}`] ? "is-invalid" : ""
+                        }`}
+                        value={item.qty || 1}
+                        onChange={(e) =>
+                          handleLineItemChange(
+                            item.id,
+                            "qty",
+                            parseInt(e.target.value) || 1
+                          )
+                        }
+                        min="1"
+                        style={{ minWidth: "50px" }}
+                        aria-label={`Quantity for line ${index + 1}`}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() =>
+                          handleLineItemChange(
+                            item.id,
+                            "qty",
+                            (item.qty || 1) + 1
+                          )
+                        }
+                        aria-label={`Increase quantity for line ${index + 1}`}
+                      >
+                        <Icon icon="mdi:plus" />
+                      </button>
+                    </div>
                     {errors[`qty_${index}`] && (
                       <div
                         className="invalid-feedback d-block"
@@ -172,23 +202,54 @@ const POLineItemsTable = ({
                     />
                   </td>
                   <td>
-                    <input
-                      type="number"
-                      className={`form-control form-control-sm ${
-                        errors[`unitPrice_${index}`] ? "is-invalid" : ""
-                      }`}
-                      value={item.unitPrice || 0}
-                      onChange={(e) =>
-                        handleLineItemChange(
-                          item.id,
-                          "unitPrice",
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
-                      min="0"
-                      step="0.01"
-                      aria-label={`Unit price for line ${index + 1}`}
-                    />
+                    <div className="input-group input-group-sm">
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() =>
+                          handleLineItemChange(
+                            item.id,
+                            "unitPrice",
+                            Math.max(0, parseFloat(((item.unitPrice || 0) - 1).toFixed(2)))
+                          )
+                        }
+                        aria-label={`Decrease unit price for line ${index + 1}`}
+                      >
+                        <Icon icon="mdi:minus" />
+                      </button>
+                      <input
+                        type="number"
+                        className={`form-control form-control-sm text-center ${
+                          errors[`unitPrice_${index}`] ? "is-invalid" : ""
+                        }`}
+                        value={item.unitPrice || 0}
+                        onChange={(e) =>
+                          handleLineItemChange(
+                            item.id,
+                            "unitPrice",
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
+                        min="0"
+                        step="0.01"
+                        style={{ minWidth: "60px" }}
+                        aria-label={`Unit price for line ${index + 1}`}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() =>
+                          handleLineItemChange(
+                            item.id,
+                            "unitPrice",
+                            parseFloat(((item.unitPrice || 0) + 1).toFixed(2))
+                          )
+                        }
+                        aria-label={`Increase unit price for line ${index + 1}`}
+                      >
+                        <Icon icon="mdi:plus" />
+                      </button>
+                    </div>
                     {errors[`unitPrice_${index}`] && (
                       <div
                         className="invalid-feedback d-block"
@@ -240,9 +301,9 @@ const POLineItemsTable = ({
                   </td>
                   <td>
                     <input
-                      type="number"
-                      className="form-control form-control-sm"
-                      value={(item.amount || 0).toFixed(2)}
+                      type="text"
+                      className="form-control form-control-sm text-end"
+                      value={`₹${(item.amount || 0).toFixed(2)}`}
                       readOnly
                       disabled
                       aria-label={`Amount for line ${index + 1}`}

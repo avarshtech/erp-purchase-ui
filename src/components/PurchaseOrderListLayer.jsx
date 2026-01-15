@@ -1,6 +1,6 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { getPOList } from "../mocks/server";
+import { getPurchaseOrders, deletePurchaseOrder } from "../services/purchaseOrders";
 import AdvancedDatePicker from "./AdvancedDatePicker";
 import POModalLayer from "./POModalLayer";
 import POViewLayer from "./POViewLayer";
@@ -44,64 +44,62 @@ const TableRow = ({ po, onEdit, onDelete, onView }) => {
     }
   };
 
-  // Parse totalValue as number
-  const totalValue =
-    typeof po.totalValue === "string"
-      ? parseFloat(po.totalValue)
-      : po.totalValue;
+  // Use grandTotal from API response
+  const totalValue = po.grandTotal || 0;
+
+  // Format date from API (YYYY-MM-DD format)
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
   return (
     <tr>
-      <td>
+      <td className="text-start">
         <button
           className="btn btn-link text-primary-600 p-0 text-decoration-none fw-medium"
           onClick={() => onView(po)}
         >
-          {po.poNo}
+          {po.poNumber}
         </button>
       </td>
-      <td>
+      <td className="text-start">
         <div className="d-flex align-items-center gap-2">
-          <div className="w-24-px h-24-px rounded-circle bg-primary-50 d-flex justify-content-center align-items-center">
+          <div className="w-24-px h-24-px rounded-circle bg-primary-50 d-flex justify-content-center align-items-center flex-shrink-0">
             <span className="text-primary-600 fw-semibold text-xs">
-              {po.supplier.name.charAt(0)}
+              {po.supplierName ? po.supplierName.charAt(0) : "?"}
             </span>
           </div>
-          <div className="fw-medium">{po.supplier.name}</div>
+          <div className="fw-medium text-truncate">{po.supplierName}</div>
         </div>
       </td>
-      <td className="po-list-cell-center fw-medium text-center">{po.poDate}</td>
-      <td>
-        <div className="po-list-value-cell">
-          <span
-            className={`fw-semibold ${
-              totalValue > 5000 ? "text-danger" : "text-success"
-            }`}
-          >
-            ${totalValue.toFixed(2)}
-          </span>
-          {totalValue > 5000 && (
-            <Icon icon="mdi:alert-circle" className="text-danger" />
-          )}
-        </div>
+      <td className="text-center fw-medium">{formatDate(po.poDate)}</td>
+      <td className="text-center fw-medium">{formatDate(po.deliveryDate)}</td>
+      <td className="text-end">
+        <span className="fw-semibold text-success">
+          ₹{totalValue.toFixed(2)}
+        </span>
       </td>
-      <td>
-        <div className="po-list-status-cell">
-          <span
-            className={`px-16 py-4 rounded-pill fw-bold text-xs d-inline-flex align-items-center gap-1 justify-content-center status-pill ${getStatusBadgeClass(
-              po.status
-            )}`}
-          >
-            <Icon
-              icon={getStatusIcon(po.status)}
-              className="text-xl status-icon"
-            />
-            <span className="status-text">{po.status}</span>
-          </span>
-        </div>
+      <td className="text-center">
+        <span
+          className={`px-16 py-4 rounded-pill fw-bold text-xs d-inline-flex align-items-center gap-1 justify-content-center status-pill ${getStatusBadgeClass(
+            po.status
+          )}`}
+        >
+          <Icon
+            icon={getStatusIcon(po.status)}
+            className="text-xl status-icon"
+          />
+          <span className="status-text">{po.status}</span>
+        </span>
       </td>
-      <td>
-        <div className="po-list-actions-cell">
+      <td className="text-center">
+        <div className="d-flex align-items-center justify-content-center gap-2">
           <button
             className="w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center border-0"
             onClick={() => onView(po)}
@@ -154,15 +152,27 @@ const PurchaseOrderListLayer = () => {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
-  const [dateRangeFilter, setDateRangeFilter] = useState({
+  const [poDateRangeFilter, setPoDateRangeFilter] = useState({
+    start: "",
+    end: "",
+  });
+  const [deliveryDateRangeFilter, setDeliveryDateRangeFilter] = useState({
     start: "",
     end: "",
   });
   const [datePickerResetKey, setDatePickerResetKey] = useState(0);
-  const [sortField, setSortField] = useState("poNo");
+  const [sortField, setSortField] = useState("id");
   const [sortDirection, setSortDirection] = useState("asc");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  
+  // Date filter popover state
+  const [showPoDateFilter, setShowPoDateFilter] = useState(false);
+  const [showDeliveryDateFilter, setShowDeliveryDateFilter] = useState(false);
+  
+  // Pagination state - server-side
+  const [currentPage, setCurrentPage] = useState(0); // 0-indexed for API
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   // Modal state
   const [showPOModal, setShowPOModal] = useState(false);
@@ -171,6 +181,7 @@ const PurchaseOrderListLayer = () => {
   // Delete confirmation state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [poToDelete, setPoToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // View Modal state
   const [showViewModal, setShowViewModal] = useState(false);
@@ -179,14 +190,30 @@ const PurchaseOrderListLayer = () => {
   const fetchPOData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await getPOList();
-      setPurchaseOrders(response.data);
+      
+      // Build query params for server-side pagination
+      const params = {
+        page: currentPage,
+        size: itemsPerPage,
+        sort: sortField,
+        direction: sortDirection,
+      };
+
+      const response = await getPurchaseOrders(params);
+      
+      // Handle paginated response
+      setPurchaseOrders(response.content || []);
+      setTotalElements(response.totalElements || 0);
+      setTotalPages(response.totalPages || 0);
     } catch (err) {
       console.error("Error fetching PO data:", err);
+      setPurchaseOrders([]);
+      setTotalElements(0);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentPage, itemsPerPage, sortField, sortDirection]);
 
   useEffect(() => {
     fetchPOData();
@@ -199,111 +226,51 @@ const PurchaseOrderListLayer = () => {
       setSortField(field);
       setSortDirection("asc");
     }
+    // Reset to first page when sorting changes
+    setCurrentPage(0);
   };
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(0);
   };
 
-  const getMonthIndex = (monthStr) => {
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    return months.indexOf(monthStr);
-  };
-
-  const filteredAndSortedOrders = useMemo(() => {
-    let filtered = purchaseOrders.filter((po) => {
+  // Client-side filtering for status, search, and date range
+  const filteredOrders = useMemo(() => {
+    return purchaseOrders.filter((po) => {
+      // Status filter
       const matchesStatus =
         statusFilter === "All" || po.status === statusFilter;
+      
+      // Search filter
       const matchesSearch =
-        po.poNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        po.supplier.name.toLowerCase().includes(searchTerm.toLowerCase());
+        !searchTerm ||
+        (po.poNumber && po.poNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (po.supplierName && po.supplierName.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      let matchesDate = true;
-      if (dateRangeFilter.start && dateRangeFilter.end) {
-        const poDateParts = po.poDate.split(" ");
-        const poDay = parseInt(poDateParts[0]);
-        const poMonth = getMonthIndex(poDateParts[1]);
-        const poYear = parseInt(poDateParts[2]);
-        const poDateObj = new Date(poYear, poMonth, poDay);
-
-        const startDate = new Date(dateRangeFilter.start);
-        const endDate = new Date(dateRangeFilter.end);
-        // Set end date to end of day
+      // PO Date range filter
+      let matchesPoDate = true;
+      if (poDateRangeFilter.start && poDateRangeFilter.end) {
+        const poDate = new Date(po.poDate);
+        const startDate = new Date(poDateRangeFilter.start);
+        const endDate = new Date(poDateRangeFilter.end);
         endDate.setHours(23, 59, 59, 999);
-
-        matchesDate = poDateObj >= startDate && poDateObj <= endDate;
+        matchesPoDate = poDate >= startDate && poDate <= endDate;
       }
 
-      return matchesStatus && matchesSearch && matchesDate;
+      // Delivery Date range filter
+      let matchesDeliveryDate = true;
+      if (deliveryDateRangeFilter.start && deliveryDateRangeFilter.end) {
+        const deliveryDate = new Date(po.deliveryDate);
+        const startDate = new Date(deliveryDateRangeFilter.start);
+        const endDate = new Date(deliveryDateRangeFilter.end);
+        endDate.setHours(23, 59, 59, 999);
+        matchesDeliveryDate = deliveryDate >= startDate && deliveryDate <= endDate;
+      }
+
+      return matchesStatus && matchesSearch && matchesPoDate && matchesDeliveryDate;
     });
-
-    return filtered.sort((a, b) => {
-      let aValue = a[sortField];
-      let bValue = b[sortField];
-
-      if (sortField === "totalValue") {
-        aValue =
-          typeof a.totalValue === "string"
-            ? parseFloat(a.totalValue)
-            : a.totalValue;
-        bValue =
-          typeof b.totalValue === "string"
-            ? parseFloat(b.totalValue)
-            : b.totalValue;
-      } else if (sortField === "poDate") {
-        const aParts = a.poDate.split(" ");
-        const bParts = b.poDate.split(" ");
-        aValue = new Date(
-          parseInt(aParts[2]),
-          getMonthIndex(aParts[1]),
-          parseInt(aParts[0])
-        ).getTime();
-        bValue = new Date(
-          parseInt(bParts[2]),
-          getMonthIndex(bParts[1]),
-          parseInt(bParts[0])
-        ).getTime();
-      } else if (sortField === "supplier") {
-        aValue = a.supplier.name.toLowerCase();
-        bValue = b.supplier.name.toLowerCase();
-      } else if (typeof aValue === "string") {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-
-      if (sortDirection === "asc") {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-  }, [
-    purchaseOrders,
-    statusFilter,
-    searchTerm,
-    sortField,
-    sortDirection,
-    dateRangeFilter,
-  ]);
-
-  const totalPages = Math.ceil(filteredAndSortedOrders.length / itemsPerPage);
-  const paginatedOrders = filteredAndSortedOrders.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  }, [purchaseOrders, statusFilter, searchTerm, poDateRangeFilter, deliveryDateRangeFilter]);
 
   const handleAddPO = () => {
     setEditingPO(null);
@@ -320,11 +287,20 @@ const PurchaseOrderListLayer = () => {
     setShowDeleteDialog(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (poToDelete) {
-      setPurchaseOrders((prev) => prev.filter((po) => po.id !== poToDelete.id));
-      setShowDeleteDialog(false);
-      setPoToDelete(null);
+      try {
+        setDeleteLoading(true);
+        await deletePurchaseOrder(poToDelete.id);
+        setShowDeleteDialog(false);
+        setPoToDelete(null);
+        // Refresh the list after delete
+        fetchPOData();
+      } catch (error) {
+        console.error("Error deleting purchase order:", error);
+      } finally {
+        setDeleteLoading(false);
+      }
     }
   };
 
@@ -336,15 +312,69 @@ const PurchaseOrderListLayer = () => {
   const clearAllFilters = () => {
     setStatusFilter("All");
     setSearchTerm("");
-    setDateRangeFilter({ start: "", end: "" });
+    setPoDateRangeFilter({ start: "", end: "" });
+    setDeliveryDateRangeFilter({ start: "", end: "" });
     setDatePickerResetKey((prev) => prev + 1);
-    setCurrentPage(1);
+    setCurrentPage(0);
   };
 
   const hasActiveFilters =
     statusFilter !== "All" ||
     searchTerm !== "" ||
-    (dateRangeFilter.start && dateRangeFilter.end);
+    (poDateRangeFilter.start && poDateRangeFilter.end) ||
+    (deliveryDateRangeFilter.start && deliveryDateRangeFilter.end);
+
+  // Handle page size change
+  const handlePageSizeChange = (newSize) => {
+    setItemsPerPage(newSize);
+    setCurrentPage(0); // Reset to first page when page size changes
+  };
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 0; i < totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(0);
+      
+      let start = Math.max(1, currentPage - 1);
+      let end = Math.min(totalPages - 2, currentPage + 1);
+      
+      if (currentPage <= 2) {
+        end = 3;
+      } else if (currentPage >= totalPages - 3) {
+        start = totalPages - 4;
+      }
+      
+      if (start > 1) {
+        pages.push('...');
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      if (end < totalPages - 2) {
+        pages.push('...');
+      }
+      
+      // Always show last page
+      pages.push(totalPages - 1);
+    }
+    
+    return pages;
+  };
 
   return (
     <div className="card h-100 p-0 radius-12">
@@ -382,7 +412,7 @@ const PurchaseOrderListLayer = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     setStatusFilter("All");
-                    setCurrentPage(1);
+                    setCurrentPage(0);
                     // Close dropdown by removing show class
                     e.currentTarget
                       .closest(".dropdown")
@@ -405,7 +435,7 @@ const PurchaseOrderListLayer = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     setStatusFilter("Draft");
-                    setCurrentPage(1);
+                    setCurrentPage(0);
                     // Close dropdown by removing show class
                     e.currentTarget
                       .closest(".dropdown")
@@ -428,7 +458,7 @@ const PurchaseOrderListLayer = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     setStatusFilter("InProgress");
-                    setCurrentPage(1);
+                    setCurrentPage(0);
                     // Close dropdown by removing show class
                     e.currentTarget
                       .closest(".dropdown")
@@ -448,7 +478,7 @@ const PurchaseOrderListLayer = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     setStatusFilter("Completed");
-                    setCurrentPage(1);
+                    setCurrentPage(0);
                     // Close dropdown by removing show class
                     e.currentTarget
                       .closest(".dropdown")
@@ -468,7 +498,7 @@ const PurchaseOrderListLayer = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     setStatusFilter("Await Approval");
-                    setCurrentPage(1);
+                    setCurrentPage(0);
                     // Close dropdown by removing show class
                     e.currentTarget
                       .closest(".dropdown")
@@ -491,7 +521,7 @@ const PurchaseOrderListLayer = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     setStatusFilter("Rejected");
-                    setCurrentPage(1);
+                    setCurrentPage(0);
                     // Close dropdown by removing show class
                     e.currentTarget
                       .closest(".dropdown")
@@ -506,39 +536,178 @@ const PurchaseOrderListLayer = () => {
             </ul>
           </div>
 
-          {/* Date Range Filter */}
-          <div
-            className="d-flex align-items-center gap-2"
-            style={{ zIndex: "20" }}
-          >
-            <Icon
-              icon="mdi:calendar-range"
-              className="text-muted icon"
-              style={{ height: "25px", width: "25px" }}
-            />
-            <AdvancedDatePicker
-              value={dateRangeFilter.start}
-              onChange={(date) => {
-                setDateRangeFilter((prev) => ({ ...prev, start: date }));
-                setCurrentPage(1);
+          {/* PO Date Range Filter */}
+          <div className="position-relative">
+            <button
+              className={`btn btn-outline-secondary d-flex align-items-center gap-2 h-40-px ${
+                poDateRangeFilter.start && poDateRangeFilter.end ? "border-primary text-primary" : ""
+              }`}
+              type="button"
+              onClick={() => {
+                setShowPoDateFilter(!showPoDateFilter);
+                setShowDeliveryDateFilter(false);
               }}
-              placeholder="From date"
-              label=""
-              className="min-w-140-px"
-              key={`start-${datePickerResetKey}`}
-            />
-            <span className="text-muted">to</span>
-            <AdvancedDatePicker
-              value={dateRangeFilter.end}
-              onChange={(date) => {
-                setDateRangeFilter((prev) => ({ ...prev, end: date }));
-                setCurrentPage(1);
+            >
+              <Icon icon="mdi:calendar-range" className="icon text-xl" />
+              <span>
+                {poDateRangeFilter.start && poDateRangeFilter.end
+                  ? `PO: ${poDateRangeFilter.start} - ${poDateRangeFilter.end}`
+                  : "PO Date"}
+              </span>
+              <Icon icon="mdi:chevron-down" className="text-sm" />
+            </button>
+            {showPoDateFilter && (
+              <>
+                <div 
+                  className="position-fixed top-0 start-0 w-100 h-100" 
+                  style={{ zIndex: 1040 }}
+                  onClick={() => setShowPoDateFilter(false)}
+                ></div>
+                <div 
+                  className="position-absolute border rounded-3 shadow-lg p-3 mt-1 date-filter-popover"
+                  style={{ zIndex: 1050, minWidth: "340px", left: 0 }}
+                >
+                  <div className="mb-3">
+                    <label className="form-label small fw-semibold mb-2">PO Date Range</label>
+                  </div>
+                  <div className="row g-3">
+                    <div className="col-12" style={{ position: 'relative', zIndex: 2 }}>
+                      <label className="form-label small mb-1">From Date</label>
+                      <AdvancedDatePicker
+                        value={poDateRangeFilter.start}
+                        onChange={(date) => {
+                          setPoDateRangeFilter((prev) => ({ ...prev, start: date }));
+                          setCurrentPage(0);
+                        }}
+                        placeholder="Select start date"
+                        label=""
+                        key={`po-start-${datePickerResetKey}`}
+                      />
+                    </div>
+                    <div className="col-12" style={{ position: 'relative', zIndex: 1 }}>
+                      <label className="form-label small mb-1">To Date</label>
+                      <AdvancedDatePicker
+                        value={poDateRangeFilter.end}
+                        onChange={(date) => {
+                          setPoDateRangeFilter((prev) => ({ ...prev, end: date }));
+                          setCurrentPage(0);
+                        }}
+                        placeholder="Select end date"
+                        label=""
+                        key={`po-end-${datePickerResetKey}`}
+                      />
+                    </div>
+                  </div>
+                  <div className="d-flex gap-2 mt-3">
+                    {poDateRangeFilter.start || poDateRangeFilter.end ? (
+                      <button
+                        className="btn btn-sm btn-outline-secondary flex-grow-1"
+                        onClick={() => {
+                          setPoDateRangeFilter({ start: "", end: "" });
+                          setDatePickerResetKey((prev) => prev + 1);
+                          setCurrentPage(0);
+                        }}
+                      >
+                        Clear
+                      </button>
+                    ) : null}
+                    <button
+                      className="btn btn-sm btn-primary-600 flex-grow-1"
+                      onClick={() => setShowPoDateFilter(false)}
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Delivery Date Range Filter */}
+          <div className="position-relative">
+            <button
+              className={`btn btn-outline-secondary d-flex align-items-center gap-2 h-40-px ${
+                deliveryDateRangeFilter.start && deliveryDateRangeFilter.end ? "border-primary text-primary" : ""
+              }`}
+              type="button"
+              onClick={() => {
+                setShowDeliveryDateFilter(!showDeliveryDateFilter);
+                setShowPoDateFilter(false);
               }}
-              placeholder="To date"
-              label=""
-              className="min-w-140-px"
-              key={`end-${datePickerResetKey}`}
-            />
+            >
+              <Icon icon="mdi:truck-delivery-outline" className="icon text-xl" />
+              <span>
+                {deliveryDateRangeFilter.start && deliveryDateRangeFilter.end
+                  ? `Delivery: ${deliveryDateRangeFilter.start} - ${deliveryDateRangeFilter.end}`
+                  : "Delivery Date"}
+              </span>
+              <Icon icon="mdi:chevron-down" className="text-sm" />
+            </button>
+            {showDeliveryDateFilter && (
+              <>
+                <div 
+                  className="position-fixed top-0 start-0 w-100 h-100" 
+                  style={{ zIndex: 1040 }}
+                  onClick={() => setShowDeliveryDateFilter(false)}
+                ></div>
+                <div 
+                  className="position-absolute border rounded-3 shadow-lg p-3 mt-1 date-filter-popover"
+                  style={{ zIndex: 1050, minWidth: "340px", left: 0 }}
+                >
+                  <div className="mb-3">
+                    <label className="form-label small fw-semibold mb-2">Delivery Date Range</label>
+                  </div>
+                  <div className="row g-3">
+                    <div className="col-12" style={{ position: 'relative', zIndex: 2 }}>
+                      <label className="form-label small mb-1">From Date</label>
+                      <AdvancedDatePicker
+                        value={deliveryDateRangeFilter.start}
+                        onChange={(date) => {
+                          setDeliveryDateRangeFilter((prev) => ({ ...prev, start: date }));
+                          setCurrentPage(0);
+                        }}
+                        placeholder="Select start date"
+                        label=""
+                        key={`delivery-start-${datePickerResetKey}`}
+                      />
+                    </div>
+                    <div className="col-12" style={{ position: 'relative', zIndex: 1 }}>
+                      <label className="form-label small mb-1">To Date</label>
+                      <AdvancedDatePicker
+                        value={deliveryDateRangeFilter.end}
+                        onChange={(date) => {
+                          setDeliveryDateRangeFilter((prev) => ({ ...prev, end: date }));
+                          setCurrentPage(0);
+                        }}
+                        placeholder="Select end date"
+                        label=""
+                        key={`delivery-end-${datePickerResetKey}`}
+                      />
+                    </div>
+                  </div>
+                  <div className="d-flex gap-2 mt-3">
+                    {deliveryDateRangeFilter.start || deliveryDateRangeFilter.end ? (
+                      <button
+                        className="btn btn-sm btn-outline-secondary flex-grow-1"
+                        onClick={() => {
+                          setDeliveryDateRangeFilter({ start: "", end: "" });
+                          setDatePickerResetKey((prev) => prev + 1);
+                          setCurrentPage(0);
+                        }}
+                      >
+                        Clear
+                      </button>
+                    ) : null}
+                    <button
+                      className="btn btn-sm btn-primary-600 flex-grow-1"
+                      onClick={() => setShowDeliveryDateFilter(false)}
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Clear Filters Button */}
@@ -581,7 +750,7 @@ const PurchaseOrderListLayer = () => {
               <h6 className="text-muted">Loading Purchase Orders...</h6>
             </div>
           </div>
-        ) : filteredAndSortedOrders.length === 0 ? (
+        ) : filteredOrders.length === 0 ? (
           <div className="po-list-no-results">
             <div className="card border">
               <div className="card-body">
@@ -612,7 +781,7 @@ const PurchaseOrderListLayer = () => {
                       className="btn-close btn-close-sm ms-1"
                       onClick={() => {
                         setStatusFilter("All");
-                        setCurrentPage(1);
+                        setCurrentPage(0);
                       }}
                     ></button>
                   </span>
@@ -622,19 +791,35 @@ const PurchaseOrderListLayer = () => {
                     Search: {searchTerm}
                     <button
                       className="btn-close btn-close-sm ms-1"
-                      onClick={() => setSearchTerm("")}
+                      onClick={() => {
+                        setSearchTerm("");
+                        setCurrentPage(0);
+                      }}
                     ></button>
                   </span>
                 )}
-                {dateRangeFilter.start && dateRangeFilter.end && (
+                {poDateRangeFilter.start && poDateRangeFilter.end && (
                   <span className="badge active-filter-badge d-flex align-items-center gap-1">
-                    Date: {dateRangeFilter.start} to {dateRangeFilter.end}
+                    PO Date: {poDateRangeFilter.start} to {poDateRangeFilter.end}
                     <button
                       className="btn-close btn-close-sm ms-1"
                       onClick={() => {
-                        setDateRangeFilter({ start: "", end: "" });
+                        setPoDateRangeFilter({ start: "", end: "" });
                         setDatePickerResetKey((prev) => prev + 1);
-                        setCurrentPage(1);
+                        setCurrentPage(0);
+                      }}
+                    ></button>
+                  </span>
+                )}
+                {deliveryDateRangeFilter.start && deliveryDateRangeFilter.end && (
+                  <span className="badge active-filter-badge d-flex align-items-center gap-1">
+                    Delivery Date: {deliveryDateRangeFilter.start} to {deliveryDateRangeFilter.end}
+                    <button
+                      className="btn-close btn-close-sm ms-1"
+                      onClick={() => {
+                        setDeliveryDateRangeFilter({ start: "", end: "" });
+                        setDatePickerResetKey((prev) => prev + 1);
+                        setCurrentPage(0);
                       }}
                     ></button>
                   </span>
@@ -648,12 +833,13 @@ const PurchaseOrderListLayer = () => {
                   <tr>
                     <th
                       scope="col"
-                      className="cursor-pointer"
-                      onClick={() => handleSort("poNo")}
+                      className="cursor-pointer text-start"
+                      onClick={() => handleSort("poNumber")}
+                      style={{ minWidth: "120px" }}
                     >
                       <div className="d-flex align-items-center gap-1">
                         PO No
-                        {sortField === "poNo" && (
+                        {sortField === "poNumber" && (
                           <Icon
                             icon={`mdi:arrow-${
                               sortDirection === "asc" ? "up" : "down"
@@ -664,12 +850,13 @@ const PurchaseOrderListLayer = () => {
                     </th>
                     <th
                       scope="col"
-                      className="cursor-pointer"
-                      onClick={() => handleSort("supplier")}
+                      className="cursor-pointer text-start"
+                      onClick={() => handleSort("supplierName")}
+                      style={{ minWidth: "180px" }}
                     >
                       <div className="d-flex align-items-center gap-1">
                         Supplier
-                        {sortField === "supplier" && (
+                        {sortField === "supplierName" && (
                           <Icon
                             icon={`mdi:arrow-${
                               sortDirection === "asc" ? "up" : "down"
@@ -680,11 +867,12 @@ const PurchaseOrderListLayer = () => {
                     </th>
                     <th
                       scope="col"
-                      className="cursor-pointer po-list-cell-center"
+                      className="cursor-pointer text-center"
                       onClick={() => handleSort("poDate")}
+                      style={{ minWidth: "120px" }}
                     >
                       <div className="d-flex align-items-center gap-1 justify-content-center">
-                        Date
+                        PO Date
                         {sortField === "poDate" && (
                           <Icon
                             icon={`mdi:arrow-${
@@ -696,12 +884,13 @@ const PurchaseOrderListLayer = () => {
                     </th>
                     <th
                       scope="col"
-                      className="cursor-pointer"
-                      onClick={() => handleSort("totalValue")}
+                      className="cursor-pointer text-center"
+                      onClick={() => handleSort("deliveryDate")}
+                      style={{ minWidth: "130px" }}
                     >
-                      <div className="d-flex align-items-center gap-1">
-                        Total Value
-                        {sortField === "totalValue" && (
+                      <div className="d-flex align-items-center gap-1 justify-content-center">
+                        Delivery Date
+                        {sortField === "deliveryDate" && (
                           <Icon
                             icon={`mdi:arrow-${
                               sortDirection === "asc" ? "up" : "down"
@@ -710,12 +899,29 @@ const PurchaseOrderListLayer = () => {
                         )}
                       </div>
                     </th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Actions</th>
+                    <th
+                      scope="col"
+                      className="cursor-pointer text-end"
+                      onClick={() => handleSort("grandTotal")}
+                      style={{ minWidth: "130px" }}
+                    >
+                      <div className="d-flex align-items-center gap-1 justify-content-end">
+                        Total Value
+                        {sortField === "grandTotal" && (
+                          <Icon
+                            icon={`mdi:arrow-${
+                              sortDirection === "asc" ? "up" : "down"
+                            }`}
+                          />
+                        )}
+                      </div>
+                    </th>
+                    <th scope="col" className="text-center" style={{ minWidth: "140px" }}>Status</th>
+                    <th scope="col" className="text-center" style={{ minWidth: "130px" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedOrders.map((po) => (
+                  {filteredOrders.map((po) => (
                     <TableRow
                       key={po.id}
                       po={po}
@@ -729,49 +935,61 @@ const PurchaseOrderListLayer = () => {
             </div>
 
             <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-24">
-              <span>
-                Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                {Math.min(
-                  currentPage * itemsPerPage,
-                  filteredAndSortedOrders.length
-                )}{" "}
-                of {filteredAndSortedOrders.length} entries
-              </span>
+              <div className="d-flex align-items-center gap-2">
+                <span>
+                  Showing {totalElements > 0 ? currentPage * itemsPerPage + 1 : 0} to{" "}
+                  {Math.min(
+                    (currentPage + 1) * itemsPerPage,
+                    totalElements
+                  )}{" "}
+                  of {totalElements} entries
+                </span>
+                <select
+                  className="form-select form-select-sm w-auto"
+                  value={itemsPerPage}
+                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                >
+                  <option value={5}>5 per page</option>
+                  <option value={10}>10 per page</option>
+                  <option value={25}>25 per page</option>
+                  <option value={50}>50 per page</option>
+                </select>
+              </div>
               <ul className="pagination d-flex flex-wrap align-items-center gap-2 justify-content-center">
                 <li className="page-item">
                   <button
                     className="page-link text-secondary-light fw-medium radius-4 border-0 px-10 py-10 d-flex align-items-center justify-content-center h-32-px w-32-px bg-base"
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.max(prev - 1, 1))
-                    }
-                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 0}
                   >
                     <Icon icon="ep:d-arrow-left" className="text-xl" />
                   </button>
                 </li>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <li key={page} className="page-item">
+                {getPageNumbers().map((page, index) => (
+                  <li key={index} className="page-item">
+                    {page === '...' ? (
+                      <span className="page-link fw-medium radius-4 border-0 px-10 py-10 d-flex align-items-center justify-content-center h-32-px w-32-px bg-base text-secondary-light">
+                        ...
+                      </span>
+                    ) : (
                       <button
                         className={`page-link fw-medium radius-4 border-0 px-10 py-10 d-flex align-items-center justify-content-center h-32-px w-32-px ${
                           currentPage === page
                             ? "bg-primary-600 text-white"
                             : "bg-primary-50 text-secondary-light"
                         }`}
-                        onClick={() => setCurrentPage(page)}
+                        onClick={() => handlePageChange(page)}
                       >
-                        {page}
+                        {page + 1}
                       </button>
-                    </li>
-                  )
-                )}
+                    )}
+                  </li>
+                ))}
                 <li className="page-item">
                   <button
                     className="page-link text-secondary-light fw-medium radius-4 border-0 px-10 py-10 d-flex align-items-center justify-content-center h-32-px w-32-px bg-base"
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                    }
-                    disabled={currentPage === totalPages}
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage >= totalPages - 1}
                   >
                     <Icon icon="ep:d-arrow-right" className="text-xl" />
                   </button>
@@ -818,7 +1036,7 @@ const PurchaseOrderListLayer = () => {
               <div className="modal-body">
                 <p>
                   Are you sure you want to delete PO{" "}
-                  <strong>{poToDelete?.poNo}</strong>?
+                  <strong>{poToDelete?.poNumber}</strong>?
                 </p>
                 <p className="text-danger">This action cannot be undone.</p>
               </div>
@@ -827,6 +1045,7 @@ const PurchaseOrderListLayer = () => {
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => setShowDeleteDialog(false)}
+                  disabled={deleteLoading}
                 >
                   Cancel
                 </button>
@@ -834,8 +1053,9 @@ const PurchaseOrderListLayer = () => {
                   type="button"
                   className="btn btn-danger"
                   onClick={handleConfirmDelete}
+                  disabled={deleteLoading}
                 >
-                  Delete
+                  {deleteLoading ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </div>

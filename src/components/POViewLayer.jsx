@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { makeRequest } from "../mocks/server";
+import { getSuppliers } from "../services/suppliers";
+import { getItemMasterData } from "../services/ItemMaster";
+import axiosInstance from "../services/axiosInstance";
 import POFooterSummary from "./child/POFooterSummary";
 import OperationControl from "./OperationControl";
 
@@ -18,10 +21,18 @@ const POViewLayer = ({ showModal, onClose, po }) => {
 
   useEffect(() => {
     if (po) {
-      // Initialize notes from PO or empty array
-      // Sort by timestamp descending if needed, but for stepper usually newest first or last depending on design
-      // Here we assume array order is display order (top to bottom)
-      setNotes(po.notes || []);
+      // Initialize notes from PO activities or notes array
+      // Support both old (notes) and new (activities) API field names
+      const activities = po.activities || po.notes || [];
+      // Map activities to notes format if needed
+      const mappedNotes = activities.map(activity => ({
+        text: activity.comment || activity.text || "",
+        timestamp: activity.createdAt || activity.timestamp || "",
+        user: activity.user || "User",
+        edited: activity.edited || false,
+        id: activity.id
+      }));
+      setNotes(mappedNotes);
     }
   }, [po]);
 
@@ -39,16 +50,17 @@ const POViewLayer = ({ showModal, onClose, po }) => {
 
     const note = {
       text: newNote,
+      comment: newNote,
       timestamp: timestamp,
-      user: "Current User", // You might want to get this from auth context
+      user: "Current User",
     };
 
     const updatedNotes = [...notes, note];
     setNotes(updatedNotes);
     setNewNote("");
 
-    // In a real app, you would save this to the backend here
-    makeRequest("POST", `/purchase-orders/${po.id}/notes`, note);
+    // Save to the backend
+    makeRequest("POST", `/purchase-orders/${po.id}/comments`, { comment: newNote });
   };
 
   const handleEditNote = (index) => {
@@ -80,12 +92,8 @@ const POViewLayer = ({ showModal, onClose, po }) => {
     setEditingNoteIndex(null);
     setEditNoteText("");
 
-    // In a real app, you would update this on the backend here
-    makeRequest(
-      "PUT",
-      `/purchase-orders/${po.id}/notes/${index}`,
-      updatedNotes[index]
-    );
+    // Update on the backend
+    makeRequest("PUT", `/purchase-orders/${po.id}/notes/${index}`, updatedNotes[index]);
   };
 
   const handleCancelEdit = () => {
@@ -110,14 +118,14 @@ const POViewLayer = ({ showModal, onClose, po }) => {
       setLoading(true);
       const [suppliersResponse, itemsResponse, termsConditionsResponse] =
         await Promise.all([
-          makeRequest("GET", "/suppliers"),
-          makeRequest("GET", "/items"),
-          makeRequest("GET", "/terms-conditions"),
+          getSuppliers(),
+          getItemMasterData(),
+          axiosInstance.get("/terms-conditions"),
         ]);
       setMasterData({
-        suppliers: suppliersResponse.data,
-        items: itemsResponse.data,
-        termsConditions: termsConditionsResponse.data,
+        suppliers: suppliersResponse.content || suppliersResponse.data || suppliersResponse || [],
+        items: itemsResponse.content || itemsResponse.data || itemsResponse || [],
+        termsConditions: termsConditionsResponse.data?.content || termsConditionsResponse.data?.data || termsConditionsResponse.data || [],
       });
     } catch (error) {
       console.error("Error loading master data:", error);
@@ -128,7 +136,10 @@ const POViewLayer = ({ showModal, onClose, po }) => {
 
   if (!showModal || !po) return null;
 
+  // Handle both old and new API field names
+  const poNumber = po.poNumber || po.poNo;
   const supplierName =
+    po.supplierName ||
     po.supplier?.name ||
     masterData.suppliers.find((s) => s.id === po.supplierId)?.name ||
     "N/A";
@@ -136,9 +147,11 @@ const POViewLayer = ({ showModal, onClose, po }) => {
     po.supplier?.code ||
     masterData.suppliers.find((s) => s.id === po.supplierId)?.code ||
     "";
+  const deliveryDate = po.deliveryDate || po.expectedDeliveryDate;
+  const termsTitle = po.termsConditionsTitle || "";
 
   const terms =
-    masterData.termsConditions.find((t) => t.id === po.termsConditionId) || {};
+    masterData.termsConditions.find((t) => t.id === (po.termsConditionsId || po.termsConditionId)) || { name: termsTitle };
 
   const lineItems = po.lineItems || [];
 
@@ -146,15 +159,15 @@ const POViewLayer = ({ showModal, onClose, po }) => {
   const subtotal =
     po.subtotal ||
     lineItems.reduce(
-      (sum, item) => sum + (item.qty || 0) * (item.unitPrice || 0),
+      (sum, item) => sum + (item.quantity || item.qty || 0) * (item.unitPrice || 0),
       0
     );
   const tax =
-    po.tax ||
+    po.tax || po.taxAmount ||
     lineItems.reduce((sum, item) => {
-      const totalTaxPercent = (item.sgstPercent || 0) + (item.cgstPercent || 0);
+      const totalTaxPercent = (item.sgst || item.sgstPercent || 0) + (item.cgst || item.cgstPercent || 0) + (item.igst || 0);
       return (
-        sum + ((item.qty || 0) * (item.unitPrice || 0) * totalTaxPercent) / 100
+        sum + ((item.quantity || item.qty || 0) * (item.unitPrice || 0) * totalTaxPercent) / 100
       );
     }, 0);
   const grandTotal = po.grandTotal || subtotal + tax;
@@ -233,7 +246,7 @@ const POViewLayer = ({ showModal, onClose, po }) => {
             style={{ flexShrink: 0 }}
           >
             <h1 className="modal-title fs-5" id="poViewModalLabel">
-              {po.poNo}
+              {poNumber}
             </h1>
             <button
               type="button"
@@ -283,7 +296,7 @@ const POViewLayer = ({ showModal, onClose, po }) => {
                     <label className="form-label text-muted mb-1">
                       PO Number
                     </label>
-                    <div className="fw-semibold">{po.poNo}</div>
+                    <div className="fw-semibold">{poNumber}</div>
                   </div>
                   <div className="col-md-2">
                     <label className="form-label text-muted mb-1">Status</label>
@@ -332,7 +345,7 @@ const POViewLayer = ({ showModal, onClose, po }) => {
                       Expected Delivery
                     </label>
                     <div className="fw-semibold">
-                      {formatDate(po.expectedDeliveryDate)}
+                      {formatDate(deliveryDate)}
                     </div>
                   </div>
                 </div>
@@ -390,32 +403,43 @@ const POViewLayer = ({ showModal, onClose, po }) => {
                                 masterData.items.find(
                                   (i) => i.id === item.itemId
                                 ) || {};
+                              // Handle both old and new API field names
+                              const itemName = item.itemName || itemDetails.name || itemDetails.itemName || "Unknown Item";
+                              const itemCode = itemDetails.code || itemDetails.itemCode || "";
+                              const quantity = item.quantity || item.qty || 0;
+                              const uomName = item.uomName || item.uom || "";
+                              const sgst = item.cgst || item.sgstPercent || 0;
+                              const cgst = item.sgst || item.cgstPercent || 0;
+                              const totalAmount = item.totalAmount || item.amount || 0;
+                              
                               return (
                                 <tr key={index}>
                                   <td>
                                     <div className="fw-medium">
-                                      {itemDetails.name || "Unknown Item"}
+                                      {itemName}
                                     </div>
-                                    <small className="text-muted">
-                                      {itemDetails.code}
-                                    </small>
+                                    {itemCode && (
+                                      <small className="text-muted">
+                                        {itemCode}
+                                      </small>
+                                    )}
                                   </td>
                                   <td className="text-center">
-                                    {item.description}
+                                    {item.description || "-"}
                                   </td>
-                                  <td className="text-center">{item.qty}</td>
-                                  <td className="text-center">{item.uom}</td>
+                                  <td className="text-center">{quantity}</td>
+                                  <td className="text-center">{uomName}</td>
                                   <td className="text-center">
-                                    ${(item.unitPrice || 0).toFixed(2)}
-                                  </td>
-                                  <td className="text-center">
-                                    {item.sgstPercent || 0}%
+                                    ₹{(item.unitPrice || 0).toFixed(2)}
                                   </td>
                                   <td className="text-center">
-                                    {item.cgstPercent || 0}%
+                                    {sgst}%
                                   </td>
                                   <td className="text-center">
-                                    ${(item.amount || 0).toFixed(2)}
+                                    {cgst}%
+                                  </td>
+                                  <td className="text-center">
+                                    ₹{(totalAmount).toFixed(2)}
                                   </td>
                                 </tr>
                               );
