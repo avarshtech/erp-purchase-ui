@@ -35,8 +35,9 @@ const SupplierModalLayer = () => {
       gstin: "",
       email: "",
       phone: "",
-      fabric: false,
-      trims: false,
+      suppliesFabric: false,
+      suppliesTrims: false,
+      active: true,
     });
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -149,8 +150,9 @@ const SupplierModalLayer = () => {
         gstin: "",
         email: "",
         phone: "",
-        fabric: false,
-        trims: false,
+        suppliesFabric: false,
+        suppliesTrims: false,
+        active: true,
       });
       setPendingSuccessToast(null);
       setShowToast(false);
@@ -173,8 +175,9 @@ const SupplierModalLayer = () => {
         gstin: foundSupplier.gstin,
         email: foundSupplier.email,
         phone: foundSupplier.phone,
-        fabric: foundSupplier.fabric,
-        trims: foundSupplier.trims,
+        suppliesFabric: foundSupplier.suppliesFabric,
+        suppliesTrims: foundSupplier.suppliesTrims,
+        active: foundSupplier.active !== undefined ? foundSupplier.active : true,
       });
       setPendingSuccessToast(null);
       setShowToast(false);
@@ -279,7 +282,7 @@ const SupplierModalLayer = () => {
         setShowToast(true);
         return;
       }
-      if (!formData.fabric && !formData.trims) {
+      if (!formData.suppliesFabric && !formData.suppliesTrims) {
         setToastMessage("At least one supply product (Fabric or Trims) must be selected.");
         setToastType("error");
         setShowToast(true);
@@ -410,7 +413,7 @@ const SupplierModalLayer = () => {
 
   const renderSuppliesChips = (supplier) => {
     const chips = [];
-    if (supplier.fabric) {
+    if (supplier.suppliesFabric) {
       chips.push(
         <span
           key="fabric"
@@ -420,7 +423,7 @@ const SupplierModalLayer = () => {
         </span>
       );
     }
-    if (supplier.trims) {
+    if (supplier.suppliesTrims) {
       chips.push(
         <span
           key="trims"
@@ -914,14 +917,14 @@ const SupplierModalLayer = () => {
                         <input
                           className="form-check-input"
                           type="checkbox"
-                          name="fabric"
-                          id="fabric"
-                          checked={formData.fabric}
+                          name="suppliesFabric"
+                          id="suppliesFabric"
+                          checked={formData.suppliesFabric}
                           onChange={handleChange}
                         />
                         <label
                           className="form-check-label mb-0"
-                          htmlFor="fabric"
+                          htmlFor="suppliesFabric"
                         >
                           Fabric
                         </label>
@@ -930,14 +933,14 @@ const SupplierModalLayer = () => {
                         <input
                           className="form-check-input"
                           type="checkbox"
-                          name="trims"
-                          id="trims"
-                          checked={formData.trims}
+                          name="suppliesTrims"
+                          id="suppliesTrims"
+                          checked={formData.suppliesTrims}
                           onChange={handleChange}
                         />
                         <label
                           className="form-check-label mb-0"
-                          htmlFor="trims"
+                          htmlFor="suppliesTrims"
                         >
                           Trims
                         </label>

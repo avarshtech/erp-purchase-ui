@@ -24,6 +24,12 @@ export const PAGES = {
     path: "/item-master",
     icon: "mingcute:inventory-line",
   },
+  MASTER_DATA: {
+    id: "master-data",
+    name: "Master Data",
+    path: "/master-data-entry",
+    icon: "mingcute:settings-2-line",
+  },
   USERS: {
     id: "users",
     name: "Users",
