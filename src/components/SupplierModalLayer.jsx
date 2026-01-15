@@ -37,6 +37,7 @@ const SupplierModalLayer = () => {
       phone: "",
       fabric: false,
       trims: false,
+      active: true
     });
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -151,6 +152,7 @@ const SupplierModalLayer = () => {
         phone: "",
         fabric: false,
         trims: false,
+        active: true
       });
       setPendingSuccessToast(null);
       setShowToast(false);
@@ -175,6 +177,7 @@ const SupplierModalLayer = () => {
         phone: foundSupplier.phone,
         fabric: foundSupplier.fabric,
         trims: foundSupplier.trims,
+        active: foundSupplier.active,
       });
       setPendingSuccessToast(null);
       setShowToast(false);
@@ -206,79 +209,112 @@ const SupplierModalLayer = () => {
     // --- Submit handler ---
     const handleSubmit = async (e) => {
       if (e) e.preventDefault();
-      // Field-by-field validation (handle null values safely)
+      
+      // Field-by-field validation in order of input placement
+      // 1. Supplier Name
       if (!(formData.name || '').trim()) {
         setToastMessage("Supplier Name is required.");
         setToastType("error");
         setShowToast(true);
         return;
       }
+      // 2. Address
       if (!(formData.address || '').trim()) {
         setToastMessage("Address is required.");
         setToastType("error");
         setShowToast(true);
         return;
       }
+      // 3. City
       if (!(formData.city || '').trim()) {
         setToastMessage("City is required.");
         setToastType("error");
         setShowToast(true);
         return;
       }
+      // 4. Pincode
       if (!(formData.pincode || '').trim()) {
         setToastMessage("Pincode is required.");
         setToastType("error");
         setShowToast(true);
         return;
       }
+      // 5. State
       if (!(formData.state || '').trim()) {
         setToastMessage("State is required.");
         setToastType("error");
         setShowToast(true);
         return;
       }
+      // 6. Country
       if (!(formData.country || '').trim()) {
         setToastMessage("Country is required.");
         setToastType("error");
         setShowToast(true);
         return;
       }
+      // 7. PAN - Required check first, then format check
       if (!(formData.pan || '').trim()) {
         setToastMessage("PAN is required.");
         setToastType("error");
         setShowToast(true);
         return;
       }
-      if (!/^[A-Z]{3}[PCAFHTBLJG]{1}[A-Z]{1}[0-9]{4}[A-Z]{1}$/.test(formData.pan || '')) {
-        setToastMessage("PAN must be in the format: AAAX9999X (e.g., ABCDE1234F)");
+      // PAN format: 5 letters + 4 digits + 1 letter (e.g., ABCPD1234E)
+      // 4th character must be entity type: C, P, H, F, A, T, B, L, J, G
+      const panRegex = /^[A-Z]{3}[PCAFHTBLJG][A-Z][0-9]{4}[A-Z]$/;
+      if (!panRegex.test((formData.pan || '').toUpperCase())) {
+        setToastMessage("Invalid PAN format. Expected format: ABCPD1234E (4th char must be C/P/H/F/A/T/B/L/J/G)");
         setToastType("error");
         setShowToast(true);
         return;
       }
+      // 8. GSTIN - Required check first, then format check
       if (!(formData.gstin || '').trim()) {
         setToastMessage("GSTIN is required.");
         setToastType("error");
         setShowToast(true);
         return;
       }
-      if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(formData.gstin || '')) {
-        setToastMessage("GSTIN must be in the format: 22AAAAA0000A1Z5 (15 digits)");
+      // GSTIN format: 2 digits (state) + 10 chars (PAN) + 1 char (entity) + Z + 1 check digit
+      // Example: 22ABCPD1234E1Z5
+      const gstinRegex = /^[0-9]{2}[A-Z]{3}[PCAFHTBLJG][A-Z][0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$/;
+      if (!gstinRegex.test((formData.gstin || '').toUpperCase())) {
+        setToastMessage("Invalid GSTIN format. Expected format: 22ABCPD1234E1Z5 (15 characters)");
         setToastType("error");
         setShowToast(true);
         return;
       }
+      // 9. Email
       if (!(formData.email || '').trim()) {
         setToastMessage("Email is required.");
         setToastType("error");
         setShowToast(true);
         return;
       }
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email || '')) {
+        setToastMessage("Invalid email format.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      // 10. Phone
       if (!(formData.phone || '').trim()) {
         setToastMessage("Phone Number is required.");
         setToastType("error");
         setShowToast(true);
         return;
       }
+      // Phone format validation (10 digits)
+      if ((formData.phone || '').length !== 10) {
+        setToastMessage("Phone Number must be 10 digits.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      // 11. Fabric/Trims
       if (!formData.fabric && !formData.trims) {
         setToastMessage("At least one supply product (Fabric or Trims) must be selected.");
         setToastType("error");

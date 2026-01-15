@@ -1,5 +1,14 @@
 /* Users Page and Dialog Styles */
 
+/* Form select dropdown arrow fix for light mode */
+[data-theme="light"] .form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-size: 16px 12px;
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
 /* Page title styling */
 .page-title {
   font-size: 2.5rem;
@@ -679,4 +688,36 @@ button:disabled {
   .modal-footer {
     padding: 1rem;
   }
+}
+
+/* Loading overlay for modal */
+.modal-loading-overlay {
+  position: absolute;
+  top: 56px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 0 0 16px 16px;
+}
+
+[data-theme="dark"] .modal-loading-overlay {
+  background: rgba(55, 65, 81, 0.9);
+}
+
+.modal-loading-overlay .spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+.modal-loading-overlay h6 {
+  color: #6b7280;
+}
+
+[data-theme="dark"] .modal-loading-overlay h6 {
+  color: #9ca3af;
 }

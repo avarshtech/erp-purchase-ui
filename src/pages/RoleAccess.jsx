@@ -1,6 +1,6 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useState, useEffect } from "react";
-import { getRoles, createRole, updateRole, deleteRole } from "../mocks/server";
+import { getRoles, createRole, updateRole, deleteRole } from "../services/roles";
 import {
   getAllPages,
   getAllOperations,
@@ -113,8 +113,10 @@ const RoleAccess = () => {
     try {
       setLoading(true);
       const response = await getRoles();
-      setAllRoles(response.data);
-      setFilteredRoles(response.data);
+      // Handle both array response and object response with data property
+      const roles = Array.isArray(response) ? response : (response.data || []);
+      setAllRoles(roles);
+      setFilteredRoles(roles);
     } catch (err) {
       console.error("Error fetching roles:", err);
     } finally {
@@ -693,7 +695,7 @@ const RoleAccess = () => {
                     </label>
                     <select
                       name="status"
-                      className="form-control radius-8"
+                      className="form-select radius-8"
                       value={formData.status}
                       onChange={handleChange}
                     >
@@ -883,19 +885,23 @@ const RoleAccess = () => {
                                   />
                                 </td>
                                 <td className="text-center">
-                                  <input
-                                    type="checkbox"
-                                    className="form-check-input"
-                                    checked={
-                                      isDisabled ||
-                                      (hasAccess &&
-                                        pagePermissions.operations.delete)
-                                    }
-                                    disabled={isDisabled || !hasAccess}
-                                    onChange={() =>
-                                      handleOperationToggle(page.id, "delete")
-                                    }
-                                  />
+                                  {page.id === "item-master" ? (
+                                    <span className="text-muted">-</span>
+                                  ) : (
+                                    <input
+                                      type="checkbox"
+                                      className="form-check-input"
+                                      checked={
+                                        isDisabled ||
+                                        (hasAccess &&
+                                          pagePermissions.operations.delete)
+                                      }
+                                      disabled={isDisabled || !hasAccess}
+                                      onChange={() =>
+                                        handleOperationToggle(page.id, "delete")
+                                      }
+                                    />
+                                  )}
                                 </td>
                                 <td className="text-center">
                                   {!isDisabled && hasAccess && (

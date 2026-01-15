@@ -1005,3 +1005,31 @@
 [data-theme="dark"] .notes-input-area {
   border-top-color: #4b5563;
 }
+
+/* Loading overlay for PO view modal */
+.po-view-loading-overlay {
+  position: absolute;
+  top: 56px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 0 0 16px 16px;
+}
+
+[data-theme="dark"] .po-view-loading-overlay {
+  background: rgba(55, 65, 81, 0.9);
+}
+
+/* CSS variable for loading overlay background */
+:root {
+  --loading-overlay-bg: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme="dark"] {
+  --loading-overlay-bg: rgba(55, 65, 81, 0.9);
+}
