@@ -3,19 +3,19 @@ import poListData from "./poListData.json";
 import poApprovalData from "./poApprovalData.json";
 
 // Seed data for Item Master
-const categories = [
+let categories = [
   { id: 1, name: "Fabric" },
   { id: 2, name: "Trims" },
 ];
 
-const subcategories = [
+let subcategories = [
   { id: 1, categoryId: 1, name: "Knit" },
   { id: 2, categoryId: 1, name: "Woven" },
   { id: 3, categoryId: 2, name: "Button" },
   { id: 4, categoryId: 2, name: "Label" },
 ];
 
-const itemTypes = [
+let itemTypes = [
   { id: 1, subCategoryId: 1, name: "Single Jersey" },
   { id: 2, subCategoryId: 1, name: "French Terry" },
   { id: 3, subCategoryId: 3, name: "Shell" },
@@ -23,6 +23,20 @@ const itemTypes = [
   { id: 5, subCategoryId: 3, name: "Horn" },
   { id: 6, subCategoryId: 3, name: "Plastic" },
 ];
+
+let attributes = [
+  { id: 1, attributeName: "Color", dataType: "string" },
+  { id: 2, attributeName: "Size", dataType: "string" },
+  { id: 3, attributeName: "Weight", dataType: "number" },
+];
+
+let uoms = [
+  { id: 1, name: "Pcs" },
+  { id: 2, name: "Kg" },
+  { id: 3, name: "Meters" },
+  { id: 4, name: "Litres" },
+];
+
 
 
 const items = [
@@ -802,6 +816,114 @@ server.get("/po-list", () => {
     per_page: poListData.length,
   };
 });
+
+// Item Master Create Routes
+
+server.get("/categories", () => {
+  return categories.map(cat => ({
+    id: cat.id,
+    name: cat.name,
+    subCategories: [] // As requested, returning empty array or null. Using empty array to match likely structure.
+  }));
+});
+
+server.post("/categories", (data) => {
+  if (data.id) {
+
+    // Update existing
+    categories = categories.map(cat => cat.id === data.id ? { ...cat, ...data } : cat);
+    return categories.find(cat => cat.id === data.id);
+  } else {
+    // Create new
+    const newCategory = { ...data, id: categories.length + 1 };
+    categories.push(newCategory);
+    return newCategory;
+  }
+});
+
+
+server.get("/sub-categories", () => {
+  return subcategories.map(sub => ({
+    id: sub.id,
+    name: sub.name,
+    categoryId: sub.categoryId,
+    itemTypes: [] // As requested
+  }));
+});
+
+server.post("/sub-categories", (data) => {
+  if (data.id) {
+     subcategories = subcategories.map(sub => sub.id === data.id ? { ...sub, ...data } : sub);
+     return subcategories.find(sub => sub.id === data.id);
+  } else {
+    const newSubCategory = { ...data, id: subcategories.length + 1, itemTypes: [] };
+    subcategories.push(newSubCategory);
+    return newSubCategory;
+  }
+});
+
+server.get("/item-types", () => {
+  return itemTypes;
+});
+
+server.post("/item-types", (data) => {
+  if (data.id) {
+    itemTypes = itemTypes.map(it => it.id === data.id ? { ...it, ...data, attributes: data.attributes || [], uoms: data.uoms || [] } : it);
+    return itemTypes.find(it => it.id === data.id);
+  } else {
+    const newItemType = { 
+      ...data, 
+      id: itemTypes.length + 1,
+      // Mocking the hydration of attributes and UOMs if they aren't provided fully
+      attributes: data.attributes || [], 
+      uoms: data.uoms || []
+    };
+    itemTypes.push(newItemType);
+    return newItemType;
+  }
+});
+
+server.get("/attribute-configs", () => {
+  return attributes;
+});
+
+server.post("/attribute-configs", (data) => {
+  if (data.id) {
+    attributes = attributes.map(attr => attr.id === data.id ? { ...attr, ...data } : attr);
+    return attributes.find(attr => attr.id === data.id);
+  } else {
+    const newAttribute = { ...data, id: attributes.length + 1 };
+    attributes.push(newAttribute);
+    return newAttribute;
+  }
+});
+
+server.get("/unit-of-measures", () => {
+    return uoms;
+});
+
+server.post("/unit-of-measures", (data) => {
+  if (data.id) {
+    uoms = uoms.map(uom => uom.id === data.id ? { ...uom, ...data } : uom);
+    return uoms.find(uom => uom.id === data.id);
+  } else {
+    const newUOM = { ...data, id: uoms.length + 1 };
+    uoms.push(newUOM);
+    return newUOM;
+  }
+});
+
+server.get("/items/meta", () => {
+  return {
+    categories: categories,
+    subCategories: subcategories,
+    itemTypes: itemTypes,
+    attributes: attributes,
+    uoms: uoms
+  };
+});
+
+
 
 server.get("/suppliers", () => {
   return {

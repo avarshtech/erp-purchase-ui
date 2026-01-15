@@ -37,7 +37,7 @@ const SupplierModalLayer = () => {
       phone: "",
       suppliesFabric: false,
       suppliesTrims: false,
-      active: true
+      active: true,
     });
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -152,7 +152,7 @@ const SupplierModalLayer = () => {
         phone: "",
         suppliesFabric: false,
         suppliesTrims: false,
-        active: true
+        active: true,
       });
       setPendingSuccessToast(null);
       setShowToast(false);
@@ -300,14 +300,8 @@ const SupplierModalLayer = () => {
         setShowToast(true);
         return;
       }
-      // 10. Phone
-      if (!(formData.phone || '').trim()) {
-        setToastMessage("Phone Number is required.");
-        setToastType("error");
-        setShowToast(true);
-        return;
-      }
-      // Phone format validation (10 digits)
+     
+      // 10. Phone format validation (10 digits)
       if ((formData.phone || '').length !== 10) {
         setToastMessage("Phone Number must be 10 digits.");
         setToastType("error");
@@ -315,7 +309,7 @@ const SupplierModalLayer = () => {
         return;
       }
       // 11. Fabric/Trims
-      if (!formData.fabric && !formData.trims) {
+      if (!formData.suppliesFabric && !formData.suppliesTrims) {
         setToastMessage("At least one supply product (Fabric or Trims) must be selected.");
         setToastType("error");
         setShowToast(true);
@@ -950,14 +944,14 @@ const SupplierModalLayer = () => {
                         <input
                           className="form-check-input"
                           type="checkbox"
-                          name="fabric"
-                          id="fabric"
-                          checked={formData.fabric}
+                          name="suppliesFabric"
+                          id="suppliesFabric"
+                          checked={formData.suppliesFabric}
                           onChange={handleChange}
                         />
                         <label
                           className="form-check-label mb-0"
-                          htmlFor="fabric"
+                          htmlFor="suppliesFabric"
                         >
                           Fabric
                         </label>
@@ -966,14 +960,14 @@ const SupplierModalLayer = () => {
                         <input
                           className="form-check-input"
                           type="checkbox"
-                          name="trims"
-                          id="trims"
-                          checked={formData.trims}
+                          name="suppliesTrims"
+                          id="suppliesTrims"
+                          checked={formData.suppliesTrims}
                           onChange={handleChange}
                         />
                         <label
                           className="form-check-label mb-0"
-                          htmlFor="trims"
+                          htmlFor="suppliesTrims"
                         >
                           Trims
                         </label>
