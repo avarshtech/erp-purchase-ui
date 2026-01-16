@@ -32,7 +32,7 @@ const TableDataLayer = () => {
                                     <label className="form-check-label">S.L</label>
                                 </div>
                             </th>
-                            <th scope="col">PO No</th>
+                            <th scope="col">PO Number</th>
                             <th scope="col">Name</th>
                             <th scope="col">Issued Date</th>
                             <th scope="col" className='dt-orderable-asc dt-orderable-desc'>Amount</th>

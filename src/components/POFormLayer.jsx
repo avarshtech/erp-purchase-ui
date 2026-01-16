@@ -12,7 +12,7 @@ const POFormLayer = () => {
   // Consolidated form state
   const [formState, setFormState] = useState({
     formData: {
-      poNo: "",
+      // poNo removed for new PO, will be set by API
       supplierId: "",
       poDate: new Date(),
       expectedDeliveryDate: null,
@@ -63,7 +63,7 @@ const POFormLayer = () => {
   // Load master data on component mount
   useEffect(() => {
     loadMasterData();
-    generatePONumber();
+    // No PO number generation for new PO; API will handle it
   }, []);
 
   // Filter suppliers based on search
@@ -141,22 +141,7 @@ const POFormLayer = () => {
     }
   };
 
-  const generatePONumber = () => {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const sequence = String(Math.floor(Math.random() * 9999) + 1).padStart(
-      4,
-      "0"
-    );
-    const poNo = `PO-${year}${month}${day}-${sequence}`;
-    setFormState((prev) => ({
-      ...prev,
-      formData: { ...prev.formData, poNo },
-      isDirty: true,
-    }));
-  };
+  // Removed generatePONumber for new PO; API will handle it
 
   const handleInputChange = useCallback((field, value) => {
     setFormState((prev) => ({

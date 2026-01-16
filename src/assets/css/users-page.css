@@ -265,11 +265,36 @@
 }
 
 .bg-hover-gray-50:hover {
-  background-color: #f9fafb !important;
+  background-color: #e3f2fd !important;
+  color: #0d6efd !important;
 }
 
 [data-theme="dark"] .bg-hover-gray-50:hover {
-  background-color: #374151 !important;
+  background-color: rgba(13,110,253,0.12) !important;
+  color: #ffffff !important;
+} 
+
+/* Final override: ensure hover color uses application primary tint globally (light + dark) */
+.dropdown-item:hover,
+.dropdown-menu .dropdown-item:hover,
+.dropdown-item-content:hover,
+.po-form-dropdown .dropdown-item:hover,
+.bg-hover-gray-50:hover,
+.btn.btn-outline-primary:hover,
+.btn-link:hover {
+  background-color: #e3f2fd !important; /* light primary tint */
+  color: #0d6efd !important;
+}
+
+[data-theme="dark"] .dropdown-item:hover,
+[data-theme="dark"] .dropdown-menu .dropdown-item:hover,
+[data-theme="dark"] .dropdown-item-content:hover,
+[data-theme="dark"] .po-form-dropdown .dropdown-item:hover,
+[data-theme="dark"] .bg-hover-gray-50:hover,
+[data-theme="dark"] .btn.btn-outline-primary:hover,
+[data-theme="dark"] .btn-link:hover {
+  background-color: rgba(13,110,253,0.18) !important; /* dark primary tint */
+  color: #ffffff !important;
 }
 
 .text-gray-700 {

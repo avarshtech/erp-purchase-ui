@@ -117,7 +117,7 @@ export const hasOperationPermission = (permissions, pageId, operationId) => {
 
 // Get user permissions from localStorage (or context in real app)
 export const getCurrentUserPermissions = () => {
-  const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const user = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
 
   // Admin has all permissions
   if (user.role === "Admin") {
@@ -130,10 +130,10 @@ export const getCurrentUserPermissions = () => {
 
 // Set current user in localStorage
 export const setCurrentUser = (user) => {
-  localStorage.setItem("currentUser", JSON.stringify(user));
+  sessionStorage.setItem("currentUser", JSON.stringify(user));
 };
 
 // Get current user
 export const getCurrentUser = () => {
-  return JSON.parse(localStorage.getItem("currentUser") || "{}");
+  return JSON.parse(sessionStorage.getItem("currentUser") || "{}");
 };

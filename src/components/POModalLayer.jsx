@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { v4 as uuidv4 } from "uuid";
 import { createPurchaseOrder, updatePurchaseOrder } from "../services/purchaseOrders";
 import { getSuppliers } from "../services/suppliers";
@@ -11,7 +9,8 @@ import POHeaderSection from "./child/POHeaderSection";
 import POLineItemsTable from "./child/POLineItemsTable";
 import POFooterSummary from "./child/POFooterSummary";
 import POActionButtons from "./child/POActionButtons";
-import "../assets/css/supplier-info.css";
+import POPreviewDialog from "./child/POPreviewDialog";
+import "../assets/css/purchase-order.css";
 
 const POModalLayer = ({
   showModal,
@@ -34,11 +33,10 @@ const POModalLayer = ({
         id: uuidv4(),
         itemId: "",
         description: "",
-        qty: 1,
+        qty: "",
         uom: "",
-        unitPrice: 0,
-        sgstPercent: 0,
-        cgstPercent: 0,
+        unitPrice: "",
+        gstPercent: 0,
         amount: 0,
       },
     ],
@@ -61,7 +59,14 @@ const POModalLayer = ({
     supplierSearch: "",
     showSupplierDropdown: false,
     showConfirmDialog: false,
+    showPreviewDialog: false,
   });
+
+  // Toast state (similar to supplier dialog)
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState("error");
+  const [pendingSuccessToast, setPendingSuccessToast] = useState(null);
 
   // Static options (moved outside state for better performance)
   const taxOptions = [
@@ -108,7 +113,7 @@ const POModalLayer = ({
   const initializeFormForNew = useCallback(() => {
     setFormState({
       formData: {
-        poNo: "",
+        // poNo removed for new PO, will be set by API
         supplierId: "",
         poDate: new Date(),
         expectedDeliveryDate: null,
@@ -120,11 +125,10 @@ const POModalLayer = ({
           id: uuidv4(),
           itemId: "",
           description: "",
-          qty: 1,
+          qty: "",
           uom: "",
-          unitPrice: 0,
-          sgstPercent: 0,
-          cgstPercent: 0,
+          unitPrice: "",
+          gstPercent: 0,
           amount: 0,
         },
       ],
@@ -138,8 +142,7 @@ const POModalLayer = ({
       showSupplierDropdown: false,
       openItemDropdown: null,
     }));
-
-    generatePONumber();
+    // No PO number generation for new PO; API will handle it
   }, []);
 
   // Load master data when modal opens
@@ -162,11 +165,10 @@ const POModalLayer = ({
             id: uuidv4(),
             itemId: "",
             description: "",
-            qty: 1,
+            qty: "",
             uom: "",
-            unitPrice: 0,
-            sgstPercent: 0,
-            cgstPercent: 0,
+            unitPrice: "",
+            gstPercent: 0,
             amount: 0,
           },
         ],
@@ -200,6 +202,29 @@ const POModalLayer = ({
     initializeFormForNew,
   ]);
 
+  // Show pending toast after modal closes (similar to supplier dialog)
+  useEffect(() => {
+    if (!showModal && pendingSuccessToast) {
+      setToastMessage(pendingSuccessToast.message);
+      setToastType(pendingSuccessToast.type);
+      setShowToast(true);
+      setPendingSuccessToast(null);
+    }
+  }, [showModal, pendingSuccessToast]);
+
+  // Auto-hide all toasts after 2.5 seconds (both success and error)
+  useEffect(() => {
+    let timer;
+    if (showToast) {
+      timer = setTimeout(() => {
+        setShowToast(false);
+      }, 2500);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [showToast]);
+
   // Filter suppliers based on search
   useEffect(() => {
     if (uiState.supplierSearch) {
@@ -228,9 +253,11 @@ const POModalLayer = ({
   // Auto-calculate amounts when line items change
   useEffect(() => {
     const updatedLineItems = formState.lineItems.map((item) => {
-      const totalTaxPercent = item.sgstPercent + item.cgstPercent;
+      const qty = parseFloat(item.qty) || 0;
+      const unitPrice = parseFloat(item.unitPrice) || 0;
+      const gstPercent = item.gstPercent || 0;
       const amount = parseFloat(
-        (item.qty * item.unitPrice * (1 + totalTaxPercent / 100)).toFixed(2)
+        (qty * unitPrice * (1 + gstPercent / 100)).toFixed(2)
       );
 
       // Only update if the amount actually changed
@@ -270,29 +297,15 @@ const POModalLayer = ({
         termsConditions: termsConditionsResponse.data?.content || termsConditionsResponse.data?.data || termsConditionsResponse.data || [],
       }));
     } catch (error) {
-      toast.error("Failed to load master data");
+      setToastMessage("Failed to load master data. Please try again.");
+      setToastType("error");
+      setShowToast(true);
       console.error("Error loading master data:", error);
     } finally {
       setUiState((prev) => ({ ...prev, loading: false }));
     }
   };
 
-  const generatePONumber = () => {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const sequence = String(Math.floor(Math.random() * 9999) + 1).padStart(
-      4,
-      "0"
-    );
-    const poNo = `PO-${year}${month}${day}-${sequence}`;
-    setFormState((prev) => ({
-      ...prev,
-      formData: { ...prev.formData, poNo },
-      // Don't set isDirty: true for auto-generated PO number
-    }));
-  };
 
   const handleInputChange = useCallback((field, value) => {
     setFormState((prev) => ({
@@ -305,65 +318,91 @@ const POModalLayer = ({
 
   const handleLineItemChange = useCallback(
     (id, field, value) => {
-      setFormState((prev) => ({
-        ...prev,
-        lineItems: prev.lineItems.map((item) => {
-          if (item.id === id) {
-            const updatedItem = { ...item, [field]: value };
+      setFormState((prev) => {
+        // Find the index of the item being changed to clear its error
+        const itemIndex = prev.lineItems.findIndex(item => item.id === id);
+        
+        // Determine which error key to clear based on the field
+        let errorKeyToClear = null;
+        if (field === "itemId") {
+          errorKeyToClear = `item_${itemIndex}`;
+        } else if (field === "qty") {
+          errorKeyToClear = `qty_${itemIndex}`;
+        } else if (field === "unitPrice") {
+          errorKeyToClear = `unitPrice_${itemIndex}`;
+        }
+        
+        // Create new errors object without the cleared error
+        const newErrors = { ...prev.errors };
+        if (errorKeyToClear && newErrors[errorKeyToClear]) {
+          delete newErrors[errorKeyToClear];
+        }
+        // Also clear the general lineItems error if any field is being filled
+        if (newErrors.lineItems) {
+          delete newErrors.lineItems;
+        }
+        
+        return {
+          ...prev,
+          lineItems: prev.lineItems.map((item) => {
+            if (item.id === id) {
+              const updatedItem = { ...item, [field]: value };
 
-            // Auto-fill item details if item is selected
-            if (field === "itemId" && value) {
-              const selectedItem = masterData.items.find(
-                (i) => i.id === parseInt(value)
-              );
-              if (selectedItem) {
-                // Build description from sub-category, item-type, and attributes
-                const descriptionParts = [];
-                
-                // Add item name
-                if (selectedItem.itemName) {
-                  descriptionParts.push(selectedItem.itemName);
-                }
-                
-                // Add sub-category and item-type
-                const categoryInfo = [];
-                if (selectedItem.subCategoryName) {
-                  categoryInfo.push(selectedItem.subCategoryName);
-                }
-                if (selectedItem.itemTypeName) {
-                  categoryInfo.push(selectedItem.itemTypeName);
-                }
-                if (categoryInfo.length > 0) {
-                  descriptionParts.push(`(${categoryInfo.join(" - ")})`);
-                }
-                
-                // Add attributes in a readable format
-                if (selectedItem.attributes && typeof selectedItem.attributes === 'object') {
-                  const attributeStrings = Object.entries(selectedItem.attributes)
-                    .filter(([key, value]) => value !== null && value !== undefined && value !== '')
-                    .map(([key, value]) => {
-                      // Format the key to be more readable (capitalize first letter)
-                      const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
-                      return `${formattedKey}: ${value}`;
-                    });
+              // Auto-fill item details if item is selected
+              if (field === "itemId" && value) {
+                const selectedItem = masterData.items.find(
+                  (i) => i.id === parseInt(value)
+                );
+                if (selectedItem) {
+                  // Build description from sub-category, item-type, and attributes
+                  const descriptionParts = [];
                   
-                  if (attributeStrings.length > 0) {
-                    descriptionParts.push(`[${attributeStrings.join(', ')}]`);
+                  // Add item name
+                  if (selectedItem.itemName) {
+                    descriptionParts.push(selectedItem.itemName);
                   }
+                  
+                  // Add sub-category and item-type
+                  const categoryInfo = [];
+                  if (selectedItem.subCategoryName) {
+                    categoryInfo.push(selectedItem.subCategoryName);
+                  }
+                  if (selectedItem.itemTypeName) {
+                    categoryInfo.push(selectedItem.itemTypeName);
+                  }
+                  if (categoryInfo.length > 0) {
+                    descriptionParts.push(`(${categoryInfo.join(" - ")})`);
+                  }
+                  
+                  // Add attributes in a readable format
+                  if (selectedItem.attributes && typeof selectedItem.attributes === 'object') {
+                    const attributeStrings = Object.entries(selectedItem.attributes)
+                      .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+                      .map(([key, value]) => {
+                        // Format the key to be more readable (capitalize first letter)
+                        const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
+                        return `${formattedKey}: ${value}`;
+                      });
+                    
+                    if (attributeStrings.length > 0) {
+                      descriptionParts.push(`[${attributeStrings.join(', ')}]`);
+                    }
+                  }
+                  
+                  updatedItem.description = descriptionParts.join(' ');
+                  updatedItem.uom = selectedItem.uomName || "";
+                  updatedItem.unitPrice = selectedItem.unitPrice || 0;
                 }
-                
-                updatedItem.description = descriptionParts.join(' ');
-                updatedItem.uom = selectedItem.uomName || "";
-                updatedItem.unitPrice = selectedItem.unitPrice || 0;
               }
-            }
 
-            return updatedItem;
-          }
-          return item;
-        }),
-        isDirty: true,
-      }));
+              return updatedItem;
+            }
+            return item;
+          }),
+          isDirty: true,
+          errors: newErrors,
+        };
+      });
     },
     [masterData.items]
   );
@@ -377,11 +416,10 @@ const POModalLayer = ({
           id: uuidv4(),
           itemId: "",
           description: "",
-          qty: 1,
+          qty: "",
           uom: "",
-          unitPrice: 0,
-          sgstPercent: 0,
-          cgstPercent: 0,
+          unitPrice: "",
+          gstPercent: 0,
           amount: 0,
         },
       ],
@@ -396,7 +434,9 @@ const POModalLayer = ({
           lineItems: prev.lineItems.filter((item) => item.id !== id),
         }));
       } else {
-        toast.warning("At least one line item is required");
+        setToastMessage("At least one line item is required.");
+        setToastType("error");
+        setShowToast(true);
       }
     },
     [formState.lineItems.length]
@@ -408,6 +448,9 @@ const POModalLayer = ({
 
       if (!formState.formData.supplierId)
         newErrors.supplierId = "Supplier is required";
+
+      if (!formState.formData.termsConditionId)
+        newErrors.termsConditionId = "Terms and Conditions is required";
 
       if (!formState.formData.poDate) {
         newErrors.poDate = "PO Date is required";
@@ -449,16 +492,22 @@ const POModalLayer = ({
       // Validate line items
       formState.lineItems.forEach((item, index) => {
         if (!item.itemId) newErrors[`item_${index}`] = "Item is required";
-        if (item.qty < 1)
+        const qty = parseFloat(item.qty);
+        const unitPrice = parseFloat(item.unitPrice);
+        if (item.qty === "" || isNaN(qty) || qty < 1)
           newErrors[`qty_${index}`] = "Quantity must be at least 1";
-        if (item.unitPrice < 0)
-          newErrors[`unitPrice_${index}`] = "Unit Price cannot be negative";
+        if (item.unitPrice === "" || isNaN(unitPrice) || unitPrice < 0.01)
+          newErrors[`unitPrice_${index}`] = "Unit Price must be at least 0.01";
       });
 
       if (
         isSubmit &&
         formState.lineItems.some(
-          (item) => !item.itemId || item.qty < 1 || item.unitPrice <= 0
+          (item) => {
+            const qty = parseFloat(item.qty);
+            const unitPrice = parseFloat(item.unitPrice);
+            return !item.itemId || item.qty === "" || isNaN(qty) || qty < 1 || item.unitPrice === "" || isNaN(unitPrice) || unitPrice < 0.01;
+          }
         )
       ) {
         newErrors.lineItems =
@@ -473,12 +522,12 @@ const POModalLayer = ({
 
   const calculateTotals = useCallback(() => {
     const subtotal = formState.lineItems.reduce(
-      (sum, item) => sum + item.qty * item.unitPrice,
+      (sum, item) => sum + (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0),
       0
     );
     const totalTax = formState.lineItems.reduce((sum, item) => {
-      const totalTaxPercent = item.sgstPercent + item.cgstPercent;
-      return sum + (item.qty * item.unitPrice * totalTaxPercent) / 100;
+      const gstPercent = item.gstPercent || 0;
+      return sum + ((parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0) * gstPercent) / 100;
     }, 0);
     const grandTotal = subtotal + totalTax;
     return {
@@ -503,11 +552,10 @@ const POModalLayer = ({
           id: uuidv4(),
           itemId: "",
           description: "",
-          qty: 1,
+          qty: "",
           uom: "",
-          unitPrice: 0,
-          sgstPercent: 0,
-          cgstPercent: 0,
+          unitPrice: "",
+          gstPercent: 0,
           amount: 0,
         },
       ],
@@ -523,55 +571,61 @@ const POModalLayer = ({
   };
 
   const handleSaveDraft = async () => {
+    // For draft saving, use comprehensive validation but show specific error messages
     if (!validateForm(false)) {
-      toast.error("Please fix the errors before saving");
+      setToastMessage("Please fix the validation errors before saving as draft.");
+      setToastType("error");
+      setShowToast(true);
       return;
     }
 
     try {
       setUiState((prev) => ({ ...prev, loading: "saving" }));
       const totals = calculateTotals();
-      
+
       // Get supplier details
       const selectedSupplier = masterData.suppliers.find(
         (s) => s.id === formState.formData.supplierId
       );
-      
+
       // Get terms and conditions details
       const selectedTerms = masterData.termsConditions.find(
         (tc) => tc.id === parseInt(formState.formData.termsConditionId)
       );
-      
+
       // Format line items to match API structure
       const formattedLineItems = formState.lineItems.map((item) => {
         const selectedItem = masterData.items.find(
           (i) => i.id === parseInt(item.itemId)
         );
         
+        // Split GST percentage by 2 for CGST and SGST
+        const gstPercent = item.gstPercent || 0;
+        const halfGstPercent = gstPercent / 2;
+
         return {
           itemId: parseInt(item.itemId) || 0,
           itemName: selectedItem?.itemName || "",
           uomId: selectedItem?.uomId || 0,
           uomName: selectedItem?.uomName || item.uom || "",
           description: item.description || "",
-          quantity: item.qty || 0,
-          unitPrice: item.unitPrice || 0,
-          cgst: item.cgstPercent || 0,
-          sgst: item.sgstPercent || 0,
+          quantity: parseFloat(item.qty) || 0,
+          unitPrice: parseFloat(item.unitPrice) || 0,
+          cgst: halfGstPercent,
+          sgst: halfGstPercent,
           igst: 0,
           totalAmount: item.amount || 0,
         };
       });
-      
+
       // Format dates to YYYY-MM-DD
       const formatDateForAPI = (date) => {
         if (!date) return null;
         const d = new Date(date);
         return d.toISOString().split('T')[0];
       };
-      
+
       const poData = {
-        poNumber: formState.formData.poNo,
         supplierId: formState.formData.supplierId || 0,
         supplierName: selectedSupplier?.name || "",
         poDate: formatDateForAPI(formState.formData.poDate),
@@ -586,79 +640,186 @@ const POModalLayer = ({
       };
 
       if (editingPO) {
-        await updatePurchaseOrder(editingPO.id, poData);
-        toast.success("Purchase Order updated as draft");
+        await updatePurchaseOrder(editingPO.id, { ...poData, poNumber: formState.formData.poNo });
+        setPendingSuccessToast({ message: "Purchase Order updated as draft.", type: "success" });
       } else {
+        // Do not send poNumber for create
         await createPurchaseOrder(poData);
-        toast.success("Purchase Order saved as draft");
+        setPendingSuccessToast({ message: "Purchase Order saved as draft.", type: "success" });
       }
 
       resetForm();
       onPOUpdated();
       onClose();
     } catch (error) {
-      toast.error("Failed to save draft");
+      setToastMessage("Failed to save draft. Please try again.");
+      setToastType("error");
+      setShowToast(true);
       console.error("Error saving draft:", error);
     } finally {
       setUiState((prev) => ({ ...prev, loading: false }));
     }
   };
 
-  const handleSubmit = async () => {
-    if (!validateForm(true)) {
-      toast.error("Please fix all errors before submitting");
+  // Validate and show preview dialog
+  const handleSubmit = () => {
+    // Field-by-field validation in order of input placement (similar to supplier dialog)
+
+    // 1. Supplier
+    if (!formState.formData.supplierId) {
+      setToastMessage("Supplier is required.");
+      setToastType("error");
+      setShowToast(true);
       return;
     }
 
+    // 2. PO Date
+    if (!formState.formData.poDate) {
+      setToastMessage("PO Date is required.");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    } else {
+      const poDate = new Date(formState.formData.poDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (poDate < today) {
+        setToastMessage("PO Date cannot be in the past.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+    }
+
+    // 3. Expected Delivery Date
+    if (!formState.formData.expectedDeliveryDate) {
+      setToastMessage("Expected Delivery Date is required.");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    } else {
+      const poDate = new Date(formState.formData.poDate);
+      const deliveryDate = new Date(formState.formData.expectedDeliveryDate);
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+
+      // Check if delivery date is in the future (at least tomorrow)
+      if (deliveryDate < tomorrow) {
+        setToastMessage("Expected Delivery Date must be in the future.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      } else if (formState.formData.poDate && deliveryDate <= poDate) {
+        setToastMessage("Expected Delivery Date must be after PO Date.");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+    }
+
+    // 4. Terms & Conditions
+    if (!formState.formData.termsConditionId) {
+      setToastMessage("Terms and Conditions is required.");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    }
+
+    // 5. Remarks validation
+    if (
+      formState.formData.remarks &&
+      formState.formData.remarks.length > 500
+    ) {
+      setToastMessage("Remarks cannot exceed 500 characters.");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    }
+
+    // 6. Line items validation
+    for (let index = 0; index < formState.lineItems.length; index++) {
+      const item = formState.lineItems[index];
+      const qty = parseFloat(item.qty);
+      const unitPrice = parseFloat(item.unitPrice);
+      if (!item.itemId) {
+        setToastMessage(`Line item ${index + 1}: Item is required.`);
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      if (item.qty === "" || isNaN(qty) || qty < 1) {
+        setToastMessage(`Line item ${index + 1}: Quantity must be at least 1.`);
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      if (item.unitPrice === "" || isNaN(unitPrice) || unitPrice < 0.01) {
+        setToastMessage(`Line item ${index + 1}: Unit Price must be at least 0.01.`);
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+    }
+
+    // All validations passed, show preview dialog
+    setUiState((prev) => ({ ...prev, showPreviewDialog: true }));
+  };
+
+  // Confirm and submit from preview dialog
+  const confirmSubmit = async () => {
     try {
       setUiState((prev) => ({ ...prev, loading: "submitting" }));
       const totals = calculateTotals();
-      
+
       // Get supplier details
       const selectedSupplier = masterData.suppliers.find(
         (s) => s.id === formState.formData.supplierId
       );
-      
+
       // Get terms and conditions details
       const selectedTerms = masterData.termsConditions.find(
         (tc) => tc.id === parseInt(formState.formData.termsConditionId)
       );
-      
+
       // Format line items to match API structure
       const formattedLineItems = formState.lineItems.map((item) => {
         const selectedItem = masterData.items.find(
           (i) => i.id === parseInt(item.itemId)
         );
         
+        // Split GST percentage by 2 for CGST and SGST
+        const gstPercent = item.gstPercent || 0;
+        const halfGstPercent = gstPercent / 2;
+
         return {
           itemId: parseInt(item.itemId) || 0,
           itemName: selectedItem?.itemName || "",
           uomId: selectedItem?.uomId || 0,
           uomName: selectedItem?.uomName || item.uom || "",
           description: item.description || "",
-          quantity: item.qty || 0,
-          unitPrice: item.unitPrice || 0,
-          cgst: item.cgstPercent || 0,
-          sgst: item.sgstPercent || 0,
+          quantity: parseFloat(item.qty) || 0,
+          unitPrice: parseFloat(item.unitPrice) || 0,
+          cgst: halfGstPercent,
+          sgst: halfGstPercent,
           igst: 0,
           totalAmount: item.amount || 0,
         };
       });
-      
+
       // Format dates to YYYY-MM-DD
       const formatDateForAPI = (date) => {
         if (!date) return null;
         const d = new Date(date);
         return d.toISOString().split('T')[0];
       };
-      
+
       const poData = {
-        poNumber: formState.formData.poNo,
         supplierId: formState.formData.supplierId || 0,
         supplierName: selectedSupplier?.name || "",
         poDate: formatDateForAPI(formState.formData.poDate),
         deliveryDate: formatDateForAPI(formState.formData.expectedDeliveryDate),
-        status: "Submitted",
+        status: "Await Approval",
         subtotal: totals.subtotal,
         taxAmount: totals.tax,
         grandTotal: totals.grandTotal,
@@ -668,22 +829,32 @@ const POModalLayer = ({
       };
 
       if (editingPO) {
-        await updatePurchaseOrder(editingPO.id, poData);
-        toast.success("Purchase Order updated and submitted for approval");
+        await updatePurchaseOrder(editingPO.id, { ...poData, poNumber: formState.formData.poNo });
+        setPendingSuccessToast({ message: "Purchase Order updated and submitted for approval.", type: "success" });
       } else {
+        // Do not send poNumber for create
         await createPurchaseOrder(poData);
-        toast.success("Purchase Order submitted for approval");
+        setPendingSuccessToast({ message: "Purchase Order submitted for approval.", type: "success" });
       }
 
+      // Close both dialogs and reset
+      setUiState((prev) => ({ ...prev, showPreviewDialog: false }));
       resetForm();
       onPOUpdated();
       onClose();
     } catch (error) {
-      toast.error("Failed to submit Purchase Order");
+      setToastMessage("Failed to submit Purchase Order. Please try again.");
+      setToastType("error");
+      setShowToast(true);
       console.error("Error submitting PO:", error);
     } finally {
       setUiState((prev) => ({ ...prev, loading: false }));
     }
+  };
+
+  // Close preview dialog
+  const closePreviewDialog = () => {
+    setUiState((prev) => ({ ...prev, showPreviewDialog: false }));
   };
 
   const handleCancel = () => {
@@ -773,23 +944,34 @@ const POModalLayer = ({
   return (
     <div
       className={`modal fade ${showModal ? "show d-block" : ""}`}
-      style={{ backgroundColor: showModal ? "rgba(0,0,0,0.5)" : "transparent" }}
+      style={{ 
+        backgroundColor: showModal ? "rgba(0,0,0,0.5)" : "transparent",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1050,
+        overflowY: "auto"
+      }}
       data-bs-backdrop="static"
     >
       <div
-        className="modal-dialog modal-dialog-centered"
-        style={{ maxWidth: "1400px", width: "95%" }}
+        className="modal-dialog"
+        style={{ maxWidth: "1400px", width: "95%", height: "85vh", maxHeight: "85vh" }}
       >
         <div
-          className="modal-content radius-16 bg-base"
+          className="modal-content radius-16 bg-base h-100"
           style={{
-            maxHeight: "90vh",
             display: "flex",
             flexDirection: "column",
           }}
         >
           <div
-            className="modal-header py-16 px-24 border border-top-0 border-start-0 border-end-0"
+            className="modal-header py-12 px-20 border border-top-0 border-start-0 border-end-0"
             style={{ flexShrink: 0 }}
           >
             <div className="d-flex align-items-center gap-3">
@@ -817,54 +999,71 @@ const POModalLayer = ({
               aria-label="Close"
             />
           </div>
-          <div
-            className="modal-body p-24"
-            style={{ flex: 1, overflowY: "auto" }}
-          >
-            <ToastContainer position="top-right" autoClose={3000} />
 
-            <POHeaderSection
-              formData={formState.formData}
-              errors={formState.errors}
-              supplierSearch={uiState.supplierSearch}
-              setSupplierSearch={setSupplierSearch}
-              showSupplierDropdown={uiState.showSupplierDropdown}
-              setShowSupplierDropdown={setShowSupplierDropdown}
-              filteredSuppliers={masterData.filteredSuppliers}
-              selectSupplier={selectSupplier}
-              handleInputChange={handleInputChange}
-              termsConditions={masterData.termsConditions}
-              loading={uiState.loading}
-            />
+          {/* Container for body and footer with relative positioning for overlay */}
+          <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+            {/* Loading overlay - covers only body and footer */}
+            {uiState.loading && (
+              <div className="po-modal-loading-overlay">
+                <div className="text-center">
+                  <div
+                    className="spinner-border text-primary mb-3"
+                    style={{ width: "3rem", height: "3rem" }}
+                    role="status"
+                  >
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <h6 className="text-muted">Loading master data...</h6>
+                </div>
+              </div>
+            )}
 
-            <POLineItemsTable
-              lineItems={formState.lineItems}
-              errors={formState.errors}
-              filteredItems={masterData.filteredItems}
-              selectItem={selectItem}
-              handleLineItemChange={handleLineItemChange}
-              addLineItem={addLineItem}
-              removeLineItem={removeLineItem}
-              taxOptions={taxOptions}
-            />
-
-            <POFooterSummary
-              subtotal={subtotal}
-              tax={tax}
-              grandTotal={grandTotal}
-            />
-          </div>
-          <div
-            className="modal-footer p-24 border border-top border-start-0 border-end-0 border-bottom-0"
-            style={{ flexShrink: 0 }}
-          >
-            <POActionButtons
-              loading={uiState.loading}
-              handleCancel={handleCancel}
-              handleSaveDraft={handleSaveDraft}
-              handleSubmit={handleSubmit}
-              isDirty={formState.isDirty}
-            />
+            <div
+              className="modal-body p-20"
+              style={{ flex: 1, overflowY: "auto", minHeight: 0 }}
+            >
+              <POHeaderSection
+                formData={formState.formData}
+                errors={formState.errors}
+                supplierSearch={uiState.supplierSearch}
+                setSupplierSearch={setSupplierSearch}
+                showSupplierDropdown={uiState.showSupplierDropdown}
+                setShowSupplierDropdown={setShowSupplierDropdown}
+                filteredSuppliers={masterData.filteredSuppliers}
+                selectSupplier={selectSupplier}
+                handleInputChange={handleInputChange}
+                termsConditions={masterData.termsConditions}
+                loading={uiState.loading}
+              />
+              <POLineItemsTable
+                lineItems={formState.lineItems}
+                errors={formState.errors}
+                filteredItems={masterData.filteredItems}
+                selectItem={selectItem}
+                handleLineItemChange={handleLineItemChange}
+                addLineItem={addLineItem}
+                removeLineItem={removeLineItem}
+                taxOptions={taxOptions}
+                loading={uiState.loading}
+              />
+              <POFooterSummary
+                subtotal={subtotal}
+                tax={tax}
+                grandTotal={grandTotal}
+              />
+            </div>
+            <div
+              className="modal-footer p-16 border border-top border-start-0 border-end-0 border-bottom-0"
+              style={{ flexShrink: 0 }}
+            >
+              <POActionButtons
+                loading={uiState.loading}
+                handleCancel={handleCancel}
+                handleSaveDraft={handleSaveDraft}
+                handleSubmit={handleSubmit}
+                isDirty={formState.isDirty}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -908,6 +1107,43 @@ const POModalLayer = ({
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Dialog */}
+      <POPreviewDialog
+        show={uiState.showPreviewDialog}
+        onClose={closePreviewDialog}
+        onSubmit={confirmSubmit}
+        formData={formState.formData}
+        lineItems={formState.lineItems}
+        suppliers={masterData.suppliers}
+        termsConditions={masterData.termsConditions}
+        totals={calculateTotals()}
+        loading={uiState.loading === "submitting"}
+      />
+
+      {/* Custom Toast (similar to supplier dialog) */}
+      {showToast && (
+        <div
+          className="position-fixed top-0 start-50 translate-middle-x mt-3"
+          style={{ zIndex: 2000 }}
+        >
+          <div
+            className={`toast-custom ${
+              toastType === "error" ? "toast-error" : "toast-success"
+            }`}
+          >
+            <span>{toastMessage}</span>
+            <button
+              type="button"
+              className="toast-close"
+              onClick={() => setShowToast(false)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
           </div>
         </div>
       )}
