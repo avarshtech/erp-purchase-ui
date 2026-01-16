@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { getPurchaseOrders, deletePurchaseOrder } from "../services/purchaseOrders";
 import AdvancedDatePicker from "./AdvancedDatePicker";
 import POModalLayer from "./POModalLayer";
-import POViewLayer from "./POViewLayer";
+import POPreviewDialog from "./child/POPreviewDialog";
 import OperationControl from "./OperationControl";
 import "../assets/css/purchase-order.css";
 
@@ -385,7 +385,7 @@ const PurchaseOrderListLayer = () => {
               type="text"
               className="bg-base h-40-px w-auto"
               name="search"
-              placeholder="Search PO No, Supplier..."
+              placeholder="Search PO Number, Supplier..."
               value={searchTerm}
               onChange={handleSearchChange}
             />
@@ -838,7 +838,7 @@ const PurchaseOrderListLayer = () => {
                       style={{ minWidth: "120px" }}
                     >
                       <div className="d-flex align-items-center gap-1">
-                        PO No
+                        PO Number
                         {sortField === "poNumber" && (
                           <Icon
                             icon={`mdi:arrow-${
@@ -1010,10 +1010,11 @@ const PurchaseOrderListLayer = () => {
       )}
 
       {showViewModal && viewingPO && (
-        <POViewLayer
-          showModal={showViewModal}
+        <POPreviewDialog
+          show={showViewModal}
           onClose={() => setShowViewModal(false)}
-          po={viewingPO}
+          viewMode={true}
+          poData={viewingPO}
         />
       )}
 

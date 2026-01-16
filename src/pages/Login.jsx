@@ -22,8 +22,8 @@ const Login = () => {
   });
 
   useEffect(() => {
-    // Check if user is already logged in
-    const currentUser = localStorage.getItem("currentUser");
+    // Check if user is already logged in (now using sessionStorage)
+    const currentUser = sessionStorage.getItem("currentUser");
     if (currentUser) {
       navigate("/purchase-orders");
     }

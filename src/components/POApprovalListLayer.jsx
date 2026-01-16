@@ -516,7 +516,7 @@ const POApprovalListLayer = () => {
                   onClick={() => handleSort("poNo")}
                 >
                   <div className="d-flex align-items-center gap-1">
-                    PO No
+                    PO Number
                     {sortBy === "poNo" && (
                       <Icon
                         icon={`mdi:arrow-${

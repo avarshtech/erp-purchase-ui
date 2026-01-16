@@ -2,7 +2,7 @@ import React from 'react';
 
 const POActionButtons = ({ loading, handleCancel, handleSaveDraft, handleSubmit, isDirty }) => {
   return (
-    <div className="row gy-3">
+    <div className="row gy-2">
       <div className="col-12">
         <div className="d-flex gap-2 justify-content-end">
           <button

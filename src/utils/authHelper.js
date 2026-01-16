@@ -74,10 +74,9 @@ export const authenticateUser = async (username, password) => {
       token
     };
 
-    // Save user session to localStorage
+    // Save user session to sessionStorage
     setCurrentUser(userSession);
-
-    // Save auth token separately to sessionStorage
+    // Save auth token separately to sessionStorage (for compatibility)
     sessionStorage.setItem("authToken", token);
 
     // Dispatch custom event to notify app of auth change
@@ -101,12 +100,11 @@ export const authenticateUser = async (username, password) => {
  * @returns {string|null} The bearer token or null if not found
  */
 export const getToken = () => {
-  // First try to get from sessionStorage (new key)
+  // Try to get from sessionStorage
   const sessionToken = sessionStorage.getItem("authToken");
   if (sessionToken) return sessionToken;
-
-  // Fallback to localStorage for backwards compatibility
-  const user = localStorage.getItem("currentUser");
+  // Fallback to session user object
+  const user = sessionStorage.getItem("currentUser");
   if (!user) return null;
   try {
     const userData = JSON.parse(user);
@@ -120,7 +118,7 @@ export const getToken = () => {
  * Logout user
  */
 export const logoutUser = () => {
-  localStorage.removeItem("currentUser");
+  sessionStorage.removeItem("currentUser");
   sessionStorage.removeItem("authToken");
   // Dispatch custom event to notify app of auth change
   window.dispatchEvent(new Event("authChange"));
@@ -131,7 +129,7 @@ export const logoutUser = () => {
  * @returns {boolean} True if user is logged in
  */
 export const isAuthenticated = () => {
-  const user = localStorage.getItem("currentUser");
+  const user = sessionStorage.getItem("currentUser");
   return !!user;
 };
 
@@ -141,8 +139,7 @@ export const isAuthenticated = () => {
  */
 export const initializeDefaultUser = () => {
   // Check if a user is already set
-  const existingUser = localStorage.getItem("currentUser");
-
+  const existingUser = sessionStorage.getItem("currentUser");
   if (!existingUser) {
     // Don't auto-login in production, redirect to login page
     console.log("No user session found. Please login.");

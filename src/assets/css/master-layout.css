@@ -469,3 +469,28 @@
     margin-top: 8px !important;
   }
 }
+
+/* Global primary hover overrides to ensure hover uses application primary color */
+.dropdown-menu .dropdown-item:hover,
+.dropdown-item-content:hover,
+.po-form-dropdown .dropdown-item:hover,
+.bg-hover-gray-50:hover,
+.advanced-date-picker .btn.btn-outline-primary:hover,
+.advanced-date-picker .btn.btn-link:hover,
+.btn.btn-outline-primary:hover,
+.btn-link:hover {
+  background-color: #e3f2fd !important;
+  color: #0d6efd !important;
+}
+
+[data-theme="dark"] .dropdown-menu .dropdown-item:hover,
+[data-theme="dark"] .dropdown-item-content:hover,
+[data-theme="dark"] .po-form-dropdown .dropdown-item:hover,
+[data-theme="dark"] .bg-hover-gray-50:hover,
+[data-theme="dark"] .advanced-date-picker .btn.btn-outline-primary:hover,
+[data-theme="dark"] .advanced-date-picker .btn.btn-link:hover,
+[data-theme="dark"] .btn.btn-outline-primary:hover,
+[data-theme="dark"] .btn-link:hover {
+  background-color: rgba(13,110,253,0.18) !important;
+  color: #ffffff !important;
+}
