@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Icon } from '@iconify/react/dist/iconify.js';
-import '../assets/css/advanced-date-picker.css';
+import React, { useState, useRef, useEffect } from "react";
+import { Icon } from "@iconify/react/dist/iconify.js";
+import "../assets/css/advanced-date-picker.css";
 
 const AdvancedDatePicker = ({
   value,
@@ -10,16 +10,29 @@ const AdvancedDatePicker = ({
   className = "",
   disabled = false,
   minDate = null,
-  maxDate = null
+  maxDate = null,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(value ? new Date(value) : null);
+  const [selectedDate, setSelectedDate] = useState(null);
   const [position, setPosition] = useState({ top: -9999, left: -9999 });
-  const [viewMode, setViewMode] = useState('calendar'); // 'calendar', 'month', 'year'
+  const [viewMode, setViewMode] = useState("calendar"); // 'calendar', 'month', 'year'
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
+  useEffect(() => {
+    if (!value) {
+      setSelectedDate(null);
+      return;
+    }
 
+    const parsed = new Date(value);
+    if (!isNaN(parsed.getTime())) {
+      setSelectedDate(parsed);
+      setCurrentDate(parsed);
+    } else {
+      setSelectedDate(null);
+    }
+  }, [value]);
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -47,7 +60,7 @@ const AdvancedDatePicker = ({
         }
 
         // Only update position if it's different to prevent unnecessary re-renders
-        setPosition(prev => {
+        setPosition((prev) => {
           if (prev.top !== top || prev.left !== left) {
             return { top, left };
           }
@@ -63,14 +76,14 @@ const AdvancedDatePicker = ({
       });
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('scroll', updatePosition);
-    window.addEventListener('resize', updatePosition);
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", updatePosition);
+    window.addEventListener("resize", updatePosition);
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', updatePosition);
-      window.removeEventListener('resize', updatePosition);
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", updatePosition);
+      window.removeEventListener("resize", updatePosition);
     };
   }, [isOpen]);
 
@@ -85,35 +98,35 @@ const AdvancedDatePicker = ({
   };
 
   const handleYearSelect = (year) => {
-    setCurrentDate(prev => {
+    setCurrentDate((prev) => {
       const newDate = new Date(prev);
       newDate.setFullYear(year);
       return newDate;
     });
-    setViewMode('calendar');
+    setViewMode("calendar");
   };
 
   const handleMonthSelect = (month) => {
-    setCurrentDate(prev => {
+    setCurrentDate((prev) => {
       const newDate = new Date(prev);
       newDate.setMonth(month);
       return newDate;
     });
-    setViewMode('calendar');
+    setViewMode("calendar");
   };
 
   const formatDate = (date) => {
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const handleDateSelect = (date) => {
     if (isDateDisabled(date)) return;
     setSelectedDate(date);
-    onChange(date.toISOString().split('T')[0]);
+    onChange(date.toISOString().split("T")[0]);
     setIsOpen(false);
   };
 
@@ -136,7 +149,7 @@ const AdvancedDatePicker = ({
   };
 
   const navigateMonth = (direction) => {
-    setCurrentDate(prev => {
+    setCurrentDate((prev) => {
       const newDate = new Date(prev);
       newDate.setMonth(prev.getMonth() + direction);
       return newDate;
@@ -164,29 +177,47 @@ const AdvancedDatePicker = ({
   };
 
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
     <div className={`advanced-date-picker ${className}`} ref={dropdownRef}>
-      {label && <label className="form-label small fw-medium text-muted mb-1">{label}</label>}
+      {label && (
+        <label className="form-label small fw-medium text-muted mb-1">
+          {label}
+        </label>
+      )}
       <div className="position-relative">
         <button
           ref={inputRef}
           type="button"
-          className={`form-control d-flex align-items-center justify-content-between ${disabled ? 'bg-light' : ''}`}
+          className={`form-control d-flex align-items-center justify-content-between ${
+            disabled ? "bg-light" : ""
+          }`}
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
         >
-          <span className={selectedDate ? 'text-dark' : 'text-muted'}>
+          <span className={selectedDate ? "text-dark" : "text-muted"}>
             {selectedDate ? formatDate(selectedDate) : placeholder}
           </span>
           <Icon
             icon="mdi:calendar"
-            className={`text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            className={`text-muted transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
           />
         </button>
 
@@ -194,16 +225,18 @@ const AdvancedDatePicker = ({
           <div
             className="position-absolute"
             style={{
-              position: 'fixed',
-              top: position.top === -9999 ? '-9999px' : `${position.top}px`,
-              left: position.left === -9999 ? '-9999px' : `${position.left}px`,
-              minWidth: '280px',
+              position: "fixed",
+              top: position.top === -9999 ? "-9999px" : `${position.top}px`,
+              left: position.left === -9999 ? "-9999px" : `${position.left}px`,
+              minWidth: "280px",
               zIndex: 99999,
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-              maxWidth: '300px',
+              boxShadow:
+                "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+              maxWidth: "300px",
               opacity: position.top === -9999 ? 0 : 1,
-              transition: position.top === -9999 ? 'none' : 'opacity 0.1s ease-out',
-              borderRadius: '12px'
+              transition:
+                position.top === -9999 ? "none" : "opacity 0.1s ease-out",
+              borderRadius: "12px",
             }}
           >
             {/* Header with View Navigation */}
@@ -212,105 +245,145 @@ const AdvancedDatePicker = ({
                 type="button"
                 className="btn btn-sm btn-link text-decoration-none p-1 d-flex align-items-center justify-content-center"
                 onClick={() => {
-                  if (viewMode === 'calendar') {
+                  if (viewMode === "calendar") {
                     const newDate = new Date(currentDate);
                     newDate.setMonth(newDate.getMonth() - 1);
                     if (!minDate || newDate >= minDate) {
                       navigateMonth(-1);
                     }
                   }
-                  if (viewMode === 'month') {
-                    const newDate = new Date(currentDate.getFullYear() - 1, currentDate.getMonth(), 1);
+                  if (viewMode === "month") {
+                    const newDate = new Date(
+                      currentDate.getFullYear() - 1,
+                      currentDate.getMonth(),
+                      1
+                    );
                     if (!minDate || newDate >= minDate) {
-                      setCurrentDate(prev => new Date(prev.getFullYear() - 1, prev.getMonth(), 1));
+                      setCurrentDate(
+                        (prev) =>
+                          new Date(prev.getFullYear() - 1, prev.getMonth(), 1)
+                      );
                     }
                   }
-                  if (viewMode === 'year') {
-                    const newDate = new Date(currentDate.getFullYear() - 10, currentDate.getMonth(), 1);
+                  if (viewMode === "year") {
+                    const newDate = new Date(
+                      currentDate.getFullYear() - 10,
+                      currentDate.getMonth(),
+                      1
+                    );
                     if (!minDate || newDate >= minDate) {
-                      setCurrentDate(prev => new Date(prev.getFullYear() - 10, prev.getMonth(), 1));
+                      setCurrentDate(
+                        (prev) =>
+                          new Date(prev.getFullYear() - 10, prev.getMonth(), 1)
+                      );
                     }
                   }
                 }}
-                style={{ width: '32px', height: '32px', flexShrink: 0 }}
-                disabled={viewMode === 'calendar' && minDate && (() => {
-                  const newDate = new Date(currentDate);
-                  newDate.setMonth(newDate.getMonth() - 1);
-                  return newDate < minDate;
-                })()}
+                style={{ width: "32px", height: "32px", flexShrink: 0 }}
+                disabled={
+                  viewMode === "calendar" &&
+                  minDate &&
+                  (() => {
+                    const newDate = new Date(currentDate);
+                    newDate.setMonth(newDate.getMonth() - 1);
+                    return newDate < minDate;
+                  })()
+                }
               >
                 <Icon icon="mdi:chevron-left" className="text-muted" />
               </button>
-              
+
               <div className="d-flex align-items-center gap-1">
-                {viewMode === 'calendar' && (
+                {viewMode === "calendar" && (
                   <>
                     <button
                       type="button"
                       className="btn btn-sm btn-link text-decoration-none px-2 py-1 h-auto fw-bold"
-                      onClick={() => setViewMode('month')}
-                      style={{ fontSize: '0.9rem', minWidth: 'auto' }}
+                      onClick={() => setViewMode("month")}
+                      style={{ fontSize: "0.9rem", minWidth: "auto" }}
                     >
                       {monthNames[currentDate.getMonth()]}
                     </button>
                     <button
                       type="button"
                       className="btn btn-sm btn-link text-decoration-none px-2 py-1 h-auto fw-bold"
-                      onClick={() => setViewMode('year')}
-                      style={{ fontSize: '0.9rem', minWidth: 'auto' }}
+                      onClick={() => setViewMode("year")}
+                      style={{ fontSize: "0.9rem", minWidth: "auto" }}
                     >
                       {currentDate.getFullYear()}
                     </button>
                   </>
                 )}
-                {viewMode === 'month' && (
+                {viewMode === "month" && (
                   <>
                     <button
                       type="button"
                       className="btn btn-sm btn-link text-decoration-none px-2 py-1 h-auto fw-bold"
-                      onClick={() => setViewMode('year')}
-                      style={{ fontSize: '0.9rem', minWidth: 'auto' }}
+                      onClick={() => setViewMode("year")}
+                      style={{ fontSize: "0.9rem", minWidth: "auto" }}
                     >
                       {currentDate.getFullYear()}
                     </button>
-                    <span className="fw-bold" style={{ fontSize: '0.9rem' }}>Select Month</span>
+                    <span className="fw-bold" style={{ fontSize: "0.9rem" }}>
+                      Select Month
+                    </span>
                   </>
                 )}
-                {viewMode === 'year' && (
-                  <span className="fw-bold" style={{ fontSize: '0.9rem' }}>Select Year</span>
+                {viewMode === "year" && (
+                  <span className="fw-bold" style={{ fontSize: "0.9rem" }}>
+                    Select Year
+                  </span>
                 )}
               </div>
-              
+
               <button
                 type="button"
                 className="btn btn-sm btn-link text-decoration-none p-1 d-flex align-items-center justify-content-center"
                 onClick={() => {
-                  if (viewMode === 'calendar') {
+                  if (viewMode === "calendar") {
                     const newDate = new Date(currentDate);
                     newDate.setMonth(newDate.getMonth() + 1);
                     if (!maxDate || newDate <= maxDate) {
                       navigateMonth(1);
                     }
                   }
-                  if (viewMode === 'month') {
-                    const newDate = new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), 1);
+                  if (viewMode === "month") {
+                    const newDate = new Date(
+                      currentDate.getFullYear() + 1,
+                      currentDate.getMonth(),
+                      1
+                    );
                     if (!maxDate || newDate <= maxDate) {
-                      setCurrentDate(prev => new Date(prev.getFullYear() + 1, prev.getMonth(), 1));
+                      setCurrentDate(
+                        (prev) =>
+                          new Date(prev.getFullYear() + 1, prev.getMonth(), 1)
+                      );
                     }
                   }
-                  if (viewMode === 'year') {
-                    const newDate = new Date(currentDate.getFullYear() + 10, currentDate.getMonth(), 1);
+                  if (viewMode === "year") {
+                    const newDate = new Date(
+                      currentDate.getFullYear() + 10,
+                      currentDate.getMonth(),
+                      1
+                    );
                     if (!maxDate || newDate <= maxDate) {
-                      setCurrentDate(prev => new Date(prev.getFullYear() + 10, prev.getMonth(), 1));
+                      setCurrentDate(
+                        (prev) =>
+                          new Date(prev.getFullYear() + 10, prev.getMonth(), 1)
+                      );
                     }
                   }
                 }}
-                style={{ width: '32px', height: '32px', flexShrink: 0 }}
-                disabled={viewMode === 'calendar' && maxDate && (() => {
-                  const newDate = new Date(currentDate);
-                  newDate.setMonth(newDate.getMonth() + 1);
-                  return newDate > maxDate;
-                })()}
+                style={{ width: "32px", height: "32px", flexShrink: 0 }}
+                disabled={
+                  viewMode === "calendar" &&
+                  maxDate &&
+                  (() => {
+                    const newDate = new Date(currentDate);
+                    newDate.setMonth(newDate.getMonth() + 1);
+                    return newDate > maxDate;
+                  })()
+                }
               >
                 <Icon icon="mdi:chevron-right" className="text-muted" />
               </button>
@@ -318,12 +391,15 @@ const AdvancedDatePicker = ({
 
             {/* Content based on view mode */}
             <div className="p-3">
-              {viewMode === 'calendar' && (
+              {viewMode === "calendar" && (
                 <>
                   {/* Day headers */}
                   <div className="d-grid grid-cols-7 gap-1 mb-2">
-                    {dayNames.map(day => (
-                      <div key={day} className="text-center text-muted small fw-medium py-1">
+                    {dayNames.map((day) => (
+                      <div
+                        key={day}
+                        className="text-center text-muted small fw-medium py-1"
+                      >
                         {day}
                       </div>
                     ))}
@@ -339,11 +415,29 @@ const AdvancedDatePicker = ({
                           type="button"
                           className={`
                             btn btn-sm border-0 rounded d-flex align-items-center justify-content-center
-                            ${isDateSelected(date) ? 'bg-primary text-white' : ''}
-                            ${!isCurrentMonth(date) ? 'text-muted' : 'text-dark'}
-                            ${isToday(date) && !isDateSelected(date) ? 'bg-primary-light text-primary' : ''}
-                            ${!isCurrentMonth(date) && isToday(date) ? 'bg-primary-light text-primary' : ''}
-                            ${disabled ? 'text-muted bg-light cursor-not-allowed' : 'hover:bg-primary hover:text-white transition-colors'}
+                            ${
+                              isDateSelected(date)
+                                ? "bg-primary text-white"
+                                : ""
+                            }
+                            ${
+                              !isCurrentMonth(date) ? "text-muted" : "text-dark"
+                            }
+                            ${
+                              isToday(date) && !isDateSelected(date)
+                                ? "bg-primary-light text-primary"
+                                : ""
+                            }
+                            ${
+                              !isCurrentMonth(date) && isToday(date)
+                                ? "bg-primary-light text-primary"
+                                : ""
+                            }
+                            ${
+                              disabled
+                                ? "text-muted bg-light cursor-not-allowed"
+                                : "hover:bg-primary hover:text-white transition-colors"
+                            }
                           `}
                           onClick={() => handleDateSelect(date)}
                           disabled={disabled}
@@ -356,7 +450,7 @@ const AdvancedDatePicker = ({
                 </>
               )}
 
-              {viewMode === 'month' && (
+              {viewMode === "month" && (
                 <div className="d-grid grid-cols-3 gap-2">
                   {monthNames.map((month, index) => (
                     <button
@@ -364,7 +458,11 @@ const AdvancedDatePicker = ({
                       type="button"
                       className={`
                         btn btn-sm border rounded d-flex align-items-center justify-content-center
-                        ${currentDate.getMonth() === index ? 'bg-primary text-white' : 'btn-outline-primary text-primary'}
+                        ${
+                          currentDate.getMonth() === index
+                            ? "bg-primary text-white"
+                            : "btn-outline-primary text-primary"
+                        }
                         hover:bg-primary hover:text-white transition-colors
                       `}
                       onClick={() => handleMonthSelect(index)}
@@ -375,7 +473,7 @@ const AdvancedDatePicker = ({
                 </div>
               )}
 
-              {viewMode === 'year' && (
+              {viewMode === "year" && (
                 <div className="d-grid grid-cols-3 gap-2">
                   {generateYearRange().map((year) => (
                     <button
@@ -383,10 +481,14 @@ const AdvancedDatePicker = ({
                       type="button"
                       className={`
                         btn btn-sm border rounded d-flex align-items-center justify-content-center
-                        ${currentDate.getFullYear() === year ? 'bg-primary text-white' : 'btn-outline-primary text-primary'}
+                        ${
+                          currentDate.getFullYear() === year
+                            ? "bg-primary text-white"
+                            : "btn-outline-primary text-primary"
+                        }
                         hover:bg-primary hover:text-white transition-colors
                       `}
-                      style={{ minHeight: '36px', fontWeight: '500' }}
+                      style={{ minHeight: "36px", fontWeight: "500" }}
                       onClick={() => handleYearSelect(year)}
                     >
                       {year}
@@ -400,13 +502,15 @@ const AdvancedDatePicker = ({
             <div className="d-flex justify-content-between align-items-center p-3 border-top">
               <button
                 type="button"
-                className={`btn btn-sm btn-link text-decoration-none ${minDate && new Date() < minDate ? 'text-muted' : 'text-muted'} px-2 py-1`}
+                className={`btn btn-sm btn-link text-decoration-none ${
+                  minDate && new Date() < minDate ? "text-muted" : "text-muted"
+                } px-2 py-1`}
                 onClick={() => {
                   const today = new Date();
                   if (minDate && today < minDate) return;
                   setCurrentDate(today);
                   setSelectedDate(today);
-                  onChange(today.toISOString().split('T')[0]);
+                  onChange(today.toISOString().split("T")[0]);
                   setIsOpen(false);
                 }}
                 disabled={minDate && new Date() < minDate}
@@ -414,12 +518,12 @@ const AdvancedDatePicker = ({
                 Today
               </button>
               <div className="d-flex gap-1">
-                {viewMode !== 'calendar' && (
+                {viewMode !== "calendar" && (
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-primary px-3 py-1 fw-medium"
-                    onClick={() => setViewMode('calendar')}
-                    style={{ minHeight: '32px' }}
+                    onClick={() => setViewMode("calendar")}
+                    style={{ minHeight: "32px" }}
                   >
                     Back
                   </button>
@@ -428,7 +532,7 @@ const AdvancedDatePicker = ({
                   type="button"
                   className="btn btn-sm btn-primary px-3 py-1 fw-medium"
                   onClick={() => setIsOpen(false)}
-                  style={{ minHeight: '32px' }}
+                  style={{ minHeight: "32px" }}
                 >
                   Done
                 </button>

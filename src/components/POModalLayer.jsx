@@ -30,7 +30,7 @@ const POModalLayer = ({
     },
     lineItems: [
       {
-        id: uuidv4(),
+        id: "",
         itemId: "",
         description: "",
         qty: "",
@@ -82,18 +82,60 @@ const POModalLayer = ({
         const selectedSupplier = masterData.suppliers.find(
           (s) => s.id === po.supplierId
         );
+
+        const termsId =
+          po.termsConditionId ?? po.termsConditionsId ?? po.terms_conditions_id ?? "";
+        const remarks = po.remarks ?? po.remark ?? po.notes ?? "";
+
+        // Map line items from backend shape to form shape
+        const mappedLineItems = (po.lineItems || []).map((item) => {
+          // quantity may be named `quantity` or `qty`
+          const qtyRaw = item.quantity ?? item.qty ?? item.Qty ?? 0;
+          const unitPriceRaw =
+            item.unitPrice ?? item.unit_price ?? item.price ?? 0;
+
+          // GST may be split into cgst/sgst or provided as gstPercent
+          const cgst = item.cgst ?? item.CGST ?? 0;
+          const sgst = item.sgst ?? item.SGST ?? 0;
+          const gstPercentRaw =
+            item.gstPercent ?? item.gst_percent ?? (cgst || sgst ? cgst + sgst : 0);
+
+          const amountRaw =
+            item.totalAmount ?? item.total_amount ?? item.amount ?? item.total ?? 0;
+
+          return {
+            id: uuidv4(),
+            itemId: item.itemId ?? item.item_id ?? item.itemId?.toString?.() ?? "",
+            description: item.description ?? item.itemName ?? item.item_name ?? "",
+            qty: String(qtyRaw ?? ""),
+            uom: item.uomName ?? item.uom ?? item.uom_name ?? "",
+            unitPrice: Number(unitPriceRaw) || 0,
+            gstPercent: Number(gstPercentRaw) || 0,
+            amount: Number(amountRaw) || 0,
+          };
+        });
+
         setFormState({
           formData: {
-            poNo: po.poNo,
-            supplierId: po.supplierId,
-            poDate: new Date(po.poDate),
-            expectedDeliveryDate: new Date(po.expectedDeliveryDate),
-            termsConditionId: po.termsConditionId || "",
-            remarks: po.remarks || "",
+            poNo: po.poNo ?? po.poNumber ?? po.po_number ?? "",
+            supplierId: po.supplierId ?? po.supplier_id ?? "",
+            poDate: po.poDate ?? null,
+            expectedDeliveryDate: po.deliveryDate ?? null,
+            termsConditionId: termsId,
+            remarks: remarks,
           },
-          lineItems: po.lineItems
-            ? po.lineItems.map((item) => ({ ...item, id: uuidv4() }))
-            : [],
+          lineItems: mappedLineItems.length > 0 ? mappedLineItems : [
+            {
+              id: uuidv4(),
+              itemId: "",
+              description: "",
+              qty: "",
+              uom: "",
+              unitPrice: 0,
+              gstPercent: 0,
+              amount: 0,
+            },
+          ],
           errors: {},
           isDirty: false, // Start with isDirty as false for edit mode
         });
@@ -122,7 +164,7 @@ const POModalLayer = ({
       },
       lineItems: [
         {
-          id: uuidv4(),
+          id: "",
           itemId: "",
           description: "",
           qty: "",
@@ -549,7 +591,7 @@ const POModalLayer = ({
       },
       lineItems: [
         {
-          id: uuidv4(),
+          id: "",
           itemId: "",
           description: "",
           qty: "",
@@ -819,7 +861,7 @@ const POModalLayer = ({
         supplierName: selectedSupplier?.name || "",
         poDate: formatDateForAPI(formState.formData.poDate),
         deliveryDate: formatDateForAPI(formState.formData.expectedDeliveryDate),
-        status: "Await Approval",
+        status: "AwaitApproval",
         subtotal: totals.subtotal,
         taxAmount: totals.tax,
         grandTotal: totals.grandTotal,
@@ -828,11 +870,12 @@ const POModalLayer = ({
         termsConditionsTitle: selectedTerms?.name || "",
       };
 
-      if (editingPO) {
+      if (editingPO && editingPO.id) {
+        // Ensure update is called for existing PO
         await updatePurchaseOrder(editingPO.id, { ...poData, poNumber: formState.formData.poNo });
         setPendingSuccessToast({ message: "Purchase Order updated and submitted for approval.", type: "success" });
       } else {
-        // Do not send poNumber for create
+        // Create new PO when not editing
         await createPurchaseOrder(poData);
         setPendingSuccessToast({ message: "Purchase Order submitted for approval.", type: "success" });
       }
@@ -850,6 +893,17 @@ const POModalLayer = ({
     } finally {
       setUiState((prev) => ({ ...prev, loading: false }));
     }
+  };
+
+  // Helper to enrich line items with itemName from masterData.items
+  const getLineItemsWithNames = (lineItems, itemsMaster) => {
+    return lineItems.map((item) => {
+      const found = itemsMaster.find((i) => i.id === parseInt(item.itemId));
+      return {
+        ...item,
+        itemName: found ? found.itemName : "",
+      };
+    });
   };
 
   // Close preview dialog
@@ -944,7 +998,7 @@ const POModalLayer = ({
   return (
     <div
       className={`modal fade ${showModal ? "show d-block" : ""}`}
-      style={{ 
+      style={{
         backgroundColor: showModal ? "rgba(0,0,0,0.5)" : "transparent",
         position: "fixed",
         top: 0,
@@ -976,7 +1030,7 @@ const POModalLayer = ({
           >
             <div className="d-flex align-items-center gap-3">
               <h1 className="modal-title fs-5" id="poModalLabel">
-                {editingPO ? "Update Purchase Order" : "New Purchase Order"}
+                {editingPO ? (editingPO.poNo || editingPO.poNumber || "PO") : "New Purchase Order"}
               </h1>
               {editingPO && editingPO.status && (
                 <span
@@ -1002,8 +1056,8 @@ const POModalLayer = ({
 
           {/* Container for body and footer with relative positioning for overlay */}
           <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-            {/* Loading overlay - covers only body and footer */}
-            {uiState.loading && (
+            {/* Loading overlay - covers only body and footer (skip when submitting from preview) */}
+            {uiState.loading && uiState.loading !== "submitting" && (
               <div className="po-modal-loading-overlay">
                 <div className="text-center">
                   <div
@@ -1011,9 +1065,17 @@ const POModalLayer = ({
                     style={{ width: "3rem", height: "3rem" }}
                     role="status"
                   >
-                    <span className="visually-hidden">Loading...</span>
+                    <span className="visually-hidden">
+                      {uiState.loading === "saving" ? "Saving draft..." : "Loading..."}
+                    </span>
                   </div>
-                  <h6 className="text-muted">Loading master data...</h6>
+                  <h6 className="text-muted">
+                    {uiState.loading === "saving"
+                      ? "Saving draft..."
+                      : uiState.loading === true
+                      ? "Loading master data..."
+                      : "Please wait..."}
+                  </h6>
                 </div>
               </div>
             )}
@@ -1065,88 +1127,89 @@ const POModalLayer = ({
               />
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Confirmation Dialog */}
-      {uiState.showConfirmDialog && (
-        <div
-          className="modal fade show d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog modal-sm modal-dialog-centered">
-            <div className="modal-content radius-16 bg-base">
-              <div className="modal-body p-24 text-center">
-                <div className="mb-16">
-                  <Icon
-                    icon="mingcute:alert-line"
-                    className="text-warning text-4xl"
-                  />
-                </div>
-                <h6 className="text-lg text-neutral-900 mb-8">
-                  Unsaved Changes
-                </h6>
-                <p className="text-sm text-neutral-600 mb-24">
-                  You have unsaved changes. Are you sure you want to cancel?
-                </p>
-                <div className="d-flex align-items-center justify-content-center gap-3">
-                  <button
-                    type="button"
-                    className="border border-neutral-300 bg-hover-neutral-100 text-neutral-600 text-md px-32 py-11 radius-8"
-                    onClick={() => handleConfirmDialog(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger border border-danger-600 text-md px-32 py-12 radius-8"
-                    onClick={() => handleConfirmDialog(true)}
-                  >
-                    Proceed
-                  </button>
+          {/* Confirmation Dialog */}
+          {uiState.showConfirmDialog && (
+            <div
+              className="modal fade show d-block"
+              style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            >
+              <div className="modal-dialog modal-sm modal-dialog-centered">
+                <div className="modal-content radius-16 bg-base">
+                  <div className="modal-body p-24 text-center">
+                    <div className="mb-16">
+                      <Icon
+                        icon="mingcute:alert-line"
+                        className="text-warning text-4xl"
+                      />
+                    </div>
+                    <h6 className="text-lg text-neutral-900 mb-8">
+                      Unsaved Changes
+                    </h6>
+                    <p className="text-sm text-neutral-600 mb-24">
+                      You have unsaved changes. Are you sure you want to cancel?
+                    </p>
+                    <div className="d-flex align-items-center justify-content-center gap-3">
+                      <button
+                        type="button"
+                        className="border border-neutral-300 bg-hover-neutral-100 text-neutral-600 text-md px-32 py-11 radius-8"
+                        onClick={() => handleConfirmDialog(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger border border-danger-600 text-md px-32 py-12 radius-8"
+                        onClick={() => handleConfirmDialog(true)}
+                      >
+                        Proceed
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Preview Dialog */}
-      <POPreviewDialog
-        show={uiState.showPreviewDialog}
-        onClose={closePreviewDialog}
-        onSubmit={confirmSubmit}
-        formData={formState.formData}
-        lineItems={formState.lineItems}
-        suppliers={masterData.suppliers}
-        termsConditions={masterData.termsConditions}
-        totals={calculateTotals()}
-        loading={uiState.loading === "submitting"}
-      />
+          {/* Preview Dialog */}
+          <POPreviewDialog
+            show={uiState.showPreviewDialog}
+            onClose={closePreviewDialog}
+            onSubmit={confirmSubmit}
+            editingPO={editingPO}
+            formData={formState.formData}
+            lineItems={getLineItemsWithNames(formState.lineItems, masterData.items)}
+            suppliers={masterData.suppliers}
+            termsConditions={masterData.termsConditions}
+            totals={calculateTotals()}
+            loading={uiState.loading === "submitting"}
+          />
 
-      {/* Custom Toast (similar to supplier dialog) */}
-      {showToast && (
-        <div
-          className="position-fixed top-0 start-50 translate-middle-x mt-3"
-          style={{ zIndex: 2000 }}
-        >
-          <div
-            className={`toast-custom ${
-              toastType === "error" ? "toast-error" : "toast-success"
-            }`}
-          >
-            <span>{toastMessage}</span>
-            <button
-              type="button"
-              className="toast-close"
-              onClick={() => setShowToast(false)}
-              aria-label="Close"
+          {/* Custom Toast (similar to supplier dialog) */}
+          {showToast && (
+            <div
+              className="position-fixed top-0 start-50 translate-middle-x mt-3"
+              style={{ zIndex: 2000 }}
             >
-              &times;
-            </button>
-          </div>
+              <div
+                className={`toast-custom ${
+                  toastType === "error" ? "toast-error" : "toast-success"
+                }`}
+              >
+                <span>{toastMessage}</span>
+                <button
+                  type="button"
+                  className="toast-close"
+                  onClick={() => setShowToast(false)}
+                  aria-label="Close"
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
