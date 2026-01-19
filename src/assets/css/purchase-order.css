@@ -140,6 +140,58 @@
   }
 }
 
+/* Table row hover effect for purchase order lists (theme-aware via CSS variables) */
+:root {
+  /* Slightly stronger, still mild bluish hover for light theme */
+  --table-row-hover-bg: rgba(13,110,253,0.12);
+  --table-row-hover-shadow: 0 8px 20px rgba(13,110,253,0.10);
+}
+
+[data-theme="dark"] {
+  /* A touch darker on dark theme but still soft */
+  --table-row-hover-bg: rgba(13,110,253,0.14);
+  --table-row-hover-shadow: 0 8px 20px rgba(13,110,253,0.12);
+}
+
+/* Table row hover: smoother transitions and no stacking changes */
+.table.bordered-table tbody tr > td {
+  transition: background-color 80ms linear, color 80ms linear;
+  background-clip: padding-box;
+  will-change: background-color;
+}
+
+.table.bordered-table tbody tr {
+  transition: box-shadow 120ms linear;
+  will-change: box-shadow;
+}
+
+/* Apply cell background on hover (keeps layout stable) */
+.table.bordered-table tbody tr:hover > td {
+  background-color: var(--table-row-hover-bg);
+}
+
+/* Soft shadow on hover; remove translate to avoid repaint delays during theme changes */
+.table.bordered-table tbody tr:hover {
+  box-shadow: var(--table-row-hover-shadow);
+  cursor: pointer;
+}
+
+/* Allow shadows of rows to be visible while preserving horizontal scrolling */
+.table-responsive {
+  overflow-x: auto;
+  overflow-y: visible; /* so row shadows are not clipped */
+}
+
+/* Ensure header/footer are not affected */
+.table.bordered-table thead tr:hover > th,
+.table.bordered-table tfoot tr:hover > td,
+.table.bordered-table thead tr:hover,
+.table.bordered-table tfoot tr:hover {
+  background-color: transparent;
+  transform: none;
+  box-shadow: none;
+  cursor: default;
+}
 /* Dark mode dropdown fixes */
 [data-theme="dark"] .dropdown-menu .dropdown-item {
   color: #e9ecef;

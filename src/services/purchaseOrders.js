@@ -79,7 +79,10 @@ export const createPurchaseOrder = async (poData) => {
  */
 export const updatePurchaseOrder = async (id, poData) => {
   try {
-    const response = await axiosInstance.put(`${ENDPOINTS.PURCHASE_ORDERS}/${id}`, poData);
+    // Backend expects POST for updates and requires `id` in the request body
+    // Send to the collection endpoint with `id` included so the API treats it as an update
+    const payload = { id, ...poData };
+    const response = await axiosInstance.post(`${ENDPOINTS.PURCHASE_ORDERS}`, payload);
     return response.data;
   } catch (error) {
     console.error(`Error updating purchase order with ID ${id}:`, error);

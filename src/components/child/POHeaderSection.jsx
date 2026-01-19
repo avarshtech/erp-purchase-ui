@@ -13,12 +13,11 @@ const POHeaderSection = ({
   selectSupplier,
   handleInputChange,
   termsConditions,
-  loading
+  loading,
 }) => {
   // State for terms & conditions dropdown
   const [showTermsDropdown, setShowTermsDropdown] = React.useState(false);
   const [termsSearch, setTermsSearch] = React.useState('');
-
   // Close dropdown when clicking outside
   React.useEffect(() => {
     const handleClickOutside = (event) => {
@@ -63,28 +62,43 @@ const POHeaderSection = ({
   // Get selected terms & conditions
   const selectedTerm = termsConditions.find(term => term.id === formData.termsConditionId);
 
+
+  // Refs for search inputs
+  const supplierSearchInputRef = React.useRef(null);
+  const termsSearchInputRef = React.useRef(null);
+
+
+  // Ensure supplier search input is focused when dropdown is shown (Bootstrap event)
+  React.useEffect(() => {
+    const dropdown = document.getElementById('supplier-dropdown-toggle');
+    if (!dropdown) return;
+    const handleDropdownShown = () => {
+      setShowSupplierDropdown(true);
+      setTimeout(() => {
+        if (supplierSearchInputRef.current) {
+          supplierSearchInputRef.current.focus();
+        }
+      }, 0);
+    };
+    dropdown.addEventListener('shown.bs.dropdown', handleDropdownShown);
+    return () => {
+      dropdown.removeEventListener('shown.bs.dropdown', handleDropdownShown);
+    };
+  }, [setShowSupplierDropdown]);
+
+  // Auto-focus terms search input when terms dropdown opens
+  React.useEffect(() => {
+    if (showTermsDropdown && termsSearchInputRef.current) {
+      termsSearchInputRef.current.focus();
+    }
+  }, [showTermsDropdown]);
+
   // Only show PO Number field if editing (i.e., poNo exists)
   return (
     <>
       {/* Header Section */}
       <div className="row gy-3 mb-2">
-        {formData.poNo && (
-          <div className="col-md-3">
-            <label className="form-label">
-              PO Number <span className="text-danger">*</span>
-            </label>
-            <input
-              type="text"
-              className={`form-control ${errors.poNo ? "is-invalid" : ""}`}
-              value={formData.poNo}
-              readOnly
-              disabled
-              aria-label="Purchase Order Number"
-              style={{ height: "40px" }}
-            />
-            {errors.poNo && <div className="invalid-feedback">{errors.poNo}</div>}
-          </div>
-        )}
+        {/* PO Number removed from dialog per UI decision */}
 
         <div className="col-md-3">
           <label className="form-label">
@@ -92,6 +106,7 @@ const POHeaderSection = ({
           </label>
           <div className="dropdown">
             <button
+              id="supplier-dropdown-toggle"
               className={`btn btn-sm ${
                 formData.supplierId ? "btn-primary" : "btn-outline-secondary"
               } dropdown-toggle d-flex align-items-center gap-2 w-100`}
@@ -129,6 +144,7 @@ const POHeaderSection = ({
               <li className="p-2">
                 <div className="position-relative">
                   <input
+                    ref={supplierSearchInputRef}
                     type="text"
                     className="form-control form-control-sm pe-5"
                     placeholder="Search suppliers..."
@@ -277,6 +293,7 @@ const POHeaderSection = ({
               <li className="p-2">
                 <div className="position-relative">
                   <input
+                    ref={termsSearchInputRef}
                     type="text"
                     className="form-control form-control-sm pe-5"
                     placeholder="Search terms and conditions..."

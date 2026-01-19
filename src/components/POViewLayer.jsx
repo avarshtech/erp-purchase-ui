@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { makeRequest } from "../mocks/server";
+import { createActivity, updateActivity } from "../services/poActivityLog";
 import { getSuppliers } from "../services/suppliers";
 import { getItemMasterData } from "../services/ItemMaster";
 import axiosInstance from "../services/axiosInstance";
@@ -36,31 +36,25 @@ const POViewLayer = ({ showModal, onClose, po }) => {
     }
   }, [po]);
 
-  const handleAddNote = () => {
+  const handleAddNote = async () => {
     if (!newNote.trim()) return;
 
-    const timestamp = new Date().toLocaleString("en-US", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      hour12: true,
-    });
-
-    const note = {
-      text: newNote,
-      comment: newNote,
-      timestamp: timestamp,
-      user: "Current User",
-    };
-
-    const updatedNotes = [...notes, note];
-    setNotes(updatedNotes);
-    setNewNote("");
-
-    // Save to the backend
-    makeRequest("POST", `/purchase-orders/${po.id}/comments`, { comment: newNote });
+    try {
+      // Call API to create activity
+      const res = await createActivity(po.id, { comment: newNote });
+      // Map server response to local note format
+      const mapped = {
+        text: res.comment || res.text || newNote,
+        timestamp: res.createdAt || new Date().toLocaleString(),
+        user: res.user || "Current User",
+        edited: res.edited || false,
+        id: res.id,
+      };
+      setNotes((prev) => [...prev, mapped]);
+      setNewNote("");
+    } catch (error) {
+      console.error("Failed to add activity:", error);
+    }
   };
 
   const handleEditNote = (index) => {
@@ -68,9 +62,11 @@ const POViewLayer = ({ showModal, onClose, po }) => {
     setEditNoteText(notes[index].text);
   };
 
-  const handleSaveEdit = (index) => {
+  const handleSaveEdit = async (index) => {
     if (!editNoteText.trim()) return;
 
+    const noteToUpdate = notes[index];
+    // Optimistically update UI
     const timestamp = new Date().toLocaleString("en-US", {
       day: "numeric",
       month: "short",
@@ -87,13 +83,29 @@ const POViewLayer = ({ showModal, onClose, po }) => {
       timestamp: timestamp,
       edited: true,
     };
-
     setNotes(updatedNotes);
     setEditingNoteIndex(null);
     setEditNoteText("");
 
-    // Update on the backend
-    makeRequest("PUT", `/purchase-orders/${po.id}/notes/${index}`, updatedNotes[index]);
+    // If note has server id, persist change
+    if (noteToUpdate && noteToUpdate.id) {
+      try {
+        const res = await updateActivity(po.id, noteToUpdate.id, { comment: editNoteText });
+        // Replace with authoritative server data
+        setNotes((prev) => prev.map((n) => (n.id === res.id ? {
+          text: res.comment || res.text || n.text,
+          timestamp: res.updatedAt || res.createdAt || n.timestamp,
+          user: res.user || n.user,
+          edited: res.edited || true,
+          id: res.id,
+        } : n)));
+      } catch (error) {
+        console.error("Failed to update activity:", error);
+      }
+    } else {
+      // No server id — cannot update on server; log warning
+      console.warn("Note has no id; skipping server update.");
+    }
   };
 
   const handleCancelEdit = () => {
@@ -186,6 +198,22 @@ const POViewLayer = ({ showModal, onClose, po }) => {
       .replace(/ /g, "-");
   };
 
+  // Format timestamp to `yyyy-MMM-dd HH:MM:ss` (24-hour)
+  const formatTimestamp = (ts) => {
+    if (!ts) return "";
+    const d = new Date(ts);
+    if (Number.isNaN(d.getTime())) return ts;
+    const pad = (n) => String(n).padStart(2, "0");
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const year = d.getFullYear();
+    const month = months[d.getMonth()];
+    const day = pad(d.getDate());
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    const seconds = pad(d.getSeconds());
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  };
+
   // Helper for status badge class
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -195,7 +223,7 @@ const POViewLayer = ({ showModal, onClose, po }) => {
         return "bg-warning-focus text-warning-main";
       case "Draft":
         return "bg-info-300 text-info-600";
-      case "Await Approval":
+      case "AwaitApproval":
         return "bg-neutral-300 text-cyan-600";
       case "Rejected":
         return "bg-danger-300 text-danger-main";
@@ -213,7 +241,7 @@ const POViewLayer = ({ showModal, onClose, po }) => {
         return "mdi:clock-outline";
       case "Draft":
         return "mdi:file-document-outline";
-      case "Await Approval":
+      case "AwaitApproval":
         return "mdi:clock-check-outline";
       case "Rejected":
         return "mdi:close-circle";
@@ -221,6 +249,10 @@ const POViewLayer = ({ showModal, onClose, po }) => {
         return "mdi:help-circle";
     }
   };
+
+  // Normalize status for comparisons (remove spaces, lowercase)
+  const normalizeStatus = (s) => (s ? s.toString().replace(/\s+/g, "").toLowerCase() : "");
+  const isInProgress = normalizeStatus(po.status) === "inprogress";
 
   return (
     <div
@@ -458,7 +490,7 @@ const POViewLayer = ({ showModal, onClose, po }) => {
                 />
 
                 {/* Notes / Activity Log Section - Only show for InProgress POs */}
-                {po.status === "InProgress" && (
+                {isInProgress && (
                   <>
                     <hr style={{ marginTop: "10px" }} />
                     <div>
@@ -482,7 +514,7 @@ const POViewLayer = ({ showModal, onClose, po }) => {
                               </div>
                               <div className="stepper-content">
                                 <div className="stepper-date">
-                                  {note.timestamp}
+                                  {formatTimestamp(note.timestamp)}
                                   {note.edited && (
                                     <span className="text-muted ms-2">
                                       (Edited)

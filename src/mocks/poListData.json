@@ -295,7 +295,7 @@
     },
     "poDate": "02 Mar 2024",
     "totalValue": "2150.40",
-    "status": "Await Approval",
+    "status": "AwaitApproval",
     "lineItems": []
   },
   {
@@ -308,7 +308,7 @@
     },
     "poDate": "05 Mar 2024",
     "totalValue": "890.75",
-    "status": "Await Approval",
+    "status": "AwaitApproval",
     "lineItems": []
   },
   {
@@ -321,7 +321,7 @@
     },
     "poDate": "08 Mar 2024",
     "totalValue": "3420.90",
-    "status": "Await Approval",
+    "status": "AwaitApproval",
     "lineItems": []
   },
   {

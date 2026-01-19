@@ -1,5 +1,5 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { getPurchaseOrders, deletePurchaseOrder } from "../services/purchaseOrders";
 import AdvancedDatePicker from "./AdvancedDatePicker";
 import POModalLayer from "./POModalLayer";
@@ -28,14 +28,15 @@ const TableRow = ({ po, onEdit, onDelete, onView }) => {
   };
 
   const getStatusIcon = (status) => {
-    switch (status) {
+    const normalize = (s) => (s ? s.toString().replace(/\s+/g, "") : "");
+    switch (normalize(status)) {
       case "Completed":
         return "mdi:check-circle";
       case "InProgress":
         return "mdi:clock-outline";
       case "Draft":
         return "mdi:file-document-outline";
-      case "Await Approval":
+      case "AwaitApproval":
         return "mdi:clock-check-outline";
       case "Rejected":
         return "mdi:close-circle";
@@ -148,6 +149,8 @@ const TableRow = ({ po, onEdit, onDelete, onView }) => {
 };
 
 const PurchaseOrderListLayer = () => {
+    // Debounce ref for search
+    const searchTimeoutRef = useRef();
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("All");
@@ -190,19 +193,26 @@ const PurchaseOrderListLayer = () => {
   const fetchPOData = useCallback(async () => {
     try {
       setLoading(true);
-      
-      // Build query params for server-side pagination
+      // Build query params for server-side pagination and filters
       const params = {
         page: currentPage,
         size: itemsPerPage,
         sort: sortField,
         direction: sortDirection,
+        search: searchTerm, // free text for PO Number & Supplier
+        status: statusFilter !== "All" ? statusFilter : undefined,
+        poDateStart: poDateRangeFilter.start || undefined,
+        poDateEnd: poDateRangeFilter.end || undefined,
+        deliveryDateStart: deliveryDateRangeFilter.start || undefined,
+        deliveryDateEnd: deliveryDateRangeFilter.end || undefined,
       };
-
       const response = await getPurchaseOrders(params);
-      
-      // Handle paginated response
-      setPurchaseOrders(response.content || []);
+      // Ensure activities is always an array in local state
+      const items = (response.content || []).map((po) => ({
+        ...po,
+        activities: po.activities || [],
+      }));
+      setPurchaseOrders(items);
       setTotalElements(response.totalElements || 0);
       setTotalPages(response.totalPages || 0);
     } catch (err) {
@@ -213,7 +223,7 @@ const PurchaseOrderListLayer = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, sortField, sortDirection]);
+  }, [currentPage, itemsPerPage, sortField, sortDirection, searchTerm, statusFilter, poDateRangeFilter, deliveryDateRangeFilter]);
 
   useEffect(() => {
     fetchPOData();
@@ -231,46 +241,16 @@ const PurchaseOrderListLayer = () => {
   };
 
   const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
+    const value = e.target.value;
+    setSearchTerm(value);
     setCurrentPage(0);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchPOData();
+    }, 400); // 400ms debounce
   };
 
-  // Client-side filtering for status, search, and date range
-  const filteredOrders = useMemo(() => {
-    return purchaseOrders.filter((po) => {
-      // Status filter
-      const matchesStatus =
-        statusFilter === "All" || po.status === statusFilter;
-      
-      // Search filter
-      const matchesSearch =
-        !searchTerm ||
-        (po.poNumber && po.poNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (po.supplierName && po.supplierName.toLowerCase().includes(searchTerm.toLowerCase()));
-
-      // PO Date range filter
-      let matchesPoDate = true;
-      if (poDateRangeFilter.start && poDateRangeFilter.end) {
-        const poDate = new Date(po.poDate);
-        const startDate = new Date(poDateRangeFilter.start);
-        const endDate = new Date(poDateRangeFilter.end);
-        endDate.setHours(23, 59, 59, 999);
-        matchesPoDate = poDate >= startDate && poDate <= endDate;
-      }
-
-      // Delivery Date range filter
-      let matchesDeliveryDate = true;
-      if (deliveryDateRangeFilter.start && deliveryDateRangeFilter.end) {
-        const deliveryDate = new Date(po.deliveryDate);
-        const startDate = new Date(deliveryDateRangeFilter.start);
-        const endDate = new Date(deliveryDateRangeFilter.end);
-        endDate.setHours(23, 59, 59, 999);
-        matchesDeliveryDate = deliveryDate >= startDate && deliveryDate <= endDate;
-      }
-
-      return matchesStatus && matchesSearch && matchesPoDate && matchesDeliveryDate;
-    });
-  }, [purchaseOrders, statusFilter, searchTerm, poDateRangeFilter, deliveryDateRangeFilter]);
+  // Use purchaseOrders directly for rendering
 
   const handleAddPO = () => {
     setEditingPO(null);
@@ -750,7 +730,7 @@ const PurchaseOrderListLayer = () => {
               <h6 className="text-muted">Loading Purchase Orders...</h6>
             </div>
           </div>
-        ) : filteredOrders.length === 0 ? (
+        ) : purchaseOrders.length === 0 ? (
           <div className="po-list-no-results">
             <div className="card border">
               <div className="card-body">
@@ -921,7 +901,7 @@ const PurchaseOrderListLayer = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredOrders.map((po) => (
+                  {purchaseOrders.map((po) => (
                     <TableRow
                       key={po.id}
                       po={po}
