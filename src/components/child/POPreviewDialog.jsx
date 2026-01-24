@@ -148,14 +148,41 @@ const POPreviewDialog = ({
         (sum, item) => sum + (item.quantity || 0) * (item.unitPrice || 0),
         0
       );
-      const totalTax = displayLineItems.reduce((sum, item) => {
-        const gstPercent =
-          (item.cgst || 0) + (item.sgst || 0) + (item.igst || 0);
-        return (
-          sum +
-          ((item.quantity || 0) * (item.unitPrice || 0) * gstPercent) / 100
-        );
-      }, 0);
+      const totals = displayLineItems.reduce(
+        (acc, item) => {
+          const qty = item.quantity || 0;
+          const unitPrice = item.unitPrice || 0;
+          const base = qty * unitPrice;
+          const sgstPercent = parseFloat(item.sgstPercent ?? item.sgst ?? 0) || 0;
+          const cgstPercent = parseFloat(item.cgstPercent ?? item.cgst ?? 0) || 0;
+          // If explicit sgst/cgst percents are not present, try splitting combined gst (fallback)
+          if (sgstPercent === 0 && cgstPercent === 0) {
+            const gstPercent = parseFloat(item.gstPercent || 0) || 0;
+            acc.sgst += (base * gstPercent) / 200; // half
+            acc.cgst += (base * gstPercent) / 200; // half
+          } else {
+            acc.sgst += (base * sgstPercent) / 100;
+            acc.cgst += (base * cgstPercent) / 100;
+          }
+          return acc;
+        },
+        { sgst: 0, cgst: 0 }
+      );
+
+      // Prefer API-provided order-level fields when available. Provide fallbacks to computed values.
+      const apiSubtotal = poData.subtotal ?? poData.subTotal ?? poData.totalValue;
+      const apiTax = poData.tax ?? poData.taxAmount;
+      const apiSgst = poData.sgst ?? poData.sgstValue;
+      const apiCgst = poData.cgst ?? poData.cgstValue;
+      const apiGrand = poData.grandTotal ?? poData.totalValue ?? poData.grand_total;
+
+      // If API gives tax but not split, try to split evenly when necessary
+      const computedTax = apiTax !== undefined ? apiTax : totals.sgst + totals.cgst;
+      const computedSgst = apiSgst !== undefined ? apiSgst : totals.sgst;
+      const computedCgst = apiCgst !== undefined ? apiCgst : totals.cgst;
+
+      const finalSubtotal = apiSubtotal !== undefined ? apiSubtotal : subtotal;
+      const finalGrand = apiGrand !== undefined ? apiGrand : (finalSubtotal + computedTax);
 
       return {
         supplierName: poData.supplierName || "Not selected",
@@ -172,12 +199,17 @@ const POPreviewDialog = ({
           qty: item.quantity || 0,
           uom: item.uomName || "",
           unitPrice: item.unitPrice || 0,
-          gstPercent: (item.cgst || 0) + (item.sgst || 0) + (item.igst || 0),
+          // item.cgst/item.sgst are percentages per API; combine them for display
+          gstPercent:
+            (parseFloat(item.cgst ?? item.cgstPercent ?? 0) || 0) +
+            (parseFloat(item.sgst ?? item.sgstPercent ?? 0) || 0) +
+            (parseFloat(item.igst ?? item.igstPercent ?? 0) || 0),
         })),
         totals: {
-          subtotal: poData.subtotal || subtotal,
-          tax: poData.taxAmount || totalTax,
-          grandTotal: poData.grandTotal || subtotal + totalTax,
+          subtotal: parseFloat((finalSubtotal || 0).toFixed(2)),
+          sgst: parseFloat((computedSgst || 0).toFixed(2)),
+          cgst: parseFloat((computedCgst || 0).toFixed(2)),
+          grandTotal: parseFloat((finalGrand || 0).toFixed(2)),
         },
       };
     } else {
@@ -188,6 +220,31 @@ const POPreviewDialog = ({
       const selectedTerms = termsConditions?.find(
         (tc) => tc.id === parseInt(formData?.termsConditionId)
       );
+
+      // Compute totals for preview mode (use passed `totals` prop if it contains breakdown)
+      const previewSubtotal = (totals && totals.subtotal) || (lineItems || []).reduce((s, it) => s + (it.qty || 0) * (it.unitPrice || 0), 0);
+
+      // Compute sgst/cgst from the form line items if totals don't include them
+      const previewBreakdown = (totals && (totals.sgst !== undefined || totals.cgst !== undefined))
+        ? { sgst: totals.sgst || 0, cgst: totals.cgst || 0 }
+        : (lineItems || []).reduce((acc, it) => {
+            const qty = parseFloat(it.qty) || 0;
+            const unitPrice = parseFloat(it.unitPrice) || 0;
+            const base = qty * unitPrice;
+            const sgstPercent = parseFloat(it.sgstPercent ?? it.sgst ?? 0) || 0;
+            const cgstPercent = parseFloat(it.cgstPercent ?? it.cgst ?? 0) || 0;
+            if (sgstPercent === 0 && cgstPercent === 0) {
+              const gstPercent = parseFloat(it.gstPercent || 0) || 0;
+              acc.sgst += (base * gstPercent) / 200;
+              acc.cgst += (base * gstPercent) / 200;
+            } else {
+              acc.sgst += (base * sgstPercent) / 100;
+              acc.cgst += (base * cgstPercent) / 100;
+            }
+            return acc;
+          }, { sgst: 0, cgst: 0 });
+
+      const previewGrand = (totals && totals.grandTotal) || previewSubtotal + previewBreakdown.sgst + previewBreakdown.cgst;
 
       return {
         supplierName: selectedSupplier?.name || "Not selected",
@@ -206,12 +263,56 @@ const POPreviewDialog = ({
           unitPrice: item.unitPrice || 0,
           gstPercent: item.gstPercent || 0,
         })),
-        totals: totals || { subtotal: 0, tax: 0, grandTotal: 0 },
+        totals: {
+          subtotal: previewSubtotal || 0,
+          sgst: previewBreakdown.sgst || 0,
+          cgst: previewBreakdown.cgst || 0,
+          grandTotal: previewGrand || 0,
+        },
       };
     }
   };
 
   const displayData = getDisplayData();
+
+  // Compute GST breakup grouped by GST percentage for preview dialog
+  const gstBreakup = (() => {
+    const groups = {};
+    (displayData.lineItems || []).forEach((item) => {
+      const qty = parseFloat(item.qty || item.quantity) || 0;
+      const unitPrice = parseFloat(item.unitPrice) || 0;
+      const base = qty * unitPrice;
+
+      let gstPercent = 0;
+      if (item.gstPercent !== undefined && item.gstPercent !== null) {
+        gstPercent = parseFloat(item.gstPercent) || 0;
+      } else {
+        gstPercent =
+          (parseFloat(item.sgstPercent ?? item.sgst ?? 0) || 0) +
+          (parseFloat(item.cgstPercent ?? item.cgst ?? 0) || 0);
+      }
+
+      if (gstPercent === 0) return;
+
+      const gstAmount = (base * gstPercent) / 100;
+      const sgstAmount = gstAmount / 2;
+      const cgstAmount = gstAmount / 2;
+
+      if (!groups[gstPercent]) {
+        groups[gstPercent] = { sgst: 0, cgst: 0 };
+      }
+      groups[gstPercent].sgst += sgstAmount;
+      groups[gstPercent].cgst += cgstAmount;
+    });
+
+    return Object.entries(groups)
+      .map(([pct, vals]) => ({
+        percent: parseFloat(pct),
+        sgst: vals.sgst,
+        cgst: vals.cgst,
+      }))
+      .sort((a, b) => a.percent - b.percent);
+  })();
 
   const normalizeStatus = (s) => (s ? s.toString().replace(/\s+/g, "").toLowerCase() : "");
   const isInProgress = normalizeStatus(displayData.status) === "inprogress";
@@ -667,13 +768,39 @@ const POPreviewDialog = ({
                     </span>
                   </div>
 
+                  {/* GST Breakup Section */}
+                  {gstBreakup.length > 0 && (
+                    <div className="mb-12 pb-8 border-bottom border-dashed">
+                      <div className="d-flex align-items-center gap-2 mb-8">
+                        <Icon icon="mdi:format-list-group" className="text-primary-600" width="16" height="16" />
+                        <span className="text-primary-600 fw-semibold text-xs text-uppercase">GST Breakup</span>
+                      </div>
+                      {gstBreakup.map((group) => (
+                        <div key={group.percent} className="ps-3 mb-6">
+                          <div className="text-secondary-light text-xs fw-medium mb-4" style={{ opacity: 0.85 }}>
+                            GST @ {group.percent}%
+                          </div>
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <span className="text-secondary-light text-xs ps-24">SGST ({group.percent / 2}%)</span>
+                            <span className="text-xs fw-medium">₹{group.sgst.toFixed(2)}</span>
+                          </div>
+                          <div className="d-flex justify-content-between align-items-center">
+                            <span className="text-secondary-light text-xs ps-24">CGST ({group.percent / 2}%)</span>
+                            <span className="text-xs fw-medium">₹{group.cgst.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="d-flex justify-content-between align-items-center mb-8 pb-6 border-bottom border-dashed">
+                    <span className="text-secondary-light text-sm">Total SGST</span>
+                    <span className="text-sm fw-medium">₹{(displayData.totals.sgst || 0).toFixed(2)}</span>
+                  </div>
+
                   <div className="d-flex justify-content-between align-items-center mb-12 pb-8 border-bottom border-dashed">
-                    <span className="text-secondary-light text-sm">
-                      Total GST
-                    </span>
-                    <span className="text-sm fw-medium">
-                      ₹{displayData.totals.tax.toFixed(2)}
-                    </span>
+                    <span className="text-secondary-light text-sm">Total CGST</span>
+                    <span className="text-sm fw-medium">₹{(displayData.totals.cgst || 0).toFixed(2)}</span>
                   </div>
 
                   <div className="d-flex justify-content-between align-items-center p-12 rounded-2 mt-8 bg-primary-600">

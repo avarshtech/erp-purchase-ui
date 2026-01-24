@@ -59,8 +59,6 @@ const ItemFormLayer = ({
     isActive: true,
     attributes: {},
   });
-  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-  const [duplicateInfo, setDuplicateInfo] = useState(null);
 
   // State for UOM options
   const [uomOptions, setUomOptions] = useState([]);
@@ -349,63 +347,14 @@ const ItemFormLayer = ({
     return true;
   };
 
-  // Local duplicate check function - compares category, subcategory, itemType and itemName with tableData
-  const checkDuplicateInTableData = useCallback(() => {
-    if (!tableData || tableData.length === 0) {
-      return null;
-    }
-
-    const newCategoryId = parseInt(formData.categoryId);
-    const newSubCategoryId = parseInt(formData.subCategoryId);
-    const newItemTypeId = parseInt(formData.itemTypeId);
-
-    // Find matching item in tableData
-    const duplicateItem = tableData.find((item) => {
-      // Skip if it's the same item being edited
-      if (isEdit && item.id === itemId) {
-        return false;
-      }
-
-      // Check if category, subcategory, itemType and itemName match
-      if (item.categoryId !== newCategoryId) return false;
-      if (item.subCategoryId !== newSubCategoryId) return false;
-      if (item.itemTypeId !== newItemTypeId) return false;
-
-      // Check if item name matches (case-insensitive comparison)
-      if (
-        item.itemName?.toLowerCase() !== formData.itemName?.trim().toLowerCase()
-      )
-        return false;
-
-      return true;
-    });
-
-    if (duplicateItem) {
-      return {
-        isDuplicate: true,
-        existingItemCode: duplicateItem.itemCode,
-        existingItemId: duplicateItem.id,
-        existingItemName: duplicateItem.itemName,
-      };
-    }
-
-    return null;
-  }, [tableData, formData, isEdit, itemId]);
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const isValid = validateForm();
     if (!isValid) return;
 
-    // Only check for duplicates in add mode (not edit mode)
-    if (!isEdit) {
-      const duplicateResponse = checkDuplicateInTableData();
-      if (duplicateResponse && duplicateResponse.isDuplicate) {
-        setDuplicateInfo(duplicateResponse);
-        setShowDuplicateModal(true);
-        return;
-      }
-    }
+    // Duplicate checks are handled by the API (backend). Proceed to submit.
 
     try {
       setLoading(true);
@@ -443,9 +392,10 @@ const ItemFormLayer = ({
 
   const renderAttributeField = (attr) => {
     const value = formData.attributes[attr.id] || "";
+    const type = (attr.dataType || "").toString().trim().toLowerCase();
 
-    switch (attr.dataType) {
-      case "Number":
+    switch (type) {
+      case "number":
         return (
           <input
             type="number"
@@ -475,7 +425,8 @@ const ItemFormLayer = ({
             }}
           />
         );
-      case "Text":
+      case "text":
+      case "string":
         return (
           <input
             type="text"
@@ -483,14 +434,14 @@ const ItemFormLayer = ({
             placeholder={`Enter ${attr.attributeName}`}
             value={value}
             onChange={(e) => {
-              // Filter out special characters and numbers, allow only letters and spaces
-              const filteredValue = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+              // Filter out special characters and numbers, allow letters, spaces and hyphen
+              const filteredValue = e.target.value.replace(/[^a-zA-Z\s-]/g, "");
               handleAttributeChange(attr.id, filteredValue);
             }}
             onKeyPress={(e) => {
               // Only allow letters, spaces, and control keys
               if (
-                !/[a-zA-Z\s]/.test(e.key) &&
+                !/[a-zA-Z\s-]/.test(e.key) &&
                 e.key !== "Backspace" &&
                 e.key !== "Delete" &&
                 e.key !== "Tab"
@@ -508,17 +459,14 @@ const ItemFormLayer = ({
             placeholder={`Enter ${attr.attributeName}`}
             value={value}
             onChange={(e) => {
-              // Filter out special characters
-              const filteredValue = e.target.value.replace(
-                /[^a-zA-Z0-9\s]/g,
-                ""
-              );
+              // Filter out special characters but allow hyphen
+              const filteredValue = e.target.value.replace(/[^a-zA-Z0-9\s-]/g, "");
               handleAttributeChange(attr.id, filteredValue);
             }}
             onKeyPress={(e) => {
               // Only allow letters, numbers, spaces, and control keys
               if (
-                !/[a-zA-Z0-9\s]/.test(e.key) &&
+                !/[a-zA-Z0-9\s-]/.test(e.key) &&
                 e.key !== "Backspace" &&
                 e.key !== "Delete" &&
                 e.key !== "Tab"
@@ -963,48 +911,7 @@ const ItemFormLayer = ({
         </div>
       </form>
 
-      {/* Duplicate Modal */}
-      {showDuplicateModal && (
-        <div
-          className="modal fade show d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-          data-bs-backdrop="static"
-        >
-          <div className="modal-dialog modal-sm modal-dialog-centered">
-            <div className="modal-content radius-16 bg-base">
-              <div className="modal-body p-24 text-center">
-                <div className="mb-16">
-                  <Icon
-                    icon="mingcute:alert-line"
-                    className="text-warning-600 text-4xl"
-                  />
-                </div>
-                <h6 className="text-lg text-neutral-900 mb-8">
-                  Duplicate Item Found
-                </h6>
-                <p className="text-sm text-neutral-600 mb-16">
-                  An item with the same combination already exists:{" "}
-                  <strong>{duplicateInfo?.existingItemCode}</strong>
-                </p>
-                <p className="text-sm text-neutral-600 mb-24">
-                  Please update the existing record{" "}
-                  <strong>'{duplicateInfo?.existingItemName}'</strong> before
-                  creating a new record with the same combination.
-                </p>
-                <div className="d-flex align-items-center justify-content-center gap-3">
-                  <button
-                    type="button"
-                    className="border border-neutral-300 bg-hover-neutral-100 text-neutral-600 text-md px-32 py-11 radius-8"
-                    onClick={() => setShowDuplicateModal(false)}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 };
