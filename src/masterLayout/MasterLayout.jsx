@@ -8,6 +8,7 @@ import {
   hasPageAccess,
 } from "../utils/permissions";
 import { logoutUser } from "../utils/authHelper";
+import "../assets/css/app.css";
 import "../assets/css/master-layout.css";
 
 // Initialize tooltips when component mounts

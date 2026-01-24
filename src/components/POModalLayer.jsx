@@ -635,15 +635,24 @@ const POModalLayer = ({
         (tc) => tc.id === parseInt(formState.formData.termsConditionId)
       );
 
-      // Format line items to match API structure
+      // Format line items to match API structure (include tax percentages and values)
       const formattedLineItems = formState.lineItems.map((item) => {
         const selectedItem = masterData.items.find(
           (i) => i.id === parseInt(item.itemId)
         );
-        
+
         // Split GST percentage by 2 for CGST and SGST
-        const gstPercent = item.gstPercent || 0;
+        const gstPercent = parseFloat(item.gstPercent || 0) || 0;
         const halfGstPercent = gstPercent / 2;
+
+        const quantity = parseFloat(item.qty) || 0;
+        const unitPrice = parseFloat(item.unitPrice) || 0;
+        const taxableBase = quantity * unitPrice;
+
+        const cgstValue = +(taxableBase * (halfGstPercent) / 100) || 0;
+        const sgstValue = +(taxableBase * (halfGstPercent) / 100) || 0;
+        const igstValue = 0;
+        const taxValue = +(cgstValue + sgstValue + igstValue) || 0;
 
         return {
           itemId: parseInt(item.itemId) || 0,
@@ -651,12 +660,16 @@ const POModalLayer = ({
           uomId: selectedItem?.uomId || 0,
           uomName: selectedItem?.uomName || item.uom || "",
           description: item.description || "",
-          quantity: parseFloat(item.qty) || 0,
-          unitPrice: parseFloat(item.unitPrice) || 0,
+          quantity: quantity,
+          unitPrice: unitPrice,
           cgst: halfGstPercent,
           sgst: halfGstPercent,
           igst: 0,
-          totalAmount: item.amount || 0,
+          cgstValue: parseFloat(cgstValue.toFixed(2)),
+          sgstValue: parseFloat(sgstValue.toFixed(2)),
+          igstValue: parseFloat(igstValue.toFixed(2)),
+          taxValue: parseFloat(taxValue.toFixed(2)),
+          totalAmount: parseFloat((item.amount || 0).toFixed(2)),
         };
       });
 
@@ -674,7 +687,10 @@ const POModalLayer = ({
         deliveryDate: formatDateForAPI(formState.formData.expectedDeliveryDate),
         status: "Draft",
         subtotal: totals.subtotal,
-        taxAmount: totals.tax,
+        tax: totals.tax, // backend expects `tax`
+        // Include order-level SGST/CGST values for clarity
+        sgstValue: parseFloat(taxBreakdown.sgst.toFixed(2)),
+        cgstValue: parseFloat(taxBreakdown.cgst.toFixed(2)),
         grandTotal: totals.grandTotal,
         lineItems: formattedLineItems,
         termsConditionsId: parseInt(formState.formData.termsConditionId) || 0,
@@ -824,15 +840,23 @@ const POModalLayer = ({
         (tc) => tc.id === parseInt(formState.formData.termsConditionId)
       );
 
-      // Format line items to match API structure
+      // Format line items to match API structure (include tax percentages and values)
       const formattedLineItems = formState.lineItems.map((item) => {
         const selectedItem = masterData.items.find(
           (i) => i.id === parseInt(item.itemId)
         );
-        
-        // Split GST percentage by 2 for CGST and SGST
-        const gstPercent = item.gstPercent || 0;
+
+        const gstPercent = parseFloat(item.gstPercent || 0) || 0;
         const halfGstPercent = gstPercent / 2;
+
+        const quantity = parseFloat(item.qty) || 0;
+        const unitPrice = parseFloat(item.unitPrice) || 0;
+        const taxableBase = quantity * unitPrice;
+
+        const cgstValue = +(taxableBase * (halfGstPercent) / 100) || 0;
+        const sgstValue = +(taxableBase * (halfGstPercent) / 100) || 0;
+        const igstValue = 0;
+        const taxValue = +(cgstValue + sgstValue + igstValue) || 0;
 
         return {
           itemId: parseInt(item.itemId) || 0,
@@ -840,12 +864,16 @@ const POModalLayer = ({
           uomId: selectedItem?.uomId || 0,
           uomName: selectedItem?.uomName || item.uom || "",
           description: item.description || "",
-          quantity: parseFloat(item.qty) || 0,
-          unitPrice: parseFloat(item.unitPrice) || 0,
+          quantity: quantity,
+          unitPrice: unitPrice,
           cgst: halfGstPercent,
           sgst: halfGstPercent,
           igst: 0,
-          totalAmount: item.amount || 0,
+          cgstValue: parseFloat(cgstValue.toFixed(2)),
+          sgstValue: parseFloat(sgstValue.toFixed(2)),
+          igstValue: parseFloat(igstValue.toFixed(2)),
+          taxValue: parseFloat(taxValue.toFixed(2)),
+          totalAmount: parseFloat((item.amount || 0).toFixed(2)),
         };
       });
 
@@ -863,7 +891,9 @@ const POModalLayer = ({
         deliveryDate: formatDateForAPI(formState.formData.expectedDeliveryDate),
         status: "AwaitApproval",
         subtotal: totals.subtotal,
-        taxAmount: totals.tax,
+        tax: totals.tax,
+        sgstValue: parseFloat(taxBreakdown.sgst.toFixed(2)),
+        cgstValue: parseFloat(taxBreakdown.cgst.toFixed(2)),
         grandTotal: totals.grandTotal,
         lineItems: formattedLineItems,
         termsConditionsId: parseInt(formState.formData.termsConditionId) || 0,
@@ -969,7 +999,42 @@ const POModalLayer = ({
     handleLineItemChange(lineItemId, "itemId", itemId);
   };
 
-  const { subtotal, tax, grandTotal } = calculateTotals();
+  const { subtotal, grandTotal } = calculateTotals();
+
+  // Compute SGST/CGST breakdown separately for the footer (keep calculateTotals for compatibility)
+  const taxBreakdown = formState.lineItems.reduce(
+    (acc, item) => {
+      const qty = parseFloat(item.qty) || 0;
+      const unitPrice = parseFloat(item.unitPrice) || 0;
+      const base = qty * unitPrice;
+      // Prefer explicit sgst/cgst percents if present, otherwise split gstPercent evenly
+      const sgstPercent =
+        item.sgstPercent !== undefined && item.sgstPercent !== null
+          ? parseFloat(item.sgstPercent) || 0
+          : null;
+      const cgstPercent =
+        item.cgstPercent !== undefined && item.cgstPercent !== null
+          ? parseFloat(item.cgstPercent) || 0
+          : null;
+
+      let sgstAmount = 0;
+      let cgstAmount = 0;
+
+      if (sgstPercent !== null || cgstPercent !== null) {
+        sgstAmount = (base * (sgstPercent || 0)) / 100;
+        cgstAmount = (base * (cgstPercent || 0)) / 100;
+      } else {
+        const gstPercent = parseFloat(item.gstPercent || 0) || 0;
+        sgstAmount = (base * gstPercent) / 200; // half
+        cgstAmount = (base * gstPercent) / 200; // half
+      }
+
+      acc.sgst += sgstAmount;
+      acc.cgst += cgstAmount;
+      return acc;
+    },
+    { sgst: 0, cgst: 0 }
+  );
 
   // Helper functions for child components
   const setSupplierSearch = useCallback((value) => {
@@ -1110,8 +1175,10 @@ const POModalLayer = ({
               />
               <POFooterSummary
                 subtotal={subtotal}
-                tax={tax}
+                sgst={taxBreakdown.sgst}
+                cgst={taxBreakdown.cgst}
                 grandTotal={grandTotal}
+                lineItems={formState.lineItems}
               />
             </div>
             <div

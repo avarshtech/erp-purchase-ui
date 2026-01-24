@@ -106,9 +106,12 @@ const POFormLayer = () => {
   // Auto-calculate amounts when line items change
   useEffect(() => {
     const updatedLineItems = formState.lineItems.map((item) => {
-      const totalTaxPercent = item.sgstPercent + item.cgstPercent;
+      const totalTaxPercent =
+        item.gstPercent !== undefined && item.gstPercent !== null
+          ? parseFloat(item.gstPercent)
+          : (parseFloat(item.sgstPercent || 0) + parseFloat(item.cgstPercent || 0));
       const amount = parseFloat(
-        (item.qty * item.unitPrice * (1 + totalTaxPercent / 100)).toFixed(2)
+        (parseFloat(item.qty || 0) * parseFloat(item.unitPrice || 0) * (1 + (totalTaxPercent || 0) / 100)).toFixed(2)
       );
       return {
         ...item,
@@ -277,14 +280,31 @@ const POFormLayer = () => {
       (sum, item) => sum + item.qty * item.unitPrice,
       0
     );
-    const totalTax = formState.lineItems.reduce((sum, item) => {
-      const totalTaxPercent = item.sgstPercent + item.cgstPercent;
-      return sum + (item.qty * item.unitPrice * totalTaxPercent) / 100;
-    }, 0);
-    const grandTotal = subtotal + totalTax;
+    // Sum SGST and CGST separately by deriving from selected gstPercent (or sgst/cgst if present)
+    const totals = formState.lineItems.reduce(
+      (acc, item) => {
+        const qty = parseFloat(item.qty) || 0;
+        const unitPrice = parseFloat(item.unitPrice) || 0;
+        const base = qty * unitPrice;
+        const gstPercent =
+          item.gstPercent !== undefined && item.gstPercent !== null
+            ? parseFloat(item.gstPercent)
+            : (parseFloat(item.sgstPercent || 0) + parseFloat(item.cgstPercent || 0));
+        const gstAmount = (base * (gstPercent || 0)) / 100;
+        const sgst = gstAmount / 2;
+        const cgst = gstAmount / 2;
+        acc.sgst += sgst;
+        acc.cgst += cgst;
+        return acc;
+      },
+      { sgst: 0, cgst: 0 }
+    );
+
+    const grandTotal = subtotal + totals.sgst + totals.cgst;
     return {
       subtotal: parseFloat(subtotal.toFixed(2)),
-      tax: parseFloat(totalTax.toFixed(2)),
+      sgst: parseFloat(totals.sgst.toFixed(2)),
+      cgst: parseFloat(totals.cgst.toFixed(2)),
       grandTotal: parseFloat(grandTotal.toFixed(2)),
     };
   }, [formState.lineItems]);
@@ -390,7 +410,7 @@ const POFormLayer = () => {
     handleLineItemChange(lineItemId, "itemId", itemId);
   };
 
-  const { subtotal, tax, grandTotal } = calculateTotals();
+  const { subtotal, sgst, cgst, grandTotal } = calculateTotals();
 
   // Helper functions for child components
   const setSupplierSearch = useCallback((value) => {
@@ -436,8 +456,10 @@ const POFormLayer = () => {
 
             <POFooterSummary
               subtotal={subtotal}
-              tax={tax}
+              sgst={sgst}
+              cgst={cgst}
               grandTotal={grandTotal}
+              lineItems={formState.lineItems}
             />
 
             <POActionButtons

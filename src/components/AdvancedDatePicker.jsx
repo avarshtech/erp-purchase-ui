@@ -25,8 +25,20 @@ const AdvancedDatePicker = ({
       return;
     }
 
-    const parsed = new Date(value);
-    if (!isNaN(parsed.getTime())) {
+    // Parse incoming value (expected format YYYY-MM-DD) as a local date
+    const parseLocalDate = (v) => {
+      if (!v || typeof v !== "string") return null;
+      const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return null;
+      const y = parseInt(m[1], 10);
+      const mo = parseInt(m[2], 10) - 1;
+      const d = parseInt(m[3], 10);
+      const dt = new Date(y, mo, d);
+      return isNaN(dt.getTime()) ? null : dt;
+    };
+
+    const parsed = parseLocalDate(value) || null;
+    if (parsed) {
       setSelectedDate(parsed);
       setCurrentDate(parsed);
     } else {
@@ -123,10 +135,17 @@ const AdvancedDatePicker = ({
     });
   };
 
+  const toLocalISO = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
   const handleDateSelect = (date) => {
     if (isDateDisabled(date)) return;
     setSelectedDate(date);
-    onChange(date.toISOString().split("T")[0]);
+    onChange(toLocalISO(date));
     setIsOpen(false);
   };
 
@@ -500,7 +519,7 @@ const AdvancedDatePicker = ({
 
             {/* Footer */}
             <div className="d-flex justify-content-between align-items-center p-3 border-top">
-              <button
+                  <button
                 type="button"
                 className={`btn btn-sm btn-link text-decoration-none ${
                   minDate && new Date() < minDate ? "text-muted" : "text-muted"
@@ -510,7 +529,7 @@ const AdvancedDatePicker = ({
                   if (minDate && today < minDate) return;
                   setCurrentDate(today);
                   setSelectedDate(today);
-                  onChange(today.toISOString().split("T")[0]);
+                      onChange(toLocalISO(today));
                   setIsOpen(false);
                 }}
                 disabled={minDate && new Date() < minDate}

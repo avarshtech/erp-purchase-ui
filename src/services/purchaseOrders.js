@@ -91,19 +91,6 @@ export const updatePurchaseOrder = async (id, poData) => {
 };
 
 /**
- * Save purchase order (create or update based on presence of ID)
- * @param {Object} poData - Purchase order data
- * @param {number} id - Purchase order ID (optional, for update)
- * @returns {Promise<Object>} Response with saved purchase order
- */
-export const savePurchaseOrder = async (poData, id = null) => {
-  if (id) {
-    return updatePurchaseOrder(id, poData);
-  }
-  return createPurchaseOrder(poData);
-};
-
-/**
  * Delete a purchase order
  * @param {number} id - ID of purchase order to delete
  * @returns {Promise<Object>} Response with deletion status

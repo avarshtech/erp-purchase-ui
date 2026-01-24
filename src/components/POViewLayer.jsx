@@ -167,22 +167,36 @@ const POViewLayer = ({ showModal, onClose, po }) => {
 
   const lineItems = po.lineItems || [];
 
-  // Calculate totals if not present in PO object
+  // Calculate totals if not present in PO object. Compute SGST and CGST separately.
   const subtotal =
     po.subtotal ||
     lineItems.reduce(
       (sum, item) => sum + (item.quantity || item.qty || 0) * (item.unitPrice || 0),
       0
     );
-  const tax =
-    po.tax || po.taxAmount ||
-    lineItems.reduce((sum, item) => {
-      const totalTaxPercent = (item.sgst || item.sgstPercent || 0) + (item.cgst || item.cgstPercent || 0) + (item.igst || 0);
-      return (
-        sum + ((item.quantity || item.qty || 0) * (item.unitPrice || 0) * totalTaxPercent) / 100
-      );
-    }, 0);
-  const grandTotal = po.grandTotal || subtotal + tax;
+
+  const totals =
+    po.sgst || po.cgst
+      ? {
+          sgst: po.sgst || 0,
+          cgst: po.cgst || 0,
+        }
+      : lineItems.reduce(
+          (acc, item) => {
+            const qty = item.quantity || item.qty || 0;
+            const unitPrice = item.unitPrice || 0;
+            const base = qty * unitPrice;
+            const sgstPercent = parseFloat(item.sgstPercent ?? item.sgst ?? 0) || 0;
+            const cgstPercent = parseFloat(item.cgstPercent ?? item.cgst ?? 0) || 0;
+            acc.sgst += (base * sgstPercent) / 100;
+            acc.cgst += (base * cgstPercent) / 100;
+            return acc;
+          },
+          { sgst: 0, cgst: 0 }
+        );
+
+  const tax = (po.tax || po.taxAmount) ?? totals.sgst + totals.cgst;
+  const grandTotal = po.grandTotal || subtotal + totals.sgst + totals.cgst;
 
   // Helper for date formatting
   const formatDate = (dateString) => {
@@ -440,8 +454,8 @@ const POViewLayer = ({ showModal, onClose, po }) => {
                               const itemCode = itemDetails.code || itemDetails.itemCode || "";
                               const quantity = item.quantity || item.qty || 0;
                               const uomName = item.uomName || item.uom || "";
-                              const sgst = item.cgst || item.sgstPercent || 0;
-                              const cgst = item.sgst || item.cgstPercent || 0;
+                              const sgst = item.sgstPercent || item.sgst || 0;
+                              const cgst = item.cgstPercent || item.cgst || 0;
                               const totalAmount = item.totalAmount || item.amount || 0;
                               
                               return (
@@ -485,8 +499,10 @@ const POViewLayer = ({ showModal, onClose, po }) => {
 
                 <POFooterSummary
                   subtotal={subtotal}
-                  tax={tax}
+                  sgst={totals.sgst}
+                  cgst={totals.cgst}
                   grandTotal={grandTotal}
+                  lineItems={lineItems}
                 />
 
                 {/* Notes / Activity Log Section - Only show for InProgress POs */}

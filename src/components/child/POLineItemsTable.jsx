@@ -12,31 +12,64 @@ const POLineItemsTable = ({
   taxOptions,
   loading,
 }) => {
-  // Calculate GST value for a line item
+  // Calculate GST value for a line item (returns total GST amount)
   const calculateGstValue = (item) => {
-    const baseAmount = (item.qty || 0) * (item.unitPrice || 0);
-    const gstPercent = item.gstPercent || 0;
+    const qty = parseFloat(item.qty) || 0;
+    const unitPrice = parseFloat(item.unitPrice) || 0;
+    const baseAmount = qty * unitPrice;
+    const gstPercent = parseFloat(item.gstPercent ?? (item.sgstPercent + item.cgstPercent)) || 0;
     return (baseAmount * gstPercent) / 100;
   };
 
-  // Handle quantity input - only allow positive integers
+  // Handle quantity input - allow decimals up to 2 places (behaves like Unit Price)
   const handleQtyChange = (itemId, value) => {
-    // Remove any non-numeric characters
-    const numericValue = value.replace(/[^0-9]/g, '');
-    
-    if (numericValue === '') {
-      handleLineItemChange(itemId, "qty", '');
+    // Allow empty
+    if (value === '') {
+      handleLineItemChange(itemId, 'qty', '');
       return;
     }
-    
-    const parsedValue = parseInt(numericValue, 10);
-    
-    // Don't allow 0
-    if (parsedValue === 0) {
-      return;
+
+    // Remove any non-numeric characters except decimal point
+    let clean = String(value).replace(/[^0-9.]/g, '');
+
+    // Ensure only one decimal point
+    const parts = clean.split('.');
+    if (parts.length > 2) {
+      clean = parts[0] + '.' + parts.slice(1).join('');
     }
-    
-    handleLineItemChange(itemId, "qty", parsedValue);
+
+    // Limit to 2 decimal places
+    const after = clean.split('.');
+    if (after.length === 2 && after[1].length > 2) {
+      clean = after[0] + '.' + after[1].slice(0, 2);
+    }
+
+    // Update as string so user can continue typing a decimal
+    handleLineItemChange(itemId, 'qty', clean);
+  };
+
+  // Format qty on blur: only format to 2 decimals if the entered value contains a decimal point
+  const handleQtyBlur = (itemId, value) => {
+    if (value === '' || value === undefined) return;
+    const str = String(value).trim();
+    // If user entered a decimal number, format to 2 decimals; otherwise keep as integer
+    if (str.includes('.')) {
+      const n = parseFloat(str);
+      if (isNaN(n) || n <= 0) {
+        handleLineItemChange(itemId, 'qty', '');
+        return;
+      }
+      // Store formatted string so the UI shows two decimals
+      handleLineItemChange(itemId, 'qty', n.toFixed(2));
+    } else {
+      // Keep integer as-is (normalize to integer number)
+      const i = parseInt(str.replace(/[^0-9]/g, ''), 10);
+      if (isNaN(i) || i <= 0) {
+        handleLineItemChange(itemId, 'qty', '');
+        return;
+      }
+      handleLineItemChange(itemId, 'qty', i);
+    }
   };
 
   // Handle unit price input - only allow numbers with up to 2 decimal places
@@ -64,20 +97,20 @@ const POLineItemsTable = ({
     handleLineItemChange(itemId, "unitPrice", cleanValue);
   };
 
-  // Validate unit price on blur
+  // Validate unit price on blur and ensure .00 is appended when necessary
   const handleUnitPriceBlur = (itemId, value) => {
     if (value === '' || value === undefined) {
       return;
     }
-    
+
     const numericValue = parseFloat(value);
-    
+
     if (isNaN(numericValue) || numericValue < 0.01) {
       // Set to empty if invalid
       handleLineItemChange(itemId, "unitPrice", '');
     } else {
-      // Format to 2 decimal places
-      handleLineItemChange(itemId, "unitPrice", parseFloat(numericValue.toFixed(2)));
+      // Format to 2 decimal places and store as string so `.00` is visible
+      handleLineItemChange(itemId, "unitPrice", numericValue.toFixed(2));
     }
   };
 
@@ -142,10 +175,16 @@ const POLineItemsTable = ({
                   GST %
                 </th>
                 <th
-                  style={{ width: "100px", minWidth: "100px" }}
+                  style={{ width: "90px", minWidth: "90px" }}
                   className="text-center fw-semibold text-sm py-12 border-0"
                 >
-                  GST Value
+                  SGST
+                </th>
+                <th
+                  style={{ width: "90px", minWidth: "90px" }}
+                  className="text-center fw-semibold text-sm py-12 border-0"
+                >
+                  CGST
                 </th>
                 <th
                   style={{ width: "110px", minWidth: "110px" }}
@@ -218,6 +257,7 @@ const POLineItemsTable = ({
                         }`}
                         value={item.qty === '' ? '' : (item.qty || '')}
                         onChange={(e) => handleQtyChange(item.id, e.target.value)}
+                        onBlur={(e) => handleQtyBlur(item.id, e.target.value)}
                         placeholder=""
                         aria-label={`Quantity for line ${index + 1}`}
                         disabled={loading}
@@ -292,10 +332,20 @@ const POLineItemsTable = ({
                       <input
                         type="text"
                         className="form-control form-control-sm text-end bg-light"
-                        value={`₹${gstValue.toFixed(2)}`}
+                        value={`₹${(gstValue / 2).toFixed(2)}`}
                         readOnly
                         disabled
-                        aria-label={`GST value for line ${index + 1}`}
+                        aria-label={`SGST value for line ${index + 1}`}
+                      />
+                    </td>
+                    <td className="py-2">
+                      <input
+                        type="text"
+                        className="form-control form-control-sm text-end bg-light"
+                        value={`₹${(gstValue / 2).toFixed(2)}`}
+                        readOnly
+                        disabled
+                        aria-label={`CGST value for line ${index + 1}`}
                       />
                     </td>
                     <td className="py-2">
