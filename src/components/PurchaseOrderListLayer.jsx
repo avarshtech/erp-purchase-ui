@@ -165,7 +165,7 @@ const PurchaseOrderListLayer = () => {
   });
   const [datePickerResetKey, setDatePickerResetKey] = useState(0);
   const [sortField, setSortField] = useState("id");
-  const [sortDirection, setSortDirection] = useState("asc");
+  const [sortDirection, setSortDirection] = useState("desc");
   
   // Date filter popover state
   const [showPoDateFilter, setShowPoDateFilter] = useState(false);

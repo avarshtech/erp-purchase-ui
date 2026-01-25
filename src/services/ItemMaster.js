@@ -71,3 +71,21 @@ export const createItem = async (itemData) => {
 export const updateItem = async (itemData) => {
   return saveItem(itemData);
 };
+
+/**
+ * Search items by query string
+ * Endpoint: /items/search?q=<query>
+ * @param {string} query
+ * @returns {Promise<Object>} Response with search results
+ */
+export const searchItems = async (query) => {
+  try {
+    const response = await axiosInstance.get(`${ENDPOINTS.ITEMS}/search`, {
+      params: { q: query },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error searching items:", error);
+    throw error;
+  }
+};

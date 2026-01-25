@@ -27,7 +27,7 @@ export const getPurchaseOrders = async (params = {}) => {
     if (params.size !== undefined) queryParams.append('size', params.size);
     if (params.sort) {
       queryParams.append('sort', params.sort);
-      queryParams.append('sort', params.direction || 'asc');
+      queryParams.append('sort', params.direction || 'desc');
     }
 
     const queryString = queryParams.toString();

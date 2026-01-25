@@ -3,7 +3,6 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { v4 as uuidv4 } from "uuid";
 import { createPurchaseOrder, updatePurchaseOrder } from "../services/purchaseOrders";
 import { getSuppliers } from "../services/suppliers";
-import { getItemMasterData } from "../services/ItemMaster";
 import axiosInstance from "../services/axiosInstance";
 import POHeaderSection from "./child/POHeaderSection";
 import POLineItemsTable from "./child/POLineItemsTable";
@@ -43,14 +42,13 @@ const POModalLayer = ({
     errors: {},
     isDirty: false,
   });
+  console.log("POModalLayer render - formState:", formState);
 
   // Consolidated master data state
   const [masterData, setMasterData] = useState({
     suppliers: [],
-    items: [],
     termsConditions: [],
     filteredSuppliers: [],
-    filteredItems: [],
   });
 
   // Consolidated UI state
@@ -287,10 +285,7 @@ const POModalLayer = ({
     }
   }, [uiState.supplierSearch, masterData.suppliers]);
 
-  // Initialize filtered items when items are loaded
-  useEffect(() => {
-    setMasterData((prev) => ({ ...prev, filteredItems: prev.items }));
-  }, [masterData.items]);
+  // Note: items are fetched by the line-level search component; do not keep items/filteredItems in parent state.
 
   // Auto-calculate amounts when line items change
   useEffect(() => {
@@ -326,16 +321,15 @@ const POModalLayer = ({
   const loadMasterData = async () => {
     try {
       setUiState((prev) => ({ ...prev, loading: true }));
-      const [suppliersResponse, itemsResponse, termsConditionsResponse] =
-        await Promise.all([
-          getSuppliers(),
-          getItemMasterData(),
-          axiosInstance.get("/terms-conditions"),
-        ]);
+      const [suppliersResponse, termsConditionsResponse] = await Promise.all([
+        getSuppliers(),
+        axiosInstance.get("/terms-conditions"),
+      ]);
+
       setMasterData((prev) => ({
         ...prev,
         suppliers: suppliersResponse.content || suppliersResponse.data || suppliersResponse || [],
-        items: itemsResponse.content || itemsResponse.data || itemsResponse || [],
+        // Do NOT load items here. Items will be fetched via search when user types.
         termsConditions: termsConditionsResponse.data?.content || termsConditionsResponse.data?.data || termsConditionsResponse.data || [],
       }));
     } catch (error) {
@@ -388,55 +382,8 @@ const POModalLayer = ({
           ...prev,
           lineItems: prev.lineItems.map((item) => {
             if (item.id === id) {
+              // Only set the field value here; full item metadata should come from the child's select callback (`selectItem`)
               const updatedItem = { ...item, [field]: value };
-
-              // Auto-fill item details if item is selected
-              if (field === "itemId" && value) {
-                const selectedItem = masterData.items.find(
-                  (i) => i.id === parseInt(value)
-                );
-                if (selectedItem) {
-                  // Build description from sub-category, item-type, and attributes
-                  const descriptionParts = [];
-                  
-                  // Add item name
-                  if (selectedItem.itemName) {
-                    descriptionParts.push(selectedItem.itemName);
-                  }
-                  
-                  // Add sub-category and item-type
-                  const categoryInfo = [];
-                  if (selectedItem.subCategoryName) {
-                    categoryInfo.push(selectedItem.subCategoryName);
-                  }
-                  if (selectedItem.itemTypeName) {
-                    categoryInfo.push(selectedItem.itemTypeName);
-                  }
-                  if (categoryInfo.length > 0) {
-                    descriptionParts.push(`(${categoryInfo.join(" - ")})`);
-                  }
-                  
-                  // Add attributes in a readable format
-                  if (selectedItem.attributes && typeof selectedItem.attributes === 'object') {
-                    const attributeStrings = Object.entries(selectedItem.attributes)
-                      .filter(([key, value]) => value !== null && value !== undefined && value !== '')
-                      .map(([key, value]) => {
-                        // Format the key to be more readable (capitalize first letter)
-                        const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
-                        return `${formattedKey}: ${value}`;
-                      });
-                    
-                    if (attributeStrings.length > 0) {
-                      descriptionParts.push(`[${attributeStrings.join(', ')}]`);
-                    }
-                  }
-                  
-                  updatedItem.description = descriptionParts.join(' ');
-                  updatedItem.uom = selectedItem.uomName || "";
-                  updatedItem.unitPrice = selectedItem.unitPrice || 0;
-                }
-              }
-
               return updatedItem;
             }
             return item;
@@ -446,7 +393,7 @@ const POModalLayer = ({
         };
       });
     },
-    [masterData.items]
+    []
   );
 
   const addLineItem = useCallback(() => {
@@ -643,17 +590,15 @@ const POModalLayer = ({
       const isIgstForDraft = supplierForDraft?.igstApplicable || false;
 
       const formattedLineItems = formState.lineItems.map((item) => {
-        const selectedItem = masterData.items.find(
-          (i) => i.id === parseInt(item.itemId)
-        );
+        // Prefer uomId/uom set on the line (populated by child `selectItem`); fallback to secondaryUomId if needed
+        const chosenUomName = item.uom || item.uomName || "";
+        let chosenUomId = (item.uomId !== undefined && item.uomId !== null)
+          ? item.uomId
+          : (item.secondaryUomId !== undefined && item.secondaryUomId !== null) ? item.secondaryUomId : 0;
 
-        // Determine chosen UOM from line item selection or master item
-        const chosenUomName = item.uom || selectedItem?.uomName || selectedItem?.uom || "";
-        let chosenUomId = selectedItem?.uomId || 0;
-        const secName = selectedItem?.secondaryUomName ?? selectedItem?.secondaryUom ?? null;
-        const secId = selectedItem?.secondaryUomId ?? null;
-        if (secName && chosenUomName && chosenUomName === secName) {
-          chosenUomId = secId || chosenUomId;
+        // If line explicitly set secondaryUomId and the chosen name matches secondary, prefer secondary id
+        if ((item.secondaryUomId !== undefined && item.secondaryUomId !== null) && item.secondaryUom && chosenUomName === item.secondaryUom) {
+          chosenUomId = item.secondaryUomId;
         }
 
         const gstPercent = parseFloat(item.gstPercent || 0) || 0;
@@ -681,7 +626,7 @@ const POModalLayer = ({
 
         return {
           itemId: parseInt(item.itemId) || 0,
-          itemName: selectedItem?.itemName || "",
+          itemName: item.description || "",
           uomId: parseInt(chosenUomId) || 0,
           uomName: chosenUomName || "",
           description: item.description || "",
@@ -876,17 +821,14 @@ const POModalLayer = ({
       const isIgstForSubmit = selectedSupplier?.igstApplicable || false;
 
       const formattedLineItems = formState.lineItems.map((item) => {
-        const selectedItem = masterData.items.find(
-          (i) => i.id === parseInt(item.itemId)
-        );
+        // Prefer uomId/uom set on the line (populated by child `selectItem`); fallback to secondaryUomId if needed
+        const chosenUomName = item.uom || item.uomName || "";
+        let chosenUomId = (item.uomId !== undefined && item.uomId !== null)
+          ? item.uomId
+          : (item.secondaryUomId !== undefined && item.secondaryUomId !== null) ? item.secondaryUomId : 0;
 
-        // Determine chosen UOM from line item selection or master item
-        const chosenUomName = item.uom || selectedItem?.uomName || selectedItem?.uom || "";
-        let chosenUomId = selectedItem?.uomId || 0;
-        const secName = selectedItem?.secondaryUomName ?? selectedItem?.secondaryUom ?? null;
-        const secId = selectedItem?.secondaryUomId ?? null;
-        if (secName && chosenUomName && chosenUomName === secName) {
-          chosenUomId = secId || chosenUomId;
+        if ((item.secondaryUomId !== undefined && item.secondaryUomId !== null) && item.secondaryUom && chosenUomName === item.secondaryUom) {
+          chosenUomId = item.secondaryUomId;
         }
 
         const gstPercent = parseFloat(item.gstPercent || 0) || 0;
@@ -914,7 +856,7 @@ const POModalLayer = ({
 
         return {
           itemId: parseInt(item.itemId) || 0,
-          itemName: selectedItem?.itemName || "",
+          itemName: item.description || "",
           uomId: parseInt(chosenUomId) || 0,
           uomName: chosenUomName || "",
           description: item.description || "",
@@ -985,15 +927,12 @@ const POModalLayer = ({
     }
   };
 
-  // Helper to enrich line items with itemName from masterData.items
-  const getLineItemsWithNames = (lineItems, itemsMaster) => {
-    return lineItems.map((item) => {
-      const found = itemsMaster.find((i) => i.id === parseInt(item.itemId));
-      return {
-        ...item,
-        itemName: found ? found.itemName : "",
-      };
-    });
+  // Helper to enrich line items with itemName; prefer description provided by child selection
+  const getLineItemsWithNames = (lineItems) => {
+    return lineItems.map((item) => ({
+      ...item,
+      itemName: item.description || "",
+    }));
   };
 
   // Close preview dialog
@@ -1056,7 +995,48 @@ const POModalLayer = ({
   }, [showModal]);
 
   const selectItem = (itemId, lineItemId) => {
-    handleLineItemChange(lineItemId, "itemId", itemId);
+    // deprecated signature: if called with primitive id, set only itemId
+    if (typeof itemId !== 'object') {
+      handleLineItemChange(lineItemId, "itemId", itemId);
+      return;
+    }
+
+    // When passed full item object, populate related fields for the line
+    const item = itemId;
+    handleLineItemChange(lineItemId, "itemId", item.id);
+    // Build description similar to previous master-data based logic
+    const descriptionParts = [];
+    if (item.itemName) descriptionParts.push(item.itemName);
+    const categoryInfo = [];
+    if (item.subCategoryName) categoryInfo.push(item.subCategoryName);
+    if (item.itemTypeName) categoryInfo.push(item.itemTypeName);
+    if (categoryInfo.length > 0) descriptionParts.push(`(${categoryInfo.join(" - ")})`);
+
+    if (item.attributes && typeof item.attributes === 'object') {
+      const attributeStrings = Object.entries(item.attributes)
+        .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+        .map(([key, value]) => {
+          const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
+          return `${formattedKey}: ${value}`;
+        });
+      if (attributeStrings.length > 0) descriptionParts.push(`[${attributeStrings.join(', ')}]`);
+    }
+
+    handleLineItemChange(lineItemId, "description", descriptionParts.join(' ') );
+    // Store master primary/secondary UOMs on the line (preserve originals)
+    handleLineItemChange(lineItemId, "primaryUom", item.uomName || item.uom || "");
+    handleLineItemChange(lineItemId, "primaryUomId", item.uomId !== undefined ? item.uomId : null);
+    handleLineItemChange(lineItemId, "secondaryUom", item.secondaryUomName || item.secondaryUom || "");
+    handleLineItemChange(lineItemId, "secondaryUomId", item.secondaryUomId !== undefined ? item.secondaryUomId : null);
+    // Set the chosen UOM (defaults to primary)
+    handleLineItemChange(lineItemId, "uom", item.uomName || item.uom || "");
+    handleLineItemChange(lineItemId, "uomId", item.uomId !== undefined ? item.uomId : null);
+    // unitPrice may be provided under different keys
+    handleLineItemChange(lineItemId, "unitPrice", item.unitPrice ?? item.price ?? item.rate ?? 0);
+    // gstPercent may be provided or may need to be derived from cgst+sgst
+    const gst = item.gstPercent ?? item.gst ?? ((item.cgst || 0) + (item.sgst || 0));
+    handleLineItemChange(lineItemId, "gstPercent", gst || 0);
+    // Recalculate amount will run in existing effect
   };
 
   const { subtotal, grandTotal } = calculateTotals();
@@ -1231,8 +1211,8 @@ const POModalLayer = ({
               <POLineItemsTable
                 lineItems={formState.lineItems}
                 errors={formState.errors}
-                filteredItems={masterData.filteredItems}
-                itemsMaster={masterData.items}
+                filteredItems={[]}
+                itemsMaster={[]}
                 selectItem={selectItem}
                 handleLineItemChange={handleLineItemChange}
                 addLineItem={addLineItem}
@@ -1308,13 +1288,13 @@ const POModalLayer = ({
           )}
 
           {/* Preview Dialog */}
-          <POPreviewDialog
+            <POPreviewDialog
             show={uiState.showPreviewDialog}
             onClose={closePreviewDialog}
             onSubmit={confirmSubmit}
             editingPO={editingPO}
             formData={formState.formData}
-            lineItems={getLineItemsWithNames(formState.lineItems, masterData.items)}
+              lineItems={getLineItemsWithNames(formState.lineItems)}
             suppliers={masterData.suppliers}
             termsConditions={masterData.termsConditions}
             totals={calculateTotals()}
