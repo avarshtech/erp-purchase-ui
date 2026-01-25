@@ -5,12 +5,14 @@ const POLineItemsTable = ({
   lineItems,
   errors,
   filteredItems,
+  itemsMaster = [],
   selectItem,
   handleLineItemChange,
   addLineItem,
   removeLineItem,
   taxOptions,
   loading,
+  isIgstApplicable = false,
 }) => {
   // Calculate GST value for a line item (returns total GST amount)
   const calculateGstValue = (item) => {
@@ -134,7 +136,7 @@ const POLineItemsTable = ({
         <div className="table-responsive rounded border" style={{ overflowX: "auto" }}>
           <table
             className="table table-bordered table-hover mb-0"
-            style={{ minWidth: "900px" }}
+            style={{ minWidth: "1200px" }}
           >
             <thead style={{ backgroundColor: "var(--primary-color, #487fff)" }}>
               <tr>
@@ -157,7 +159,7 @@ const POLineItemsTable = ({
                   Qty
                 </th>
                 <th
-                  style={{ width: "70px", minWidth: "70px" }}
+                  style={{ width: "120px", minWidth: "120px" }}
                   className="text-center fw-semibold text-sm py-12 border-0"
                 >
                   UOM
@@ -174,18 +176,29 @@ const POLineItemsTable = ({
                 >
                   GST %
                 </th>
-                <th
-                  style={{ width: "90px", minWidth: "90px" }}
-                  className="text-center fw-semibold text-sm py-12 border-0"
-                >
-                  SGST
-                </th>
-                <th
-                  style={{ width: "90px", minWidth: "90px" }}
-                  className="text-center fw-semibold text-sm py-12 border-0"
-                >
-                  CGST
-                </th>
+                {isIgstApplicable ? (
+                  <th
+                    style={{ width: "110px", minWidth: "110px" }}
+                    className="text-center fw-semibold text-sm py-12 border-0"
+                  >
+                    IGST
+                  </th>
+                ) : (
+                  <>
+                    <th
+                      style={{ width: "90px", minWidth: "90px" }}
+                      className="text-center fw-semibold text-sm py-12 border-0"
+                    >
+                      SGST
+                    </th>
+                    <th
+                      style={{ width: "90px", minWidth: "90px" }}
+                      className="text-center fw-semibold text-sm py-12 border-0"
+                    >
+                      CGST
+                    </th>
+                  </>
+                )}
                 <th
                   style={{ width: "110px", minWidth: "110px" }}
                   className="text-center fw-semibold text-sm py-12 border-0"
@@ -272,14 +285,36 @@ const POLineItemsTable = ({
                       )}
                     </td>
                     <td className="py-2">
-                      <input
-                        type="text"
-                        className="form-control form-control-sm text-center bg-light"
-                        value={(item.uom || "").toUpperCase()}
-                        readOnly
-                        disabled
-                        aria-label={`Unit of measure for line ${index + 1}`}
-                      />
+                      {/* UOM dropdown: include primary and optional secondary UOM from master item data */}
+                      {(() => {
+                        const selectedItem =
+                          itemsMaster.find((m) => String(m.id) === String(item.itemId)) ||
+                          filteredItems.find((f) => String(f.id) === String(item.itemId));
+
+                        const primaryUom =
+                          selectedItem?.uomName ?? selectedItem?.uom ?? (item.uom || "");
+                        const secondaryUom =
+                          selectedItem?.secondaryUomName ?? selectedItem?.secondaryUom ?? null;
+
+                        const options = [primaryUom];
+                        if (secondaryUom && secondaryUom !== primaryUom) options.push(secondaryUom);
+
+                        return (
+                          <select
+                            className="form-select form-select-sm text-center"
+                            value={item.uom || primaryUom || ""}
+                            onChange={(e) => handleLineItemChange(item.id, "uom", e.target.value)}
+                            aria-label={`Unit of measure for line ${index + 1}`} 
+                            disabled={loading}
+                          >
+                            {options.map((u, i) => (
+                              <option key={i} value={u}>
+                                {String(u).toUpperCase()}
+                              </option>
+                            ))}
+                          </select>
+                        );
+                      })()}
                     </td>
                     <td className="py-2" style={{ position: "relative" }}>
                       <div className="input-group input-group-sm">
@@ -328,26 +363,41 @@ const POLineItemsTable = ({
                         ))}
                       </select>
                     </td>
-                    <td className="py-2">
-                      <input
-                        type="text"
-                        className="form-control form-control-sm text-end bg-light"
-                        value={`₹${(gstValue / 2).toFixed(2)}`}
-                        readOnly
-                        disabled
-                        aria-label={`SGST value for line ${index + 1}`}
-                      />
-                    </td>
-                    <td className="py-2">
-                      <input
-                        type="text"
-                        className="form-control form-control-sm text-end bg-light"
-                        value={`₹${(gstValue / 2).toFixed(2)}`}
-                        readOnly
-                        disabled
-                        aria-label={`CGST value for line ${index + 1}`}
-                      />
-                    </td>
+                    {isIgstApplicable ? (
+                      <td className="py-2">
+                        <input
+                          type="text"
+                          className="form-control form-control-sm text-end bg-light"
+                          value={`₹${gstValue.toFixed(2)}`}
+                          readOnly
+                          disabled
+                          aria-label={`IGST value for line ${index + 1}`}
+                        />
+                      </td>
+                    ) : (
+                      <>
+                        <td className="py-2">
+                          <input
+                            type="text"
+                            className="form-control form-control-sm text-end bg-light"
+                            value={`₹${(gstValue / 2).toFixed(2)}`}
+                            readOnly
+                            disabled
+                            aria-label={`SGST value for line ${index + 1}`}
+                          />
+                        </td>
+                        <td className="py-2">
+                          <input
+                            type="text"
+                            className="form-control form-control-sm text-end bg-light"
+                            value={`₹${(gstValue / 2).toFixed(2)}`}
+                            readOnly
+                            disabled
+                            aria-label={`CGST value for line ${index + 1}`}
+                          />
+                        </td>
+                      </>
+                    )}
                     <td className="py-2">
                       <input
                         type="text"

@@ -38,6 +38,7 @@ const SupplierModalLayer = () => {
       suppliesFabric: false,
       suppliesTrims: false,
       active: true,
+      igstApplicable: false,
     });
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -153,6 +154,7 @@ const SupplierModalLayer = () => {
         suppliesFabric: false,
         suppliesTrims: false,
         active: true,
+        igstApplicable: false,
       });
       setPendingSuccessToast(null);
       setShowToast(false);
@@ -163,7 +165,14 @@ const SupplierModalLayer = () => {
       const foundSupplier = allSuppliers.find((s) => s.id === supplier.id) || supplier;
       setIsEdit(true);
       setCurrentSupplier(foundSupplier);
-      setOriginalSupplier(foundSupplier);
+      // Normalize igstApplicable from possible API shapes (camelCase / snake_case / numeric)
+      const igstFlag = Boolean(
+        foundSupplier?.igstApplicable ?? foundSupplier?.igst_applicable ?? false
+      );
+
+      // Store a normalized original supplier for accurate change detection
+      setOriginalSupplier({ ...foundSupplier, igstApplicable: igstFlag });
+
       setFormData({
         name: foundSupplier.name,
         address: foundSupplier.address,
@@ -178,6 +187,7 @@ const SupplierModalLayer = () => {
         suppliesFabric: foundSupplier.suppliesFabric,
         suppliesTrims: foundSupplier.suppliesTrims,
         active: foundSupplier.active,
+        igstApplicable: igstFlag,
       });
       setPendingSuccessToast(null);
       setShowToast(false);
@@ -935,7 +945,7 @@ const SupplierModalLayer = () => {
                       required
                     />
                   </div>
-                  <div className="col-12 mb-20">
+                  <div className="col-md-6 mb-20">
                     <label className="form-label fw-semibold text-primary-light text-sm mb-8">
                       Supplies <span className="text-danger">*</span>
                     </label>
@@ -970,6 +980,26 @@ const SupplierModalLayer = () => {
                           htmlFor="suppliesTrims"
                         >
                           Trims
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-md-6 mb-20">
+                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                      Tax Settings
+                    </label>
+                    <div className="d-flex align-items-center gap-3">
+                      <div className="form-check d-flex align-items-center gap-2">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          name="igstApplicable"
+                          id="igstApplicable"
+                          checked={formData.igstApplicable}
+                          onChange={handleChange}
+                        />
+                        <label className="form-check-label mb-0" htmlFor="igstApplicable">
+                          IGST Applicable
                         </label>
                       </div>
                     </div>

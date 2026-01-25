@@ -55,6 +55,7 @@ const ItemFormLayer = ({
     subCategoryId: "",
     itemTypeId: "",
     uomId: "",
+    secondaryUomId: "",
     hsnCode: "",
     isActive: true,
     attributes: {},
@@ -97,6 +98,7 @@ const ItemFormLayer = ({
         subCategoryId: "",
         itemTypeId: "",
         uomId: "",
+        secondaryUomId: "",
         attributes: {},
       }));
 
@@ -125,6 +127,7 @@ const ItemFormLayer = ({
         subCategoryId: subIdStr,
         itemTypeId: "",
         uomId: "",
+        secondaryUomId: "",
         attributes: {},
       }));
 
@@ -151,6 +154,7 @@ const ItemFormLayer = ({
         ...prev,
         itemTypeId,
         uomId: "",
+        secondaryUomId: "",
         attributes: {},
       }));
       setAttributes([]);
@@ -180,6 +184,7 @@ const ItemFormLayer = ({
       subCategoryId: itemData.subCategoryId?.toString() || "",
       itemTypeId: itemData.itemTypeId?.toString() || "",
       uomId: itemData.uomId?.toString() || "", // Ensure string for select
+      secondaryUomId: itemData.secondaryUomId?.toString() || "",
       hsnCode: itemData.hsnCode || "",
       isActive: itemData.isActive ?? true,
       attributes: {},
@@ -330,6 +335,11 @@ const ItemFormLayer = ({
       if (triggerToast) triggerToast("UOM is required", "error");
       return false;
     }
+    // If secondary UOM provided, it cannot be same as primary
+    if (formData.secondaryUomId && formData.secondaryUomId === formData.uomId) {
+      if (triggerToast) triggerToast("Primary and Secondary UOM cannot be same", "error");
+      return false;
+    }
     if (!formData.hsnCode.trim()) {
       if (triggerToast) triggerToast("HSN Code is required", "error");
       return false;
@@ -370,6 +380,15 @@ const ItemFormLayer = ({
         subCategoryId: parseInt(formData.subCategoryId),
         itemTypeId: parseInt(formData.itemTypeId),
         uomId: formData.uomId,
+        // Map secondary UOM fields as requested
+        secondaryUomId: formData.secondaryUomId
+          ? parseInt(formData.secondaryUomId)
+          : null,
+        secondaryUomName: formData.secondaryUomId
+          ? (uomOptions.find(
+              (opt) => opt.id.toString() === formData.secondaryUomId.toString()
+            )?.name || null)
+          : null,
         hsnCode: formData.hsnCode,
         isActive: formData.isActive,
         attributes: attributeObject,
@@ -587,7 +606,7 @@ const ItemFormLayer = ({
           </div>
           <div className="col-md-6 mb-20">
             <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-              UOM <span className="text-danger">*</span>
+              Primary UOM <span className="text-danger">*</span>
             </label>
             <select
               className={`form-select radius-8 ${
@@ -598,7 +617,29 @@ const ItemFormLayer = ({
               onChange={(e) => handleInputChange("uomId", e.target.value)}
               disabled={!formData.itemTypeId}
             >
-              <option value="">Select UOM</option>
+              <option value="">Select Primary UOM</option>
+              {uomOptions.map((opt) => (
+                <option key={opt.id} value={opt.id.toString()}>
+                  {opt.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="col-md-6 mb-20">
+            <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+              Secondary UOM
+            </label>
+            <select
+              className={`form-select radius-8 ${
+                !formData.itemTypeId ? "bg-light opacity-50" : ""
+              }`}
+              style={{ paddingRight: "2.5rem" }}
+              value={(formData.secondaryUomId || "").toString()}
+              onChange={(e) => handleInputChange("secondaryUomId", e.target.value)}
+              disabled={!formData.itemTypeId}
+            >
+              <option value="">Select Secondary UOM (optional)</option>
               {uomOptions.map((opt) => (
                 <option key={opt.id} value={opt.id.toString()}>
                   {opt.name}
@@ -792,6 +833,32 @@ const ItemFormLayer = ({
                               (formData.uomId || "").toString()
                           )?.name ||
                             formData.uomId || (
+                              <span className="text-neutral-500 fst-italic">
+                                Not selected
+                              </span>
+                            )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <div className="d-flex align-items-start gap-3 p-12 rounded bg-base-2 border border-neutral-200">
+                      <Icon
+                        icon="mdi:scale-balance"
+                        width="20"
+                        height="20"
+                        className="text-primary-600 mt-1"
+                      />
+                      <div className="flex-grow-1">
+                        <div className="text-neutral-600 text-xs mb-1">Secondary UOM</div>
+                        <div className="fw-semibold text-neutral-900">
+                          {uomOptions.find(
+                            (opt) =>
+                              opt.id.toString() ===
+                              (formData.secondaryUomId || "").toString()
+                          )?.name ||
+                            formData.secondaryUomId || (
                               <span className="text-neutral-500 fst-italic">
                                 Not selected
                               </span>
