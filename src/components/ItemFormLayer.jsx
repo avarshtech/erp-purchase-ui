@@ -1,9 +1,10 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   getItemMetaData,
   createItem,
   updateItem,
+  searchItems,
 } from "../services/ItemMaster";
 
 // Helper function to convert string to camelCase or lowercase
@@ -63,6 +64,20 @@ const ItemFormLayer = ({
 
   // State for UOM options
   const [uomOptions, setUomOptions] = useState([]);
+
+  // Autocomplete / suggestions state
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceRef = useRef(null);
+  const lastQueryRef = useRef("");
+  const suppressSuggestionsRef = useRef(false);
+  // Track selected item id when editing. In add mode we intentionally keep this null.
+  const [selectedItemId, setSelectedItemId] = useState(isEdit ? itemId : null);
+
+  useEffect(() => {
+    // Keep selectedItemId in sync when itemData changes (e.g., opening edit dialog)
+    setSelectedItemId(isEdit ? itemId : null);
+  }, [isEdit, itemId]);
 
   // Fetch Metadata on Mount
   const fetchMetaData = useCallback(async () => {
@@ -311,7 +326,17 @@ const ItemFormLayer = ({
   };
 
   const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      // If user edits the itemName, allow suggestions again
+      if (field === "itemName" && prev.itemName !== value) {
+        suppressSuggestionsRef.current = false;
+        // Allow searching again even if the query matches the last one
+        lastQueryRef.current = "";
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+      return { ...prev, [field]: value };
+    });
   };
 
   const validateForm = () => {
@@ -357,6 +382,138 @@ const ItemFormLayer = ({
     return true;
   };
 
+  // Apply selected item from suggestions into the form
+  const applySelectedItem = (item) => {
+    if (!item) return;
+
+    // Set basic form fields
+    setFormData((prev) => ({
+      ...prev,
+      itemName: item.itemName || "",
+      categoryId: item.categoryId?.toString() || "",
+      subCategoryId: item.subCategoryId?.toString() || "",
+      itemTypeId: item.itemTypeId?.toString() || "",
+      uomId: item.uomId?.toString() || "",
+      secondaryUomId: item.secondaryUomId?.toString() || "",
+      hsnCode: item.hsnCode || "",
+      isActive: item.isActive ?? true,
+      attributes: {},
+    }));
+
+    // Populate cascading dropdowns and attributes from metadata
+    const categoryId = parseInt(item.categoryId);
+    const subCategoryId = parseInt(item.subCategoryId);
+    const itemTypeId = parseInt(item.itemTypeId);
+
+    const category = metaData.find((c) => c.id === categoryId);
+    if (category) {
+      setSubcategories(category.subCategories || []);
+      const subcategory = category.subCategories?.find(
+        (sc) => sc.id === subCategoryId
+      );
+      if (subcategory) {
+        setItemTypes(subcategory.itemTypes || []);
+        const itemType = subcategory.itemTypes?.find(
+          (it) => it.id === itemTypeId
+        );
+        if (itemType) {
+          setAttributes(itemType.attributes || []);
+          setUomOptions(itemType.uoms || []);
+
+          // Populate attributes values
+          const populatedAttributes = {};
+          // If API returned attributes as object with string keys, try to map
+          if (item.attributes && Object.keys(item.attributes).length > 0) {
+            const hasCustomAttributes = Object.keys(item.attributes).some(
+              (k) => isNaN(parseInt(k))
+            );
+            if (hasCustomAttributes) {
+              itemType.attributes.forEach((attr) => {
+                const attrName = (attr.attributeName || "").toLowerCase();
+                const matchKey = Object.keys(item.attributes).find(
+                  (k) => k.toLowerCase() === attrName
+                );
+                if (matchKey) populatedAttributes[attr.id] = item.attributes[matchKey];
+              });
+            } else {
+              Object.keys(item.attributes).forEach((k) => {
+                populatedAttributes[k] = item.attributes[k];
+              });
+            }
+          }
+
+          setFormData((prev) => ({ ...prev, attributes: populatedAttributes }));
+        }
+      }
+    }
+
+    // Hide suggestions after selection
+    setSuggestions([]);
+    setShowSuggestions(false);
+    // Clear any pending debounce so pending searches won't repopulate suggestions
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    // Prevent showing suggestions again on focus until user changes input
+    suppressSuggestionsRef.current = true;
+
+    // Preserve selected item id only in edit mode. In add mode we do not preserve id.
+    if (isEdit && item && item.id) {
+      setSelectedItemId(item.id);
+    } else {
+      setSelectedItemId(null);
+    }
+  };
+
+  // Debounced search for item names when user types 3+ chars
+  useEffect(() => {
+    const query = (formData.itemName || "").trim();
+
+    // If suggestions are suppressed (user selected an item), do nothing
+    if (suppressSuggestionsRef.current) {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    if (query.length >= 3) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(async () => {
+        try {
+          // Avoid repeating same query
+          if (lastQueryRef.current === query) return;
+          const res = await searchItems(query);
+          let results = [];
+          if (Array.isArray(res)) results = res;
+          else if (res && Array.isArray(res.data)) results = res.data;
+          else if (res && res.success && Array.isArray(res.data)) results = res.data;
+
+          setSuggestions(results || []);
+          setShowSuggestions((results || []).length > 0);
+          lastQueryRef.current = query;
+        } catch (err) {
+          console.error('Item search failed', err);
+          setSuggestions([]);
+          setShowSuggestions(false);
+        }
+      }, 300);
+    } else {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      setSuggestions([]);
+      setShowSuggestions(false);
+      lastQueryRef.current = "";
+    }
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [formData.itemName]);
+
   
 
   const handleSubmit = async (e) => {
@@ -395,7 +552,8 @@ const ItemFormLayer = ({
       };
 
       if (isEdit) {
-        await updateItem({ id: itemId, ...itemDataPayload });
+        const idToUse = selectedItemId || itemId;
+        await updateItem({ id: idToUse, ...itemDataPayload });
         if (onSuccess) onSuccess("Item updated successfully");
       } else {
         await createItem(itemDataPayload);
@@ -596,13 +754,60 @@ const ItemFormLayer = ({
             <label className="form-label fw-semibold text-primary-light text-sm mb-8">
               Item Name <span className="text-danger">*</span>
             </label>
-            <input
-              type="text"
-              className="form-control radius-8"
-              placeholder="Enter Item Name"
-              value={formData.itemName}
-              onChange={(e) => handleInputChange("itemName", e.target.value)}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                className="form-control radius-8"
+                placeholder="Enter Item Name"
+                value={formData.itemName}
+                onChange={(e) => handleInputChange("itemName", e.target.value)}
+                onFocus={() => {
+                  if (
+                    !suppressSuggestionsRef.current &&
+                    suggestions &&
+                    suggestions.length >= 1 &&
+                    formData.itemName?.length >= 3
+                  ) {
+                    setShowSuggestions(true);
+                  }
+                }}
+                onBlur={() => {
+                  // Delay hiding to allow click on suggestion
+                  setTimeout(() => setShowSuggestions(false), 150);
+                }}
+              />
+
+              {showSuggestions && suggestions.length > 0 && (
+                <ul
+                  className="dropdown-menu p-12 border bg-base shadow show"
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    zIndex: 2000,
+                    maxHeight: 220,
+                    overflowY: 'auto',
+                    marginTop: 6,
+                  }}
+                >
+                  {suggestions.map((s, idx) => (
+                    <li
+                      key={s.id ?? idx}
+                      className="dropdown-item"
+                      style={{ cursor: 'pointer' }}
+                      onMouseDown={(e) => {
+                        // prevent blur from hiding before click
+                        e.preventDefault();
+                      }}
+                      onClick={() => applySelectedItem(s)}
+                    >
+                      {s.itemName}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
           <div className="col-md-6 mb-20">
             <label className="form-label fw-semibold text-primary-light text-sm mb-8">

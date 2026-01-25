@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { searchItems } from "../../services/ItemMaster";
 
 const POLineItemsTable = ({
   lineItems,
@@ -19,7 +20,7 @@ const POLineItemsTable = ({
     const qty = parseFloat(item.qty) || 0;
     const unitPrice = parseFloat(item.unitPrice) || 0;
     const baseAmount = qty * unitPrice;
-    const gstPercent = parseFloat(item.gstPercent ?? (item.sgstPercent + item.cgstPercent)) || 0;
+    const gstPercent = parseFloat((item.gstPercent ?? (item.sgstPercent + item.cgstPercent))) || 0;
     return (baseAmount * gstPercent) / 100;
   };
 
@@ -218,36 +219,42 @@ const POLineItemsTable = ({
                 const gstValue = calculateGstValue(item);
                 return (
                   <tr key={item.id}>
-                    <td className="py-2">
-                      <select
-                        className={`form-select form-select-sm ${errors[`item_${index}`] ? "is-invalid" : ""}`}
-                        value={item.itemId || ""}
-                        onChange={(e) =>
-                          selectItem(parseInt(e.target.value), item.id)
-                        }
-                        aria-label={`Select item for line ${index + 1}`}
+                    <td className="py-2" style={{ position: 'relative' }}>
+                      {/* Autocomplete input for item search (name or code) */}
+                      <ItemSearchInput
+                        lineId={item.id}
                         disabled={loading}
-                      >
-                        <option value="">Select an item...</option>
-                        {filteredItems.map((filteredItem) => (
-                          <option key={filteredItem.id} value={filteredItem.id}>
-                            {filteredItem.itemCode} - {filteredItem.itemName}
-                          </option>
-                        ))}
-                      </select>
-                      {errors[`item_${index}`] && (
-                        <div
-                          className="invalid-feedback d-block"
-                          style={{ fontSize: "11px" }}
-                        >
-                          {errors[`item_${index}`]}
-                        </div>
-                      )}
+                        error={errors[`item_${index}`]}
+                        onChange={(val) => {
+                          // When user types, clear associated itemId so fields remain disabled
+                          handleLineItemChange(item.id, 'itemId', '');
+                          // If user cleared the item text, reset all other fields for that line
+                          if (!val || !String(val).trim()) {
+                              handleLineItemChange(item.id, 'qty', '');
+                              handleLineItemChange(item.id, 'unitPrice', '');
+                              handleLineItemChange(item.id, 'uom', '');
+                              handleLineItemChange(item.id, 'uomId', null);
+                              handleLineItemChange(item.id, 'primaryUom', '');
+                              handleLineItemChange(item.id, 'primaryUomId', null);
+                              handleLineItemChange(item.id, 'secondaryUom', '');
+                              handleLineItemChange(item.id, 'secondaryUomId', null);
+                              handleLineItemChange(item.id, 'secondaryUomId', null);
+                              handleLineItemChange(item.id, 'gstPercent', 0);
+                              handleLineItemChange(item.id, 'amount', 0);
+                              // clear description when cleared
+                              handleLineItemChange(item.id, 'description', '');
+                            }
+                        }}
+                        onSelect={(selectedItem) => {
+                          // selectedItem is full item object
+                          selectItem(selectedItem, item.id);
+                        }}
+                      />
                     </td>
                     <td className="py-2">
                       <input
                         type="text"
-                        className="form-control form-control-sm"
+                        className={`form-control form-control-sm ${loading || !item.itemId ? 'bg-light' : ''}`}
                         placeholder="Description"
                         value={item.description}
                         onChange={(e) =>
@@ -258,23 +265,21 @@ const POLineItemsTable = ({
                           )
                         }
                         aria-label={`Description for line ${index + 1}`}
-                        disabled={loading}
+                        disabled={loading || !item.itemId}
                       />
                     </td>
                     <td className="py-2">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        className={`form-control form-control-sm text-center ${
-                          errors[`qty_${index}`] ? "is-invalid" : ""
-                        }`}
-                        value={item.qty === '' ? '' : (item.qty || '')}
-                        onChange={(e) => handleQtyChange(item.id, e.target.value)}
-                        onBlur={(e) => handleQtyBlur(item.id, e.target.value)}
-                        placeholder=""
-                        aria-label={`Quantity for line ${index + 1}`}
-                        disabled={loading}
-                      />
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          className={`form-control form-control-sm text-center ${errors[`qty_${index}`] ? "is-invalid" : ""} ${loading || !item.itemId ? 'bg-light' : ''}`}
+                          value={item.qty === '' ? '' : (item.qty || '')}
+                          onChange={(e) => handleQtyChange(item.id, e.target.value)}
+                          onBlur={(e) => handleQtyBlur(item.id, e.target.value)}
+                          placeholder=""
+                          aria-label={`Quantity for line ${index + 1}`}
+                          disabled={loading || !item.itemId}
+                        />
                       {errors[`qty_${index}`] && (
                         <div
                           className="invalid-feedback d-block"
@@ -287,29 +292,45 @@ const POLineItemsTable = ({
                     <td className="py-2">
                       {/* UOM dropdown: include primary and optional secondary UOM from master item data */}
                       {(() => {
-                        const selectedItem =
-                          itemsMaster.find((m) => String(m.id) === String(item.itemId)) ||
-                          filteredItems.find((f) => String(f.id) === String(item.itemId));
+                        // Build options from stored primary/secondary (master) UOM fields if available,
+                        // otherwise fall back to line uom/uomId
+                        const primaryIdField = item.primaryUomId ?? item.uomId;
+                        const primaryNameField = item.primaryUom ?? item.uom ?? item.uomName;
+                        const secondaryIdField = item.secondaryUomId ?? item.secondaryUomId;
+                        const secondaryNameField = item.secondaryUom ?? item.secondaryUomName;
 
-                        const primaryUom =
-                          selectedItem?.uomName ?? selectedItem?.uom ?? (item.uom || "");
-                        const secondaryUom =
-                          selectedItem?.secondaryUomName ?? selectedItem?.secondaryUom ?? null;
+                        const primary = (primaryIdField || primaryNameField) ? { id: primaryIdField ?? primaryNameField, name: primaryNameField ?? "" } : null;
+                        const secondary = (secondaryIdField || secondaryNameField) ? { id: secondaryIdField ?? secondaryNameField, name: secondaryNameField ?? "" } : null;
 
-                        const options = [primaryUom];
-                        if (secondaryUom && secondaryUom !== primaryUom) options.push(secondaryUom);
+                        const opts = [];
+                        if (primary && primary.name) opts.push({ id: String(primary.id), name: primary.name });
+                        if (secondary && secondary.name && String(secondary.id) !== String(primary?.id)) opts.push({ id: String(secondary.id), name: secondary.name });
+
+                        // If no ids but names exist, include them as fallback
+                        if (opts.length === 0 && (item.uom || item.primaryUom)) {
+                          const fallbackName = item.uom || item.primaryUom;
+                          opts.push({ id: String(item.uomId ?? item.primaryUomId ?? fallbackName), name: fallbackName });
+                        }
+
+                        const valueToUse = String(item.uomId ?? (opts[0] && opts[0].id) ?? "");
 
                         return (
                           <select
                             className="form-select form-select-sm text-center"
-                            value={item.uom || primaryUom || ""}
-                            onChange={(e) => handleLineItemChange(item.id, "uom", e.target.value)}
+                            value={valueToUse}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const found = opts.find((o) => String(o.id) === String(val));
+                              // Save both id and name to the line payload so parent can format correctly
+                              handleLineItemChange(item.id, "uomId", found ? found.id : val);
+                              handleLineItemChange(item.id, "uom", found ? found.name : val);
+                            }}
                             aria-label={`Unit of measure for line ${index + 1}`} 
-                            disabled={loading}
+                            disabled={loading || !item.itemId}
                           >
-                            {options.map((u, i) => (
-                              <option key={i} value={u}>
-                                {String(u).toUpperCase()}
+                            {opts.map((u) => (
+                              <option key={u.id} value={u.id}>
+                                {String(u.name).toUpperCase()}
                               </option>
                             ))}
                           </select>
@@ -322,15 +343,13 @@ const POLineItemsTable = ({
                         <input
                           type="text"
                           inputMode="decimal"
-                          className={`form-control form-control-sm text-end border-start-0 ${
-                            errors[`unitPrice_${index}`] ? "is-invalid" : ""
-                          }`}
+                          className={`form-control form-control-sm text-end border-start-0 ${errors[`unitPrice_${index}`] ? "is-invalid" : ""} ${loading || !item.itemId ? 'bg-light' : ''}`}
                           value={item.unitPrice === '' ? '' : (item.unitPrice || '')}
                           onChange={(e) => handleUnitPriceChange(item.id, e.target.value)}
                           onBlur={(e) => handleUnitPriceBlur(item.id, e.target.value)}
                           placeholder="0.00"
                           aria-label={`Unit price for line ${index + 1}`}
-                          disabled={loading}
+                          disabled={loading || !item.itemId}
                         />
                       </div>
                       {errors[`unitPrice_${index}`] && (
@@ -346,15 +365,9 @@ const POLineItemsTable = ({
                       <select
                         className="form-select form-select-sm"
                         value={item.gstPercent || 0}
-                        onChange={(e) =>
-                          handleLineItemChange(
-                            item.id,
-                            "gstPercent",
-                            parseInt(e.target.value)
-                          )
-                        }
+                        onChange={(e) => handleLineItemChange(item.id, "gstPercent", parseInt(e.target.value))}
                         aria-label={`GST percentage for line ${index + 1}`}
-                        disabled={loading}
+                        disabled={loading || !item.itemId}
                       >
                         {taxOptions.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -433,6 +446,160 @@ const POLineItemsTable = ({
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+// Small internal component providing debounced search and suggestion dropdown per line
+const ItemSearchInput = ({ lineId, value, disabled, error, onChange, onSelect }) => {
+  const [text, setText] = useState(value || "");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceRef = useRef(null);
+  const suppressRef = useRef(false);
+  const inputRef = useRef(null);
+  const [inputWidth, setInputWidth] = useState(0);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    setText(value || "");
+  }, [value]);
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      if (inputRef.current) setInputWidth(inputRef.current.offsetWidth || 0);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, true);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, true);
+    };
+  }, []);
+
+  useEffect(() => {
+    const q = (text || "").trim();
+    if (suppressRef.current) return;
+
+    if (q.length >= 3) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const res = await searchItems(q);
+          let results = [];
+          if (Array.isArray(res)) results = res;
+          else if (res && Array.isArray(res.data)) results = res.data;
+          else if (res && res.success && Array.isArray(res.data)) results = res.data;
+          setSuggestions(results || []);
+          const has = (results || []).length > 0;
+          setShowSuggestions(has);
+          if (has && inputRef.current) {
+            const rect = inputRef.current.getBoundingClientRect();
+            setDropdownPos({ top: rect.bottom + 6, left: rect.left, width: rect.width });
+          }
+        } catch (err) {
+          console.error('Item search failed', err);
+          setSuggestions([]);
+          setShowSuggestions(false);
+        }
+      }, 300);
+    } else {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [text]);
+
+  // Reposition dropdown when showSuggestions toggles or window scroll/resize
+  useEffect(() => {
+    if (!showSuggestions) return;
+    const reposition = () => {
+      if (inputRef.current) {
+        const rect = inputRef.current.getBoundingClientRect();
+        setDropdownPos({ top: rect.bottom + 6, left: rect.left, width: rect.width });
+      }
+    };
+    window.addEventListener('resize', reposition);
+    window.addEventListener('scroll', reposition, true);
+    return () => {
+      window.removeEventListener('resize', reposition);
+      window.removeEventListener('scroll', reposition, true);
+    };
+  }, [showSuggestions]);
+
+  const handleSelect = (it) => {
+    // prevent further suggestion popups until user types again
+    suppressRef.current = true;
+    const display = it.itemCode && it.itemName ? `${it.itemCode} - ${it.itemName}` : (it.itemCode || it.itemName || "");
+    setText(display);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    if (onSelect) onSelect(it);
+  };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        type="text"
+        className={`form-control form-control-sm ${error ? 'is-invalid' : ''}`}
+        placeholder="Search item by name or code"
+        value={text}
+        disabled={disabled}
+        ref={inputRef}
+        onChange={(e) => {
+          setText(e.target.value);
+          suppressRef.current = false;
+          if (onChange) onChange(e.target.value);
+        }}
+        onFocus={() => {
+          if (!suppressRef.current && suggestions.length > 0) setShowSuggestions(true);
+        }}
+        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+      />
+      {error && (
+        <div className="invalid-feedback d-block" style={{ fontSize: '11px' }}>{error}</div>
+      )}
+
+      {showSuggestions && suggestions.length > 0 && (
+        <ul
+          className="dropdown-menu p-12 border bg-base shadow show"
+          style={{
+            position: 'fixed',
+            top: dropdownPos.top,
+            left: dropdownPos.left,
+            zIndex: 3000,
+            width: dropdownPos.width || inputWidth || 'auto',
+            maxWidth: '90vw',
+            boxSizing: 'border-box',
+            overflowX: 'hidden',
+            overflowY: suggestions.length > 5 ? 220 : 'auto',
+            marginTop: 0,
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+          }}
+        >
+          {suggestions.map((s, i) => (
+            <li
+              key={s.id ?? i}
+              className="dropdown-item"
+              style={{ cursor: 'pointer', whiteSpace: 'normal' }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => handleSelect(s)}
+            >
+              <div>{s.itemCode ? `${s.itemCode} - ${s.itemName}` : s.itemName}</div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };
