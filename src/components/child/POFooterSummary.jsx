@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Icon } from "@iconify/react/dist/iconify.js";
 
-const POFooterSummary = ({ subtotal = 0, sgst = 0, cgst = 0, grandTotal = 0, lineItems = [] }) => {
+const POFooterSummary = ({ subtotal = 0, sgst = 0, cgst = 0, igst = 0, grandTotal = 0, lineItems = [], isIgstApplicable = false }) => {
   // Compute GST breakup grouped by GST percentage
   const gstBreakup = useMemo(() => {
     const groups = {};
@@ -11,10 +11,12 @@ const POFooterSummary = ({ subtotal = 0, sgst = 0, cgst = 0, grandTotal = 0, lin
       const unitPrice = parseFloat(item.unitPrice) || 0;
       const base = qty * unitPrice;
 
-      // Determine gst percent - prefer gstPercent, fallback to sgst+cgst
+      // Determine gst percent - prefer gstPercent, fallback to sgst+cgst or igst
       let gstPercent = 0;
       if (item.gstPercent !== undefined && item.gstPercent !== null) {
         gstPercent = parseFloat(item.gstPercent) || 0;
+      } else if (isIgstApplicable) {
+        gstPercent = parseFloat(item.igstPercent ?? item.igst ?? 0) || 0;
       } else {
         gstPercent =
           (parseFloat(item.sgstPercent ?? item.sgst ?? 0) || 0) +
@@ -24,14 +26,17 @@ const POFooterSummary = ({ subtotal = 0, sgst = 0, cgst = 0, grandTotal = 0, lin
       if (gstPercent === 0) return; // skip 0% GST items from breakup
 
       const gstAmount = (base * gstPercent) / 100;
-      const sgstAmount = gstAmount / 2;
-      const cgstAmount = gstAmount / 2;
 
       if (!groups[gstPercent]) {
-        groups[gstPercent] = { sgst: 0, cgst: 0, taxableAmount: 0 };
+        groups[gstPercent] = { igst: 0, sgst: 0, cgst: 0, taxableAmount: 0 };
       }
-      groups[gstPercent].sgst += sgstAmount;
-      groups[gstPercent].cgst += cgstAmount;
+
+      if (isIgstApplicable) {
+        groups[gstPercent].igst += gstAmount;
+      } else {
+        groups[gstPercent].sgst += gstAmount / 2;
+        groups[gstPercent].cgst += gstAmount / 2;
+      }
       groups[gstPercent].taxableAmount += base;
     });
 
@@ -39,19 +44,26 @@ const POFooterSummary = ({ subtotal = 0, sgst = 0, cgst = 0, grandTotal = 0, lin
     return Object.entries(groups)
       .map(([pct, vals]) => ({
         percent: parseFloat(pct),
+        igst: vals.igst,
         sgst: vals.sgst,
         cgst: vals.cgst,
         taxableAmount: vals.taxableAmount,
       }))
       .sort((a, b) => a.percent - b.percent);
-  }, [lineItems]);
+  }, [lineItems, isIgstApplicable]);
 
   // Compute totals from breakup (or use passed props as fallback)
+  const computedIgst = gstBreakup.reduce((s, g) => s + g.igst, 0);
   const computedSgst = gstBreakup.reduce((s, g) => s + g.sgst, 0);
   const computedCgst = gstBreakup.reduce((s, g) => s + g.cgst, 0);
+  
+  const totalIgst = gstBreakup.length > 0 ? computedIgst : igst;
   const totalSgst = gstBreakup.length > 0 ? computedSgst : sgst;
   const totalCgst = gstBreakup.length > 0 ? computedCgst : cgst;
-  const computedGrandTotal = subtotal + totalSgst + totalCgst;
+  
+  const computedGrandTotal = isIgstApplicable 
+    ? subtotal + totalIgst 
+    : subtotal + totalSgst + totalCgst;
   const finalGrandTotal = gstBreakup.length > 0 ? computedGrandTotal : grandTotal;
 
   return (
@@ -94,36 +106,58 @@ const POFooterSummary = ({ subtotal = 0, sgst = 0, cgst = 0, grandTotal = 0, lin
                     <div className="text-secondary-light text-xs fw-medium mb-4" style={{ opacity: 0.85 }}>
                       GST @ {group.percent}%
                     </div>
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <span className="text-secondary-light text-xs ps-24">SGST ({group.percent / 2}%)</span>
-                      <span className="text-xs fw-medium">₹{group.sgst.toFixed(2)}</span>
-                    </div>
-                    <div className="d-flex justify-content-between align-items-center">
-                      <span className="text-secondary-light text-xs ps-24">CGST ({group.percent / 2}%)</span>
-                      <span className="text-xs fw-medium">₹{group.cgst.toFixed(2)}</span>
-                    </div>
+                    {isIgstApplicable ? (
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span className="text-secondary-light text-xs ps-24">IGST ({group.percent}%)</span>
+                        <span className="text-xs fw-medium">₹{group.igst.toFixed(2)}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="d-flex justify-content-between align-items-center mb-2">
+                          <span className="text-secondary-light text-xs ps-24">SGST ({group.percent / 2}%)</span>
+                          <span className="text-xs fw-medium">₹{group.sgst.toFixed(2)}</span>
+                        </div>
+                        <div className="d-flex justify-content-between align-items-center">
+                          <span className="text-secondary-light text-xs ps-24">CGST ({group.percent / 2}%)</span>
+                          <span className="text-xs fw-medium">₹{group.cgst.toFixed(2)}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Total SGST */}
-            <div className="d-flex justify-content-between align-items-center mb-8 pb-6 border-bottom border-dashed">
-              <div className="d-flex align-items-center gap-2">
-                <Icon icon="mdi:percent-outline" className="text-secondary-light" width="16" height="16" />
-                <span className="text-secondary-light text-sm">Total SGST</span>
+            {/* Total IGST or Total SGST/CGST */}
+            {isIgstApplicable ? (
+              <div className="d-flex justify-content-between align-items-center mb-12 pb-8 border-bottom border-dashed">
+                <div className="d-flex align-items-center gap-2">
+                  <Icon icon="mdi:percent-outline" className="text-secondary-light" width="16" height="16" />
+                  <span className="text-secondary-light text-sm">Total IGST</span>
+                </div>
+                <span className="text-sm fw-medium">₹{totalIgst.toFixed(2)}</span>
               </div>
-              <span className="text-sm fw-medium">₹{totalSgst.toFixed(2)}</span>
-            </div>
+            ) : (
+              <>
+                {/* Total SGST */}
+                <div className="d-flex justify-content-between align-items-center mb-8 pb-6 border-bottom border-dashed">
+                  <div className="d-flex align-items-center gap-2">
+                    <Icon icon="mdi:percent-outline" className="text-secondary-light" width="16" height="16" />
+                    <span className="text-secondary-light text-sm">Total SGST</span>
+                  </div>
+                  <span className="text-sm fw-medium">₹{totalSgst.toFixed(2)}</span>
+                </div>
 
-            {/* Total CGST */}
-            <div className="d-flex justify-content-between align-items-center mb-12 pb-8 border-bottom border-dashed">
-              <div className="d-flex align-items-center gap-2">
-                <Icon icon="mdi:percent-outline" className="text-secondary-light" width="16" height="16" />
-                <span className="text-secondary-light text-sm">Total CGST</span>
-              </div>
-              <span className="text-sm fw-medium">₹{totalCgst.toFixed(2)}</span>
-            </div>
+                {/* Total CGST */}
+                <div className="d-flex justify-content-between align-items-center mb-12 pb-8 border-bottom border-dashed">
+                  <div className="d-flex align-items-center gap-2">
+                    <Icon icon="mdi:percent-outline" className="text-secondary-light" width="16" height="16" />
+                    <span className="text-secondary-light text-sm">Total CGST</span>
+                  </div>
+                  <span className="text-sm fw-medium">₹{totalCgst.toFixed(2)}</span>
+                </div>
+              </>
+            )}
             
             {/* Grand Total */}
             <div className="d-flex justify-content-between align-items-center p-12 rounded-2 mt-8 bg-primary-600">
