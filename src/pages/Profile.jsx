@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import '../assets/css/profile.css';
+import GlobalToast from '../utils/globalToast';
 
 const Profile = () => {
   const [user] = useState({
@@ -23,9 +24,7 @@ const Profile = () => {
     color: 'weak'
   });
 
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState('error');
+  // Use GlobalToast for notifications
 
   const [loading, setLoading] = useState(false);
 
@@ -74,30 +73,22 @@ const Profile = () => {
 
     // Validation
     if (!passwordData.currentPassword) {
-      setToastMessage('Current password is required.');
-      setToastType('error');
-      setShowToast(true);
+      GlobalToast.error('Current password is required.');
       return;
     }
 
     if (!passwordData.newPassword) {
-      setToastMessage('New password is required.');
-      setToastType('error');
-      setShowToast(true);
+      GlobalToast.error('New password is required.');
       return;
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setToastMessage('New passwords do not match.');
-      setToastType('error');
-      setShowToast(true);
+      GlobalToast.error('New passwords do not match.');
       return;
     }
 
     if (passwordStrength.score < 3) {
-      setToastMessage('Password is too weak. Please choose a stronger password.');
-      setToastType('error');
-      setShowToast(true);
+      GlobalToast.error('Password is too weak. Please choose a stronger password.');
       return;
     }
 
@@ -107,14 +98,10 @@ const Profile = () => {
       // Here you would make an API call to update the password
       await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate delay
 
-      setToastMessage('Password updated successfully!');
-      setToastType('success');
-      setShowToast(true);
+      GlobalToast.success('Password updated successfully!');
       handleModalClose();
     } catch (error) {
-      setToastMessage('Failed to update password. Please try again.');
-      setToastType('error');
-      setShowToast(true);
+      GlobalToast.error('Failed to update password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -123,11 +110,6 @@ const Profile = () => {
   // Get user initials for avatar
   const getUserInitials = (name) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  };
-
-  // Close toast
-  const closeToast = () => {
-    setShowToast(false);
   };
 
   // Handle modal close
@@ -140,15 +122,7 @@ const Profile = () => {
     });
   };
 
-  // Auto-hide toast after 5 seconds
-  useEffect(() => {
-    if (showToast) {
-      const timer = setTimeout(() => {
-        setShowToast(false);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [showToast]);
+  // GlobalToast handles auto-dismiss of notifications
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -340,15 +314,7 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Toast Notification */}
-        {showToast && (
-          <div className={`toast-custom ${toastType === 'error' ? 'toast-error' : 'toast-success'}`}>
-            <span>{toastMessage}</span>
-            <button type="button" className="toast-close" onClick={closeToast}>
-              &times;
-            </button>
-          </div>
-        )}
+        {/* GlobalToast handles notifications */}
     </>
   );
 };

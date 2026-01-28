@@ -70,7 +70,7 @@ const TableRow = ({ po, onEdit, onDelete, onView }) => {
         </button>
       </td>
       <td className="text-start">
-          <div className="d-flex align-items-start gap-2" style={{ alignItems: 'flex-start' }}>
+          <div className="d-flex align-items-center gap-2" style={{ alignItems: 'flex-start' }}>
             <div className="w-24-px h-24-px rounded-circle bg-primary-50 d-flex justify-content-center align-items-center flex-shrink-0" style={{flex: '0 0 auto'}}>
               <span className="text-primary-600 fw-semibold text-xs">
                 {po.supplierName ? po.supplierName.charAt(0) : "?"}
@@ -83,7 +83,7 @@ const TableRow = ({ po, onEdit, onDelete, onView }) => {
       <td className="text-center fw-medium">{formatDate(po.deliveryDate)}</td>
       <td className="text-end">
         <span className="fw-semibold text-success">
-          ₹{totalValue.toFixed(2)}
+          ₹ {totalValue.toFixed(2)}
         </span>
       </td>
       <td className="text-center">

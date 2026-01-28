@@ -91,7 +91,7 @@ const POFooterSummary = ({ subtotal = 0, sgst = 0, cgst = 0, igst = 0, grandTota
                 <Icon icon="mdi:receipt-text-outline" className="text-secondary-light" width="16" height="16" />
                 <span className="text-secondary-light text-sm">Subtotal</span>
               </div>
-              <span className="text-sm fw-medium">₹{subtotal.toFixed(2)}</span>
+              <span className="text-sm fw-medium">₹ {subtotal.toFixed(2)}</span>
             </div>
 
             {/* GST Breakup Section */}
@@ -107,19 +107,19 @@ const POFooterSummary = ({ subtotal = 0, sgst = 0, cgst = 0, igst = 0, grandTota
                       GST @ {group.percent}%
                     </div>
                     {isIgstApplicable ? (
-                      <div className="d-flex justify-content-between align-items-center">
+                        <div className="d-flex justify-content-between align-items-center">
                         <span className="text-secondary-light text-xs ps-24">IGST ({group.percent}%)</span>
-                        <span className="text-xs fw-medium">₹{group.igst.toFixed(2)}</span>
+                        <span className="text-xs fw-medium">₹ {group.igst.toFixed(2)}</span>
                       </div>
                     ) : (
                       <>
-                        <div className="d-flex justify-content-between align-items-center mb-2">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
                           <span className="text-secondary-light text-xs ps-24">SGST ({group.percent / 2}%)</span>
-                          <span className="text-xs fw-medium">₹{group.sgst.toFixed(2)}</span>
+                          <span className="text-xs fw-medium">₹ {group.sgst.toFixed(2)}</span>
                         </div>
                         <div className="d-flex justify-content-between align-items-center">
                           <span className="text-secondary-light text-xs ps-24">CGST ({group.percent / 2}%)</span>
-                          <span className="text-xs fw-medium">₹{group.cgst.toFixed(2)}</span>
+                          <span className="text-xs fw-medium">₹ {group.cgst.toFixed(2)}</span>
                         </div>
                       </>
                     )}
@@ -135,7 +135,7 @@ const POFooterSummary = ({ subtotal = 0, sgst = 0, cgst = 0, igst = 0, grandTota
                   <Icon icon="mdi:percent-outline" className="text-secondary-light" width="16" height="16" />
                   <span className="text-secondary-light text-sm">Total IGST</span>
                 </div>
-                <span className="text-sm fw-medium">₹{totalIgst.toFixed(2)}</span>
+                <span className="text-sm fw-medium">₹ {totalIgst.toFixed(2)}</span>
               </div>
             ) : (
               <>
@@ -145,7 +145,7 @@ const POFooterSummary = ({ subtotal = 0, sgst = 0, cgst = 0, igst = 0, grandTota
                     <Icon icon="mdi:percent-outline" className="text-secondary-light" width="16" height="16" />
                     <span className="text-secondary-light text-sm">Total SGST</span>
                   </div>
-                  <span className="text-sm fw-medium">₹{totalSgst.toFixed(2)}</span>
+                  <span className="text-sm fw-medium">₹ {totalSgst.toFixed(2)}</span>
                 </div>
 
                 {/* Total CGST */}
@@ -154,7 +154,7 @@ const POFooterSummary = ({ subtotal = 0, sgst = 0, cgst = 0, igst = 0, grandTota
                     <Icon icon="mdi:percent-outline" className="text-secondary-light" width="16" height="16" />
                     <span className="text-secondary-light text-sm">Total CGST</span>
                   </div>
-                  <span className="text-sm fw-medium">₹{totalCgst.toFixed(2)}</span>
+                  <span className="text-sm fw-medium">₹ {totalCgst.toFixed(2)}</span>
                 </div>
               </>
             )}
@@ -165,7 +165,7 @@ const POFooterSummary = ({ subtotal = 0, sgst = 0, cgst = 0, igst = 0, grandTota
                 <Icon icon="mdi:currency-inr" className="text-white" width="18" height="18" />
                 <span className="text-white fw-semibold">Grand Total</span>
               </div>
-              <span className="text-white fw-bold fs-5">₹{finalGrandTotal.toFixed(2)}</span>
+              <span className="text-white fw-bold fs-5">₹ {finalGrandTotal.toFixed(2)}</span>
             </div>
           </div>
         </div>

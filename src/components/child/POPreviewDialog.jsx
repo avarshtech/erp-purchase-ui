@@ -632,7 +632,7 @@ const POPreviewDialog = ({
                     >
                       {/* Item Header */}
                       <div className="d-flex align-items-center justify-content-between px-16 py-10 bg-primary-50 border-bottom border-neutral-200">
-                        <div className="d-flex align-items-center gap-2">
+                        <div className="d-flex align-items-center gap-4">
                           <p
                             className="d-flex align-items-center justify-content-center bg-primary-600 text-white rounded-circle fw-semibold"
                             style={{
@@ -656,8 +656,8 @@ const POPreviewDialog = ({
                             )}
                           </div>
                         </div>
-                        <p className="fw-bold text-success-600 fs-6" style={{marginBottom: 0}}>
-                          ₹{totalAmount.toFixed(2)}
+                        <p className="fw-bold text-success-600 fs-6" style={{marginBottom: 0, width: '14%' }}>
+                          ₹ {totalAmount.toFixed(2)}
                         </p>
                       </div>
 
@@ -680,7 +680,7 @@ const POPreviewDialog = ({
                               Unit Price
                             </div>
                             <div className="fw-medium">
-                              ₹{parseFloat(item.unitPrice || 0).toFixed(2)}
+                              ₹ {parseFloat(item.unitPrice || 0).toFixed(2)}
                             </div>
                           </div>
                           <div className="col-6 col-md-3">
@@ -688,7 +688,7 @@ const POPreviewDialog = ({
                               GST ({item.gstPercent || 0}%)
                             </div>
                             <div className="fw-medium">
-                              ₹{gstAmount.toFixed(2)}
+                              ₹ {gstAmount.toFixed(2)}
                             </div>
                           </div>
                           <div className="col-6 col-md-3">
@@ -696,7 +696,7 @@ const POPreviewDialog = ({
                               Base Amount
                             </div>
                             <div className="fw-medium">
-                              ₹{baseAmount.toFixed(2)}
+                              ₹ {baseAmount.toFixed(2)}
                             </div>
                           </div>
                         </div>
@@ -791,7 +791,7 @@ const POPreviewDialog = ({
 
               <div className="rounded-3 overflow-hidden bg-base border border-neutral-200"
                 style={{
-                  width: "320px",
+                  width: "35%",
                   marginLeft: "auto",
                   boxShadow:
                     "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
@@ -812,12 +812,12 @@ const POPreviewDialog = ({
                 </div>
 
                 <div className="p-16">
-                  <div className="d-flex justify-content-between align-items-center mb-12 pb-8 border-bottom border-dashed">
+                    <div className="d-flex justify-content-between align-items-center mb-12 pb-8 border-bottom border-dashed">
                     <span className="text-secondary-light text-sm">
                       Subtotal
                     </span>
                     <span className="text-sm fw-medium">
-                      ₹{displayData.totals.subtotal.toFixed(2)}
+                      ₹ {displayData.totals.subtotal.toFixed(2)}
                     </span>
                   </div>
 
@@ -836,17 +836,17 @@ const POPreviewDialog = ({
                           {isIgstMode ? (
                             <div className="d-flex justify-content-between align-items-center">
                               <span className="text-secondary-light text-xs ps-24">IGST ({group.percent}%)</span>
-                              <span className="text-xs fw-medium">₹{group.igst.toFixed(2)}</span>
+                              <span className="text-xs fw-medium">₹ {group.igst.toFixed(2)}</span>
                             </div>
                           ) : (
                             <>
                               <div className="d-flex justify-content-between align-items-center mb-2">
                                 <span className="text-secondary-light text-xs ps-24">SGST ({group.percent / 2}%)</span>
-                                <span className="text-xs fw-medium">₹{group.sgst.toFixed(2)}</span>
+                                <span className="text-xs fw-medium">₹ {group.sgst.toFixed(2)}</span>
                               </div>
                               <div className="d-flex justify-content-between align-items-center">
                                 <span className="text-secondary-light text-xs ps-24">CGST ({group.percent / 2}%)</span>
-                                <span className="text-xs fw-medium">₹{group.cgst.toFixed(2)}</span>
+                                <span className="text-xs fw-medium">₹ {group.cgst.toFixed(2)}</span>
                               </div>
                             </>
                           )}
@@ -859,18 +859,18 @@ const POPreviewDialog = ({
                   {isIgstMode ? (
                     <div className="d-flex justify-content-between align-items-center mb-12 pb-8 border-bottom border-dashed">
                       <span className="text-secondary-light text-sm">Total IGST</span>
-                      <span className="text-sm fw-medium">₹{(displayData.totals.igst || 0).toFixed(2)}</span>
+                      <span className="text-sm fw-medium">₹ {(displayData.totals.igst || 0).toFixed(2)}</span>
                     </div>
                   ) : (
                     <>
                       <div className="d-flex justify-content-between align-items-center mb-8 pb-6 border-bottom border-dashed">
                         <span className="text-secondary-light text-sm">Total SGST</span>
-                        <span className="text-sm fw-medium">₹{(displayData.totals.sgst || 0).toFixed(2)}</span>
+                        <span className="text-sm fw-medium">₹ {(displayData.totals.sgst || 0).toFixed(2)}</span>
                       </div>
 
                       <div className="d-flex justify-content-between align-items-center mb-12 pb-8 border-bottom border-dashed">
                         <span className="text-secondary-light text-sm">Total CGST</span>
-                        <span className="text-sm fw-medium">₹{(displayData.totals.cgst || 0).toFixed(2)}</span>
+                        <span className="text-sm fw-medium">₹ {(displayData.totals.cgst || 0).toFixed(2)}</span>
                       </div>
                     </>
                   )}
@@ -878,7 +878,7 @@ const POPreviewDialog = ({
                   <div className="d-flex justify-content-between align-items-center p-12 rounded-2 mt-8 bg-primary-600">
                     <span className="text-white fw-semibold">Grand Total</span>
                     <span className="text-white fw-bold fs-5">
-                      ₹{displayData.totals.grandTotal.toFixed(2)}
+                      ₹ {displayData.totals.grandTotal.toFixed(2)}
                     </span>
                   </div>
                 </div>

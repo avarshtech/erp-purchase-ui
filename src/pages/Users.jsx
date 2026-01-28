@@ -6,6 +6,7 @@ import OperationControl from "../components/OperationControl";
 import { getCurrentUser, hasOperationPermission } from "../utils/permissions";
 import { generateUsername } from "../utils/usernameGenerator";
 import "../assets/css/users-page.css";
+import GlobalToast from "../utils/globalToast";
 
 const Users = () => {
   const [allUsers, setAllUsers] = useState([]);
@@ -41,9 +42,7 @@ const Users = () => {
   const [itemsPerPage] = useState(10);
   const [sortField, setSortField] = useState("createdAt");
   const [sortDirection, setSortDirection] = useState("desc");
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState("error");
+  // Use GlobalToast for notifications
   const [roles, setRoles] = useState([]);
   const [rolesLoading, setRolesLoading] = useState(false);
 
@@ -51,15 +50,7 @@ const Users = () => {
     fetchUsers();
   }, []);
 
-  // Auto-dismiss toast
-  useEffect(() => {
-    if (showToast) {
-      const timer = setTimeout(() => {
-        setShowToast(false);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [showToast]);
+  // GlobalToast handles auto-dismiss
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -185,15 +176,11 @@ const Users = () => {
       await deleteUser(userToDelete.id);
       setShowDeleteModal(false);
       setUserToDelete(null);
-      setToastMessage("User deleted successfully");
-      setToastType("success");
-      setShowToast(true);
+      GlobalToast.success("User deleted successfully");
       fetchUsers();
     } catch (err) {
       console.error("Error deleting user:", err);
-      setToastMessage(err.errorMessage || "Failed to delete user");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error(err.errorMessage || "Failed to delete user");
     }
   };
 
@@ -202,57 +189,39 @@ const Users = () => {
 
     // Validation
     if (!formData.firstName.trim()) {
-      setToastMessage("First Name is required.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("First Name is required.");
       return;
     }
     if (!formData.lastName.trim()) {
-      setToastMessage("Last Name is required.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Last Name is required.");
       return;
     }
     if (!formData.username.trim()) {
-      setToastMessage("Username is required.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Username is required.");
       return;
     }
     if (formData.username.length < 3) {
-      setToastMessage("Username must be at least 3 characters.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Username must be at least 3 characters.");
       return;
     }
     if (!isEdit && !formData.password.trim()) {
-      setToastMessage("Password is required.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Password is required.");
       return;
     }
     if (!isEdit && formData.password.length < 6) {
-      setToastMessage("Password must be at least 6 characters.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Password must be at least 6 characters.");
       return;
     }
     if (!formData.email.trim()) {
-      setToastMessage("Email is required.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Email is required.");
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      setToastMessage("Invalid email format.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Invalid email format.");
       return;
     }
     if (!formData.roleId) {
-      setToastMessage("Role is required.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Role is required.");
       return;
     }
 
@@ -270,7 +239,7 @@ const Users = () => {
           isActive: formData.isActive,
         };
         await updateUser(currentUser.id, payload);
-        setToastMessage("User updated successfully");
+        GlobalToast.success("User updated successfully");
       } else {
         // Get roleName from fetched roles for create
         const selectedRole = roles.find(r => String(r.id) === formData.roleId);
@@ -286,18 +255,12 @@ const Users = () => {
           isActive: formData.isActive,
         };
         await createUser(payload);
-        setToastMessage("User created successfully");
+        GlobalToast.success("User created successfully");
       }
-      setToastType("success");
-      setShowToast(true);
       setShowModal(false);
       await fetchUsers();
     } catch (err) {
-      setToastMessage(
-        err.errorMessage || `Failed to ${isEdit ? "update" : "create"} user. Please try again.`
-      );
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error(err.errorMessage || `Failed to ${isEdit ? "update" : "create"} user. Please try again.`);
       console.error(`Error ${isEdit ? "updating" : "creating"} user:`, err);
     }
   };
@@ -382,29 +345,7 @@ const Users = () => {
 
   return (
     <>
-      {/* Toast Notification */}
-      {showToast && (
-        <div
-          className="position-fixed top-0 start-50 translate-middle-x mt-4"
-          style={{ zIndex: 9999 }}
-        >
-          <div
-            className={`toast-custom ${
-              toastType === "error" ? "toast-error" : "toast-success"
-            }`}
-          >
-            <span>{toastMessage}</span>
-            <button
-              type="button"
-              className="toast-close"
-              onClick={() => setShowToast(false)}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-          </div>
-        </div>
-      )}
+      {/* GlobalToast handles notifications */}
       <h6 className="page-title">Users</h6>
       <div className="card">
         <div className="card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -666,10 +607,7 @@ const Users = () => {
               <button
                 type="button"
                 className="btn-close"
-                onClick={() => {
-                  setShowModal(false);
-                  setShowToast(false);
-                }}
+                onClick={() => setShowModal(false)}
                 aria-label="Close"
               />
             </div>
@@ -807,10 +745,7 @@ const Users = () => {
                 <button
                   type="button"
                   className="border border-gray-300 bg-hover-gray-50 text-gray-700 text-md px-40 py-11 radius-8"
-                  onClick={() => {
-                    setShowModal(false);
-                    setShowToast(false);
-                  }}
+                  onClick={() => setShowModal(false)}
                 >
                   Cancel
                 </button>

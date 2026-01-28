@@ -11,6 +11,7 @@ import {
 } from "../utils/permissions";
 import OperationControl from "../components/OperationControl";
 import "../assets/css/role-access.css";
+import GlobalToast from "../utils/globalToast";
 
 const RoleAccess = () => {
   const [allRoles, setAllRoles] = useState([]);
@@ -43,23 +44,13 @@ const RoleAccess = () => {
   const [itemsPerPage] = useState(10);
   const [sortField, setSortField] = useState("createdDate");
   const [sortDirection, setSortDirection] = useState("desc");
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState("error");
+  // Use GlobalToast for notifications
 
   useEffect(() => {
     fetchRoles();
   }, []);
 
-  // Auto-dismiss toast
-  useEffect(() => {
-    if (showToast) {
-      const timer = setTimeout(() => {
-        setShowToast(false);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [showToast]);
+  // GlobalToast handles auto-dismiss
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -158,15 +149,11 @@ const RoleAccess = () => {
       await deleteRole(roleToDelete.id);
       setShowDeleteModal(false);
       setRoleToDelete(null);
-      setToastMessage("Role deleted successfully");
-      setToastType("success");
-      setShowToast(true);
+      GlobalToast.success("Role deleted successfully");
       fetchRoles();
     } catch (err) {
       console.error("Error deleting role:", err);
-      setToastMessage(err.errorMessage || "Failed to delete role");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error(err.errorMessage || "Failed to delete role");
     }
   };
 
@@ -175,36 +162,28 @@ const RoleAccess = () => {
 
     // Validation
     if (!formData.name.trim()) {
-      setToastMessage("Role Name is required.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Role Name is required.");
       return;
     }
     if (!formData.description.trim()) {
-      setToastMessage("Description is required.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Description is required.");
       return;
     }
 
     try {
       if (isEdit) {
         await updateRole(currentRole.id, formData);
-        setToastMessage("Role updated successfully");
+        GlobalToast.success("Role updated successfully");
       } else {
         await createRole(formData);
-        setToastMessage("Role created successfully");
+        GlobalToast.success("Role created successfully");
       }
-      setToastType("success");
-      setShowToast(true);
       setShowModal(false);
       await fetchRoles();
     } catch (err) {
-      setToastMessage(
+      GlobalToast.error(
         err.errorMessage || `Failed to ${isEdit ? "update" : "create"} role. Please try again.`
       );
-      setToastType("error");
-      setShowToast(true);
       console.error(`Error ${isEdit ? "updating" : "creating"} role:`, err);
     }
   };
@@ -371,29 +350,7 @@ const RoleAccess = () => {
 
   return (
     <>
-      {/* Toast Notification */}
-      {showToast && (
-        <div
-          className="position-fixed top-0 start-50 translate-middle-x mt-4"
-          style={{ zIndex: 9999 }}
-        >
-          <div
-            className={`toast-custom ${
-              toastType === "error" ? "toast-error" : "toast-success"
-            }`}
-          >
-            <span>{toastMessage}</span>
-            <button
-              type="button"
-              className="toast-close"
-              onClick={() => setShowToast(false)}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-          </div>
-        </div>
-      )}
+      {/* GlobalToast handles notifications */}
       <h6 className="page-title">Role & Access</h6>
       <div className="card">
         <div className="card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -653,7 +610,6 @@ const RoleAccess = () => {
                 className="btn-close"
                 onClick={() => {
                   setShowModal(false);
-                  setShowToast(false);
                 }}
                 aria-label="Close"
               />
@@ -934,7 +890,6 @@ const RoleAccess = () => {
                   className="border border-gray-300 bg-hover-gray-50 text-gray-700 text-md px-40 py-11 radius-8"
                   onClick={() => {
                     setShowModal(false);
-                    setShowToast(false);
                   }}
                 >
                   Cancel
