@@ -1,6 +1,29 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { searchItems } from "../../services/ItemMaster";
+import { getColorHex, isColorAttribute } from "../../utils/colorConstants";
+
+// Render color swatch inline
+const ColorSwatch = ({ colorName, size = 14 }) => {
+  const hex = getColorHex(colorName);
+  if (!hex) return null;
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        width: size,
+        height: size,
+        borderRadius: "3px",
+        backgroundColor: hex,
+        border: "1px solid rgba(0,0,0,0.15)",
+        flexShrink: 0,
+        marginRight: 4,
+        verticalAlign: "middle",
+      }}
+      title={colorName}
+    />
+  );
+};
 
 const POLineItemsTable = ({
   lineItems,
@@ -14,6 +37,8 @@ const POLineItemsTable = ({
   taxOptions,
   loading,
   isIgstApplicable = false,
+  onChangeVariant,
+  itemsWithVariants = {},
 }) => {
   // Calculate GST value for a line item (returns total GST amount)
   const calculateGstValue = (item) => {
@@ -137,7 +162,7 @@ const POLineItemsTable = ({
         <div className="table-responsive rounded border" style={{ overflowX: "auto" }}>
           <table
             className="table table-bordered table-hover mb-0"
-            style={{ minWidth: "1200px" }}
+            style={{ minWidth: "1350px" }}
           >
             <thead style={{ backgroundColor: "var(--primary-color, #487fff)" }}>
               <tr>
@@ -146,6 +171,12 @@ const POLineItemsTable = ({
                   className="text-center fw-semibold text-sm py-12 border-0"
                 >
                   Item
+                </th>
+                <th
+                  style={{ width: "150px", minWidth: "150px" }}
+                  className="text-center fw-semibold text-sm py-12 border-0"
+                >
+                  Variant
                 </th>
                 <th
                   style={{ width: "180px", minWidth: "180px" }}
@@ -216,6 +247,7 @@ const POLineItemsTable = ({
             </thead>
             <tbody>
               {lineItems.map((item, index) => {
+                console.log('Rendering line item', index, item);
                 const gstValue = calculateGstValue(item);
                 return (
                   <tr key={item.id}>
@@ -223,6 +255,11 @@ const POLineItemsTable = ({
                       {/* Autocomplete input for item search (name or code) */}
                       <ItemSearchInput
                         lineId={item.id}
+                        value={
+                          (item.itemCode || item.itemName)
+                            ? `${item.itemCode || ""} - ${item.itemName || ""}`
+                            : ""
+                        }
                         disabled={loading}
                         error={errors[`item_${index}`]}
                         onChange={(val) => {
@@ -243,6 +280,9 @@ const POLineItemsTable = ({
                               handleLineItemChange(item.id, 'amount', 0);
                               // clear description when cleared
                               handleLineItemChange(item.id, 'description', '');
+                              // clear variant fields when cleared
+                              handleLineItemChange(item.id, 'variantId', null);
+                              handleLineItemChange(item.id, 'variantAttributes', null);
                             }
                         }}
                         onSelect={(selectedItem) => {
@@ -250,6 +290,56 @@ const POLineItemsTable = ({
                           selectItem(selectedItem, item.id);
                         }}
                       />
+                    </td>
+                    {/* Variant column - styled like SGST/CGST/Amount */}
+                    <td className="py-2">
+                      <div 
+                        className="form-control form-control-sm bg-light d-flex align-items-center justify-content-center"
+                        style={{ 
+                          minHeight: "31px", 
+                          cursor: item.variantId && itemsWithVariants[item.itemId]?.variants?.length > 1 ? "pointer" : "default",
+                          padding: "4px 8px"
+                        }}
+                        onClick={() => {
+                          if (item.variantId && onChangeVariant && itemsWithVariants[item.itemId]?.variants?.length > 1 && !loading) {
+                            onChangeVariant(item.id, item.itemId);
+                          }
+                        }}
+                        title={item.variantId && itemsWithVariants[item.itemId]?.variants?.length > 1 ? "Click to change variant" : ""}
+                      >
+                        {item.variantId ? (
+                          <div className="d-flex flex-wrap gap-1 justify-content-center align-items-center w-100">
+                            {item.variantAttributes && Object.entries(item.variantAttributes).length > 0 ? (
+                              <>
+                                {Object.entries(item.variantAttributes).slice(0, 2).map(([key, value]) => {
+                                  return (
+                                    <span
+                                      key={key}
+                                      className="d-inline-flex align-items-center text-neutral-700"
+                                      style={{ fontSize: "11px" }}
+                                    >
+                                      {isColorAttribute(key) && <ColorSwatch colorName={value} size={12} />}
+                                      <span className="text-capitalize">{value}</span>
+                                    </span>
+                                  );
+                                })}
+                                {Object.entries(item.variantAttributes).length > 2 && (
+                                  <span className="text-neutral-500" style={{ fontSize: "10px" }}>
+                                    +{Object.entries(item.variantAttributes).length - 2}
+                                  </span>
+                                )}
+                                {itemsWithVariants[item.itemId]?.variants?.length > 1 && (
+                                  <Icon icon="mdi:pencil" width="12" className="text-primary ms-1" />
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-neutral-500 text-xs">Default</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-neutral-400 text-xs">-</span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-2">
                       <input
@@ -378,10 +468,10 @@ const POLineItemsTable = ({
                     </td>
                     {isIgstApplicable ? (
                       <td className="py-2">
-                        <input
+                          <input
                           type="text"
                           className="form-control form-control-sm text-end bg-light"
-                          value={`₹${gstValue.toFixed(2)}`}
+                          value={`₹ ${gstValue.toFixed(2)}`}
                           readOnly
                           disabled
                           aria-label={`IGST value for line ${index + 1}`}
@@ -390,10 +480,10 @@ const POLineItemsTable = ({
                     ) : (
                       <>
                         <td className="py-2">
-                          <input
+                            <input
                             type="text"
                             className="form-control form-control-sm text-end bg-light"
-                            value={`₹${(gstValue / 2).toFixed(2)}`}
+                            value={`₹ ${(gstValue / 2).toFixed(2)}`}
                             readOnly
                             disabled
                             aria-label={`SGST value for line ${index + 1}`}
@@ -403,7 +493,7 @@ const POLineItemsTable = ({
                           <input
                             type="text"
                             className="form-control form-control-sm text-end bg-light"
-                            value={`₹${(gstValue / 2).toFixed(2)}`}
+                            value={`₹ ${(gstValue / 2).toFixed(2)}`}
                             readOnly
                             disabled
                             aria-label={`CGST value for line ${index + 1}`}
@@ -412,10 +502,10 @@ const POLineItemsTable = ({
                       </>
                     )}
                     <td className="py-2">
-                      <input
+                        <input
                         type="text"
                         className="form-control form-control-sm text-end bg-light fw-medium"
-                        value={`₹${(item.amount || 0).toFixed(2)}`}
+                        value={`₹ ${(item.amount || 0).toFixed(2)}`}
                         readOnly
                         disabled
                         aria-label={`Amount for line ${index + 1}`}
@@ -460,9 +550,21 @@ const ItemSearchInput = ({ lineId, value, disabled, error, onChange, onSelect })
   const inputRef = useRef(null);
   const [inputWidth, setInputWidth] = useState(0);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
+  // Track the last query to detect if user is shortening
+  const lastQueryRef = useRef("");
+  // Track the shortest query that returned no results to avoid redundant API calls
+  // e.g., if "abc" returns nothing, "abcd", "abcde" etc. won't trigger API calls
+  const noResultPrefixRef = useRef("");
+  // Track if the initial value has been set (to prevent search on edit mode load)
+  const isInitializedRef = useRef(false);
 
   useEffect(() => {
+    // When value prop changes from parent (e.g., edit mode), set text and suppress search
+    if (value) {
+      suppressRef.current = true;
+    }
     setText(value || "");
+    isInitializedRef.current = true;
   }, [value]);
 
   useLayoutEffect(() => {
@@ -480,9 +582,40 @@ const ItemSearchInput = ({ lineId, value, disabled, error, onChange, onSelect })
 
   useEffect(() => {
     const q = (text || "").trim();
+    const prevQuery = lastQueryRef.current;
+    
     if (suppressRef.current) return;
 
+    // Detect if user is deleting/shortening the query
+    const isShortening = q.length < prevQuery.length;
+
+    // If user is shortening the query, reset the no-result prefix if applicable
+    // This allows re-searching when user deletes characters
+    if (isShortening && noResultPrefixRef.current) {
+      // If the new query is shorter than or equal to the no-result prefix,
+      // or doesn't start with it anymore, reset the prefix to allow new searches
+      if (q.length < noResultPrefixRef.current.length || 
+          !q.toLowerCase().startsWith(noResultPrefixRef.current.toLowerCase())) {
+        noResultPrefixRef.current = "";
+      }
+    }
+
     if (q.length >= 3) {
+      // Skip API call if current query extends a known no-result prefix
+      // e.g., if "abc" returned nothing, "abcd" won't trigger an API call
+      if (noResultPrefixRef.current && 
+          q.toLowerCase().startsWith(noResultPrefixRef.current.toLowerCase())) {
+        // Don't call API, just ensure suggestions are empty
+        setSuggestions([]);
+        setShowSuggestions(false);
+        lastQueryRef.current = q;
+        if (debounceRef.current) {
+          clearTimeout(debounceRef.current);
+          debounceRef.current = null;
+        }
+        return;
+      }
+
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(async () => {
         try {
@@ -494,6 +627,17 @@ const ItemSearchInput = ({ lineId, value, disabled, error, onChange, onSelect })
           setSuggestions(results || []);
           const has = (results || []).length > 0;
           setShowSuggestions(has);
+          lastQueryRef.current = q;
+
+          // If no results, store this query as the no-result prefix
+          // to prevent further API calls for extended queries
+          if (!results || results.length === 0) {
+            noResultPrefixRef.current = q;
+          } else {
+            // Got results, clear the no-result prefix
+            noResultPrefixRef.current = "";
+          }
+
           if (has && inputRef.current) {
             const rect = inputRef.current.getBoundingClientRect();
             setDropdownPos({ top: rect.bottom + 6, left: rect.left, width: rect.width });
@@ -505,9 +649,13 @@ const ItemSearchInput = ({ lineId, value, disabled, error, onChange, onSelect })
         }
       }, 300);
     } else {
+      // Query too short or empty - reset everything
       if (debounceRef.current) clearTimeout(debounceRef.current);
       setSuggestions([]);
       setShowSuggestions(false);
+      lastQueryRef.current = "";
+      // Reset no-result prefix when query is cleared/too short
+      noResultPrefixRef.current = "";
     }
 
     return () => {
@@ -521,7 +669,7 @@ const ItemSearchInput = ({ lineId, value, disabled, error, onChange, onSelect })
     const reposition = () => {
       if (inputRef.current) {
         const rect = inputRef.current.getBoundingClientRect();
-        setDropdownPos({ top: rect.bottom + 6, left: rect.left, width: rect.width });
+        setDropdownPos({ top: rect.bottom, left: rect.left, width: rect.width });
       }
     };
     window.addEventListener('resize', reposition);
@@ -576,12 +724,13 @@ const ItemSearchInput = ({ lineId, value, disabled, error, onChange, onSelect })
             position: 'fixed',
             top: dropdownPos.top,
             left: dropdownPos.left,
-            zIndex: 3000,
+            zIndex: 9999,
             width: dropdownPos.width || inputWidth || 'auto',
             maxWidth: '90vw',
             boxSizing: 'border-box',
             overflowX: 'hidden',
-            overflowY: suggestions.length > 5 ? 220 : 'auto',
+            overflowY: suggestions.length > 5 ? 'auto' : 'visible',
+            maxHeight: suggestions.length > 5 ? 220 : 'none',
             marginTop: 0,
             whiteSpace: 'normal',
             wordBreak: 'break-word',

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { showErrorToast } from '../utils/globalToast';
 
 /**
  * Axios instance configuration for API requests
@@ -44,7 +45,7 @@ axiosInstance.interceptors.response.use(
         if (typeof data === 'string') {
           errorMessage = data;
         } else if (data.message) {
-          // Use the message from API response (e.g., "Bad credentials")
+          // Use the message from API response (e.g., "Bad credentials" or detailed error message)
           errorMessage = data.message;
         } else if (data.error) {
           errorMessage = data.error;
@@ -95,6 +96,12 @@ axiosInstance.interceptors.response.use(
     
     // Attach the extracted message to the error object for easy access
     error.errorMessage = errorMessage;
+    
+    // Show global toast for all API errors (except 401 which redirects to login)
+    // This ensures users always see error messages even if component doesn't handle them
+    if (!error.response || error.response.status !== 401) {
+      showErrorToast(errorMessage);
+    }
     
     return Promise.reject(error);
   }

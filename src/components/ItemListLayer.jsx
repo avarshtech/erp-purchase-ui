@@ -7,6 +7,7 @@ import ItemFormLayer from "./ItemFormLayer";
 import OperationControl from "./OperationControl";
 import { getCurrentUser, hasOperationPermission } from "../utils/permissions";
 import "../assets/css/item-master.css";
+import GlobalToast from "../utils/globalToast";
 
 const ItemListLayer = () => {
   const [allItems, setAllItems] = useState([]);
@@ -43,25 +44,12 @@ const ItemListLayer = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedItemData, setSelectedItemData] = useState(null);
 
-  // Toast state
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState("error");
-
-  // Auto-dismiss toast
-  useEffect(() => {
-    if (showToast) {
-      const timer = setTimeout(() => {
-        setShowToast(false);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [showToast]);
-
   const triggerToast = (message, type = "error") => {
-    setToastMessage(message);
-    setToastType(type);
-    setShowToast(true);
+    if (!message) return;
+    if (type === "success") return GlobalToast.success(message);
+    if (type === "warning") return GlobalToast.warning(message);
+    if (type === "info") return GlobalToast.info(message);
+    return GlobalToast.error(message);
   };
 
   const fetchData = async () => {
@@ -376,29 +364,7 @@ const ItemListLayer = () => {
 
   return (
     <>
-      {/* Toast Notification */}
-      {showToast && (
-        <div
-          className="position-fixed top-0 start-50 translate-middle-x mt-4"
-          style={{ zIndex: 9999 }}
-        >
-          <div
-            className={`toast-custom ${
-              toastType === "error" ? "toast-error" : "toast-success"
-            }`}
-          >
-            <span>{toastMessage}</span>
-            <button
-              type="button"
-              className="toast-close"
-              onClick={() => setShowToast(false)}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Global toast will render toasts; no local toast UI */}
 
       <h6 className="page-title">Item Master</h6>
       <div className="card">

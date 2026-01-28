@@ -11,6 +11,7 @@
   import OperationControl from "./OperationControl";
   import { getCurrentUser, hasOperationPermission } from "../utils/permissions";
   import "../assets/css/modal.css";
+import GlobalToast from "../utils/globalToast";
 
 
 const SupplierModalLayer = () => {
@@ -76,9 +77,15 @@ const SupplierModalLayer = () => {
     // --- Show pending toast after modal closes ---
     useEffect(() => {
       if (!showModal && pendingSuccessToast) {
-        setToastMessage(pendingSuccessToast.message);
-        setToastType(pendingSuccessToast.type);
-        setShowToast(true);
+        if (pendingSuccessToast.type === 'success') {
+          GlobalToast.success(pendingSuccessToast.message);
+        } else if (pendingSuccessToast.type === 'warning') {
+          GlobalToast.warning(pendingSuccessToast.message);
+        } else if (pendingSuccessToast.type === 'info') {
+          GlobalToast.info(pendingSuccessToast.message);
+        } else {
+          GlobalToast.error(pendingSuccessToast.message);
+        }
         setPendingSuccessToast(null);
       }
     }, [showModal, pendingSuccessToast]);
@@ -157,7 +164,6 @@ const SupplierModalLayer = () => {
         igstApplicable: false,
       });
       setPendingSuccessToast(null);
-      setShowToast(false);
       setShowModal(true);
     };
 
@@ -190,7 +196,6 @@ const SupplierModalLayer = () => {
         igstApplicable: igstFlag,
       });
       setPendingSuccessToast(null);
-      setShowToast(false);
       setShowModal(true);
     };
 
@@ -206,13 +211,9 @@ const SupplierModalLayer = () => {
         setSupplierToDelete(null);
         fetchSuppliers();
         // Show success toast after delete
-        setToastMessage("Supplier deleted successfully.");
-        setToastType("success");
-        setShowToast(true);
+        GlobalToast.success("Supplier deleted successfully.");
       } catch (err) {
-        setToastMessage(err.errorMessage || "Failed to delete supplier. Please try again.");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error(err.errorMessage || "Failed to delete supplier. Please try again.");
       }
     };
 
@@ -223,106 +224,78 @@ const SupplierModalLayer = () => {
       // Field-by-field validation in order of input placement
       // 1. Supplier Name
       if (!(formData.name || '').trim()) {
-        setToastMessage("Supplier Name is required.");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("Supplier Name is required.");
         return;
       }
       // 2. Address
       if (!(formData.address || '').trim()) {
-        setToastMessage("Address is required.");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("Address is required.");
         return;
       }
       // 3. City
       if (!(formData.city || '').trim()) {
-        setToastMessage("City is required.");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("City is required.");
         return;
       }
       // 4. Pincode
       if (!(formData.pincode || '').trim()) {
-        setToastMessage("Pincode is required.");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("Pincode is required.");
         return;
       }
       // 5. State
       if (!(formData.state || '').trim()) {
-        setToastMessage("State is required.");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("State is required.");
         return;
       }
       // 6. Country
       if (!(formData.country || '').trim()) {
-        setToastMessage("Country is required.");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("Country is required.");
         return;
       }
       // 7. PAN - Required check first, then format check
       if (!(formData.pan || '').trim()) {
-        setToastMessage("PAN is required.");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("PAN is required.");
         return;
       }
       // PAN format: 5 letters + 4 digits + 1 letter (e.g., ABCPD1234E)
       // 4th character must be entity type: C, P, H, F, A, T, B, L, J, G
       const panRegex = /^[A-Z]{3}[PCAFHTBLJG][A-Z][0-9]{4}[A-Z]$/;
       if (!panRegex.test((formData.pan || '').toUpperCase())) {
-        setToastMessage("Invalid PAN format. Expected format: ABCPD1234E (4th char must be C/P/H/F/A/T/B/L/J/G)");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("Invalid PAN format. Expected format: ABCPD1234E (4th char must be C/P/H/F/A/T/B/L/J/G)");
         return;
       }
       // 8. GSTIN - Required check first, then format check
       if (!(formData.gstin || '').trim()) {
-        setToastMessage("GSTIN is required.");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("GSTIN is required.");
         return;
       }
       // GSTIN format: 2 digits (state) + 10 chars (PAN) + 1 char (entity) + Z + 1 check digit
       // Example: 22ABCPD1234E1Z5
       const gstinRegex = /^[0-9]{2}[A-Z]{3}[PCAFHTBLJG][A-Z][0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$/;
       if (!gstinRegex.test((formData.gstin || '').toUpperCase())) {
-        setToastMessage("Invalid GSTIN format. Expected format: 22ABCPD1234E1Z5 (15 characters)");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("Invalid GSTIN format. Expected format: 22ABCPD1234E1Z5 (15 characters)");
         return;
       }
       // 9. Email
       if (!(formData.email || '').trim()) {
-        setToastMessage("Email is required.");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("Email is required.");
         return;
       }
       // Email format validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email || '')) {
-        setToastMessage("Invalid email format.");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("Invalid email format.");
         return;
       }
      
       // 10. Phone format validation (10 digits)
       if ((formData.phone || '').length !== 10) {
-        setToastMessage("Phone Number must be 10 digits.");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("Phone Number must be 10 digits.");
         return;
       }
       // 11. Fabric/Trims
       if (!formData.suppliesFabric && !formData.suppliesTrims) {
-        setToastMessage("At least one supply product (Fabric or Trims) must be selected.");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("At least one supply product (Fabric or Trims) must be selected.");
         return;
       }
       try {
@@ -337,30 +310,12 @@ const SupplierModalLayer = () => {
         setShowModal(false);
         await fetchSuppliers();
       } catch (err) {
-        setToastMessage(err.errorMessage || `Failed to ${isEdit ? "update" : "create"} supplier. Please try again.`);
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error(err.errorMessage || `Failed to ${isEdit ? "update" : "create"} supplier. Please try again.`);
         console.error(`Error ${isEdit ? "updating" : "creating"} supplier:`, err);
       }
     };
 
-  // Toast state (must be defined before any use)
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState("error");
-
-  // Auto-hide success toast after 2.5 seconds (similar to item toast)
-  useEffect(() => {
-    let timer;
-    if (showToast && toastType === "success") {
-      timer = setTimeout(() => {
-        setShowToast(false);
-      }, 2500);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [showToast, toastType]);
+  // Use GlobalToast for notifications
 
 
   const handleChange = (e) => {
@@ -479,29 +434,7 @@ const SupplierModalLayer = () => {
 
   return (
     <>
-      {/* Toast Notification (global, outside modal) */}
-      {showToast && (
-        <div
-          className="position-fixed top-0 start-50 translate-middle-x mt-3"
-          style={{ zIndex: 2000 }}
-        >
-          <div
-            className={`toast-custom ${
-              toastType === "error" ? "toast-error" : "toast-success"
-            }`}
-          >
-            <span>{toastMessage}</span>
-            <button
-              type="button"
-              className="toast-close"
-              onClick={() => setShowToast(false)}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-          </div>
-        </div>
-      )}
+      {/* GlobalToast handles notifications */}
       <h6 className="page-title">Supplier / Vendor Details</h6>
       <div className="card">
         <div className="card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -787,7 +720,6 @@ const SupplierModalLayer = () => {
                 className="btn-close"
                 onClick={() => {
                   setShowModal(false);
-                  setShowToast(false);
                 }}
                 aria-label="Close"
               />
@@ -1015,10 +947,7 @@ const SupplierModalLayer = () => {
                 <button
                   type="button"
                   className="border border-gray-300 bg-hover-gray-50 text-gray-700 text-md px-40 py-11 radius-8"
-                  onClick={() => {
-                    setShowModal(false);
-                    setShowToast(false);
-                  }}
+                  onClick={() => setShowModal(false)}
                 >
                   Cancel
                 </button>

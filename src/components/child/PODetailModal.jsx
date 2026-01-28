@@ -2,6 +2,29 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useState } from "react";
 import { addPOComment } from "../../mocks/server";
 import OperationControl from "../OperationControl";
+import { getColorHex, isColorAttribute } from "../../utils/colorConstants";
+
+// Render color swatch inline
+const ColorSwatch = ({ colorName, size = 12 }) => {
+  const hex = getColorHex(colorName);
+  if (!hex) return null;
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        width: size,
+        height: size,
+        borderRadius: "3px",
+        backgroundColor: hex,
+        border: "1px solid rgba(0,0,0,0.15)",
+        flexShrink: 0,
+        marginRight: 4,
+        verticalAlign: "middle",
+      }}
+      title={colorName}
+    />
+  );
+};
 
 const PODetailModal = ({
   show,
@@ -426,6 +449,7 @@ const PODetailModal = ({
                       <thead className="table-light">
                         <tr>
                           <th>Item Name</th>
+                          <th>Variant</th>
                           <th>Description</th>
                           <th className="text-end">Quantity</th>
                           <th>UOM</th>
@@ -441,6 +465,26 @@ const PODetailModal = ({
                             <td>
                               <div className="fw-medium">{item.name}</div>
                               <small className="text-muted">{item.code}</small>
+                            </td>
+                            <td>
+                              {item.variantAttributes && Object.keys(item.variantAttributes).length > 0 ? (
+                                <div className="d-flex flex-wrap gap-1">
+                                  {Object.entries(item.variantAttributes).map(([key, value]) => {
+                                    return (
+                                      <span
+                                        key={key}
+                                        className="badge bg-light text-dark d-inline-flex align-items-center"
+                                        style={{ fontSize: "11px", padding: "3px 6px" }}
+                                      >
+                                        {isColorAttribute(key) && <ColorSwatch colorName={value} size={10} />}
+                                        <span className="text-capitalize">{value}</span>
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <span className="text-muted small">-</span>
+                              )}
                             </td>
                             <td>{item.description}</td>
                             <td className="text-end">{item.quantity}</td>
@@ -458,7 +502,7 @@ const PODetailModal = ({
                       </tbody>
                       <tfoot className="table-light">
                         <tr>
-                          <th colSpan="7" className="text-end">
+                          <th colSpan="8" className="text-end">
                             Subtotal:
                           </th>
                           <th className="text-end">
@@ -466,13 +510,13 @@ const PODetailModal = ({
                           </th>
                         </tr>
                         <tr>
-                          <th colSpan="7" className="text-end">
+                          <th colSpan="8" className="text-end">
                             Tax:
                           </th>
                           <th className="text-end">${po.tax.toFixed(2)}</th>
                         </tr>
                         <tr>
-                          <th colSpan="7" className="text-end">
+                          <th colSpan="8" className="text-end">
                             Grand Total:
                           </th>
                           <th className="text-end">

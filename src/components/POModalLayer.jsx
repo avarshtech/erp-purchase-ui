@@ -3,13 +3,16 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { v4 as uuidv4 } from "uuid";
 import { createPurchaseOrder, updatePurchaseOrder } from "../services/purchaseOrders";
 import { getSuppliers } from "../services/suppliers";
+import { getItemsByIds } from "../services/ItemMaster";
 import axiosInstance from "../services/axiosInstance";
 import POHeaderSection from "./child/POHeaderSection";
 import POLineItemsTable from "./child/POLineItemsTable";
 import POFooterSummary from "./child/POFooterSummary";
 import POActionButtons from "./child/POActionButtons";
 import POPreviewDialog from "./child/POPreviewDialog";
+import VariantSelectionModal from "./child/VariantSelectionModal";
 import "../assets/css/purchase-order.css";
+import GlobalToast from "../utils/globalToast";
 
 const POModalLayer = ({
   showModal,
@@ -17,6 +20,7 @@ const POModalLayer = ({
   editingPO = null,
   onPOUpdated,
 }) => {
+  console.log("POModalLayer render", editingPO);
   // Consolidated form state
   const [formState, setFormState] = useState({
     formData: {
@@ -29,7 +33,7 @@ const POModalLayer = ({
     },
     lineItems: [
       {
-        id: "",
+        id: uuidv4(),
         itemId: "",
         description: "",
         qty: "",
@@ -42,7 +46,6 @@ const POModalLayer = ({
     errors: {},
     isDirty: false,
   });
-  console.log("POModalLayer render - formState:", formState);
 
   // Consolidated master data state
   const [masterData, setMasterData] = useState({
@@ -60,17 +63,39 @@ const POModalLayer = ({
     showPreviewDialog: false,
   });
 
-  // Toast state (similar to supplier dialog)
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState("error");
+  // Variant selection modal state
+  const [variantModalState, setVariantModalState] = useState({
+    show: false,
+    pendingItem: null, // Full item object from search
+    pendingLineId: null, // The line item ID this variant is for
+    isChange: false, // Whether this is changing an existing variant
+  });
+
+  // Items with their variants (keyed by itemId) - used in edit mode
+  const [itemsWithVariants, setItemsWithVariants] = useState({});
+
+  // Use global toast utility instead of local toast state
   const [pendingSuccessToast, setPendingSuccessToast] = useState(null);
+
+  useEffect(() => {
+    if (!showModal && pendingSuccessToast) {
+      if (pendingSuccessToast.type === "success") {
+        GlobalToast.success(pendingSuccessToast.message);
+      } else if (pendingSuccessToast.type === "warning") {
+        GlobalToast.warning(pendingSuccessToast.message);
+      } else if (pendingSuccessToast.type === "info") {
+        GlobalToast.info(pendingSuccessToast.message);
+      } else {
+        GlobalToast.error(pendingSuccessToast.message);
+      }
+      setPendingSuccessToast(null);
+    }
+  }, [showModal, pendingSuccessToast]);
 
   // Static options (moved outside state for better performance)
   const taxOptions = [
     { value: 0, label: "0%" },
-    { value: 5, label: "5%" },
-    { value: 10, label: "10%" },
+    { value: 12, label: "12%" },
     { value: 18, label: "18%" },
   ];
 
@@ -103,15 +128,29 @@ const POModalLayer = ({
 
           return {
             id: uuidv4(),
-            itemId: item.itemId ?? item.item_id ?? item.itemId?.toString?.() ?? "",
-            description: item.description ?? item.itemName ?? item.item_name ?? "",
-            qty: String(qtyRaw ?? ""),
-            uom: item.uomName ?? item.uom ?? item.uom_name ?? "",
-            unitPrice: Number(unitPriceRaw) || 0,
-            gstPercent: Number(gstPercentRaw) || 0,
-            amount: Number(amountRaw) || 0,
+              itemId: item.itemId ?? item.item_id ?? (item.id ?? item.itemId)?.toString?.() ?? "",
+              // preserve separate code/name for child component display
+              itemCode: item.itemCode ?? item.item_code ?? item.code ?? "",
+              itemName: item.itemName ?? item.item_name ?? item.name ?? "",
+              description: item.description ?? item.itemName ?? item.item_name ?? "",
+              qty: String(qtyRaw ?? ""),
+              // UOM fields - keep both id and name for dropdown building
+              uom: item.uomName ?? item.uom ?? item.uom_name ?? "",
+              uomId: item.uomId ?? item.uom_id ?? null,
+              primaryUom: item.uomName ?? item.uom ?? item.uom_name ?? "",
+              primaryUomId: item.uomId ?? item.uom_id ?? null,
+              secondaryUom: item.secondaryUomName ?? item.secondaryUom ?? item.secondary_uom_name ?? "",
+              secondaryUomId: item.secondaryUomId ?? item.secondary_uom_id ?? null,
+              unitPrice: Number(unitPriceRaw) || 0,
+              gstPercent: Number(gstPercentRaw) || 0,
+              amount: Number(amountRaw) || 0,
+              // Variant fields
+              variantId: item.variantId ?? item.variant_id ?? null,
+              variantAttributes: item.variantAttributes ?? item.variant_attributes ?? null,
           };
         });
+
+        // Note: Items with variants are fetched in loadMasterData in parallel with suppliers/terms
 
         setFormState({
           formData: {
@@ -162,7 +201,7 @@ const POModalLayer = ({
       },
       lineItems: [
         {
-          id: "",
+          id: uuidv4(),
           itemId: "",
           description: "",
           qty: "",
@@ -222,7 +261,17 @@ const POModalLayer = ({
         showSupplierDropdown: false,
         showConfirmDialog: false,
       }));
+
+      // Reset variant-related state
+      setItemsWithVariants({});
+      setVariantModalState({
+        show: false,
+        pendingItem: null,
+        pendingLineId: null,
+        isChange: false,
+      });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showModal]);
 
   // Initialize form when master data is loaded and modal is open
@@ -242,28 +291,7 @@ const POModalLayer = ({
     initializeFormForNew,
   ]);
 
-  // Show pending toast after modal closes (similar to supplier dialog)
-  useEffect(() => {
-    if (!showModal && pendingSuccessToast) {
-      setToastMessage(pendingSuccessToast.message);
-      setToastType(pendingSuccessToast.type);
-      setShowToast(true);
-      setPendingSuccessToast(null);
-    }
-  }, [showModal, pendingSuccessToast]);
-
-  // Auto-hide all toasts after 2.5 seconds (both success and error)
-  useEffect(() => {
-    let timer;
-    if (showToast) {
-      timer = setTimeout(() => {
-        setShowToast(false);
-      }, 2500);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [showToast]);
+  // Global toasts handle timing and auto-dismiss; pending success handled inline when needed
 
   // Filter suppliers based on search
   useEffect(() => {
@@ -321,10 +349,42 @@ const POModalLayer = ({
   const loadMasterData = async () => {
     try {
       setUiState((prev) => ({ ...prev, loading: true }));
-      const [suppliersResponse, termsConditionsResponse] = await Promise.all([
+      
+      // Build list of API calls - always include suppliers and terms
+      const apiCalls = [
         getSuppliers(),
         axiosInstance.get("/terms-conditions"),
-      ]);
+      ];
+      
+      // If editing a PO, also fetch items with variants in parallel
+      let itemIdsToFetch = [];
+      if (editingPO?.lineItems?.length > 0) {
+        itemIdsToFetch = [...new Set(
+          editingPO.lineItems
+            .map(li => li.itemId ?? li.item_id)
+            .filter(id => id)
+        )];
+        if (itemIdsToFetch.length > 0) {
+          apiCalls.push(getItemsByIds(itemIdsToFetch));
+        }
+      }
+      
+      const responses = await Promise.all(apiCalls);
+      const [suppliersResponse, termsConditionsResponse] = responses;
+      
+      // Handle items response if we fetched items
+      if (itemIdsToFetch.length > 0 && responses[2]) {
+        const itemsResponse = responses[2];
+        const itemsData = Array.isArray(itemsResponse) 
+          ? itemsResponse 
+          : (itemsResponse?.data || itemsResponse?.content || []);
+        
+        const itemsMap = {};
+        itemsData.forEach(item => {
+          itemsMap[item.id] = item;
+        });
+        setItemsWithVariants(itemsMap);
+      }
 
       setMasterData((prev) => ({
         ...prev,
@@ -333,9 +393,7 @@ const POModalLayer = ({
         termsConditions: termsConditionsResponse.data?.content || termsConditionsResponse.data?.data || termsConditionsResponse.data || [],
       }));
     } catch (error) {
-      setToastMessage("Failed to load master data. Please try again.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Failed to load master data. Please try again.");
       console.error("Error loading master data:", error);
     } finally {
       setUiState((prev) => ({ ...prev, loading: false }));
@@ -423,9 +481,7 @@ const POModalLayer = ({
           lineItems: prev.lineItems.filter((item) => item.id !== id),
         }));
       } else {
-        setToastMessage("At least one line item is required.");
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error("At least one line item is required.");
       }
     },
     [formState.lineItems.length]
@@ -447,7 +503,9 @@ const POModalLayer = ({
         const poDate = new Date(formState.formData.poDate);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        if (poDate < today) {
+        // Allow past PO dates when editing an existing PO (user may have created it earlier).
+        // In add mode the datepicker prevents past selection, so only validate for new PO.
+        if (!editingPO && poDate < today) {
           newErrors.poDate = "PO Date cannot be in the past";
         }
       }
@@ -506,7 +564,7 @@ const POModalLayer = ({
       setFormState((prev) => ({ ...prev, errors: newErrors }));
       return Object.keys(newErrors).length === 0;
     },
-    [formState.formData, formState.lineItems]
+    [formState.formData, formState.lineItems, editingPO]
   );
 
   const calculateTotals = useCallback(() => {
@@ -538,7 +596,7 @@ const POModalLayer = ({
       },
       lineItems: [
         {
-          id: "",
+          id: uuidv4(),
           itemId: "",
           description: "",
           qty: "",
@@ -562,9 +620,7 @@ const POModalLayer = ({
   const handleSaveDraft = async () => {
     // For draft saving, use comprehensive validation but show specific error messages
     if (!validateForm(false)) {
-      setToastMessage("Please fix the validation errors before saving as draft.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Please fix the validation errors before saving as draft.");
       return;
     }
 
@@ -626,7 +682,8 @@ const POModalLayer = ({
 
         return {
           itemId: parseInt(item.itemId) || 0,
-          itemName: item.description || "",
+          itemCode: item.itemCode || "",
+          itemName: item.itemName || "",
           uomId: parseInt(chosenUomId) || 0,
           uomName: chosenUomName || "",
           description: item.description || "",
@@ -640,6 +697,9 @@ const POModalLayer = ({
           igstValue: isIgstForDraft ? parseFloat(igstValue.toFixed(2)) : null,
           taxValue: parseFloat(taxValue.toFixed(2)),
           totalAmount: parseFloat((item.amount || 0).toFixed(2)),
+          // Variant fields
+          variantId: item.variantId || null,
+          variantAttributes: item.variantAttributes || null,
         };
       });
 
@@ -671,6 +731,7 @@ const POModalLayer = ({
         lineItems: formattedLineItems,
         termsConditionsId: parseInt(formState.formData.termsConditionId) || 0,
         termsConditionsTitle: selectedTerms?.name || "",
+        remarks: formState.formData.remarks || "",
       };
 
       if (editingPO) {
@@ -686,9 +747,7 @@ const POModalLayer = ({
       onPOUpdated();
       onClose();
     } catch (error) {
-      setToastMessage("Failed to save draft. Please try again.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Failed to save draft. Please try again.");
       console.error("Error saving draft:", error);
     } finally {
       setUiState((prev) => ({ ...prev, loading: false }));
@@ -701,35 +760,28 @@ const POModalLayer = ({
 
     // 1. Supplier
     if (!formState.formData.supplierId) {
-      setToastMessage("Supplier is required.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Supplier is required.");
       return;
     }
 
     // 2. PO Date
     if (!formState.formData.poDate) {
-      setToastMessage("PO Date is required.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("PO Date is required.");
       return;
     } else {
       const poDate = new Date(formState.formData.poDate);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      if (poDate < today) {
-        setToastMessage("PO Date cannot be in the past.");
-        setToastType("error");
-        setShowToast(true);
-        return;
-      }
+      // Allow past PO dates while editing existing PO; enforce only when creating new PO
+        if (!editingPO && poDate < today) {
+          GlobalToast.error("PO Date cannot be in the past.");
+          return;
+        }
     }
 
     // 3. Expected Delivery Date
     if (!formState.formData.expectedDeliveryDate) {
-      setToastMessage("Expected Delivery Date is required.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Expected Delivery Date is required.");
       return;
     } else {
       const poDate = new Date(formState.formData.poDate);
@@ -739,24 +791,18 @@ const POModalLayer = ({
       tomorrow.setHours(0, 0, 0, 0);
 
       // Check if delivery date is in the future (at least tomorrow)
-      if (deliveryDate < tomorrow) {
-        setToastMessage("Expected Delivery Date must be in the future.");
-        setToastType("error");
-        setShowToast(true);
-        return;
-      } else if (formState.formData.poDate && deliveryDate <= poDate) {
-        setToastMessage("Expected Delivery Date must be after PO Date.");
-        setToastType("error");
-        setShowToast(true);
-        return;
-      }
+        if (deliveryDate < tomorrow) {
+          GlobalToast.error("Expected Delivery Date must be in the future.");
+          return;
+        } else if (formState.formData.poDate && deliveryDate <= poDate) {
+          GlobalToast.error("Expected Delivery Date must be after PO Date");
+          return;
+        }
     }
 
     // 4. Terms & Conditions
     if (!formState.formData.termsConditionId) {
-      setToastMessage("Terms and Conditions is required.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Terms and Conditions is required.");
       return;
     }
 
@@ -765,9 +811,7 @@ const POModalLayer = ({
       formState.formData.remarks &&
       formState.formData.remarks.length > 500
     ) {
-      setToastMessage("Remarks cannot exceed 500 characters.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Remarks cannot exceed 500 characters.");
       return;
     }
 
@@ -777,21 +821,15 @@ const POModalLayer = ({
       const qty = parseFloat(item.qty);
       const unitPrice = parseFloat(item.unitPrice);
       if (!item.itemId) {
-        setToastMessage(`Line item ${index + 1}: Item is required.`);
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error(`Line item ${index + 1}: Item is required.`);
         return;
       }
       if (item.qty === "" || isNaN(qty) || qty < 1) {
-        setToastMessage(`Line item ${index + 1}: Quantity must be at least 1.`);
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error(`Line item ${index + 1}: Quantity must be at least 1.`);
         return;
       }
       if (item.unitPrice === "" || isNaN(unitPrice) || unitPrice < 0.01) {
-        setToastMessage(`Line item ${index + 1}: Unit Price must be at least 0.01.`);
-        setToastType("error");
-        setShowToast(true);
+        GlobalToast.error(`Line item ${index + 1}: Unit Price must be at least 0.01.`);
         return;
       }
     }
@@ -856,7 +894,8 @@ const POModalLayer = ({
 
         return {
           itemId: parseInt(item.itemId) || 0,
-          itemName: item.description || "",
+          itemCode: item.itemCode || "",
+          itemName: item.itemName || "",
           uomId: parseInt(chosenUomId) || 0,
           uomName: chosenUomName || "",
           description: item.description || "",
@@ -870,6 +909,9 @@ const POModalLayer = ({
           igstValue: isIgstForSubmit ? parseFloat(igstValue.toFixed(2)) : null,
           taxValue: parseFloat(taxValue.toFixed(2)),
           totalAmount: parseFloat((item.amount || 0).toFixed(2)),
+          // Variant fields
+          variantId: item.variantId || null,
+          variantAttributes: item.variantAttributes || null,
         };
       });
 
@@ -900,16 +942,17 @@ const POModalLayer = ({
         lineItems: formattedLineItems,
         termsConditionsId: parseInt(formState.formData.termsConditionId) || 0,
         termsConditionsTitle: selectedTerms?.name || "",
+        remarks: formState.formData.remarks || "",
       };
 
       if (editingPO && editingPO.id) {
         // Ensure update is called for existing PO
         await updatePurchaseOrder(editingPO.id, { ...poData, poNumber: formState.formData.poNo });
-        setPendingSuccessToast({ message: "Purchase Order updated and submitted for approval.", type: "success" });
+        GlobalToast.success("Purchase Order updated and submitted for approval.");
       } else {
         // Create new PO when not editing
         await createPurchaseOrder(poData);
-        setPendingSuccessToast({ message: "Purchase Order submitted for approval.", type: "success" });
+        GlobalToast.success("Purchase Order submitted for approval.");
       }
 
       // Close both dialogs and reset
@@ -918,20 +961,19 @@ const POModalLayer = ({
       onPOUpdated();
       onClose();
     } catch (error) {
-      setToastMessage("Failed to submit Purchase Order. Please try again.");
-      setToastType("error");
-      setShowToast(true);
+      GlobalToast.error("Failed to submit Purchase Order. Please try again.");
       console.error("Error submitting PO:", error);
     } finally {
       setUiState((prev) => ({ ...prev, loading: false }));
     }
   };
 
-  // Helper to enrich line items with itemName; prefer description provided by child selection
+  // Helper to enrich line items with itemName and itemCode
   const getLineItemsWithNames = (lineItems) => {
     return lineItems.map((item) => ({
       ...item,
-      itemName: item.description || "",
+      itemCode: item.itemCode || "",
+      itemName: item.itemName || "",
     }));
   };
 
@@ -1001,10 +1043,47 @@ const POModalLayer = ({
       return;
     }
 
-    // When passed full item object, populate related fields for the line
+    // When passed full item object, check if it has variants
     const item = itemId;
+    const variants = (item.variants || []).filter(v => v.isActive !== false);
+    
+    // Always store item in itemsWithVariants for "Change Variant" functionality
+    setItemsWithVariants(prev => ({
+      ...prev,
+      [item.id]: item
+    }));
+    
+    // If item has multiple variants, show variant selection modal
+    if (variants.length > 1) {
+      // Show variant selection modal
+      setVariantModalState({
+        show: true,
+        pendingItem: item,
+        pendingLineId: lineItemId,
+        isChange: false,
+      });
+      return;
+    }
+    
+    // If item has exactly one variant, auto-select it
+    const selectedVariant = variants.length === 1 ? variants[0] : null;
+    
+    // Populate line item with item and variant data
+    populateLineItemWithVariant(lineItemId, item, selectedVariant);
+  };
+
+  // Helper function to populate line item after variant selection
+  const populateLineItemWithVariant = (lineItemId, item, variant) => {
     handleLineItemChange(lineItemId, "itemId", item.id);
-    // Build description similar to previous master-data based logic
+    // Also store display code/name for child input value and future edits
+    handleLineItemChange(lineItemId, "itemCode", item.itemCode ?? item.code ?? "");
+    handleLineItemChange(lineItemId, "itemName", item.itemName ?? item.name ?? "");
+    
+    // Store variant info
+    handleLineItemChange(lineItemId, "variantId", variant?.id ?? null);
+    handleLineItemChange(lineItemId, "variantAttributes", variant?.attributes ?? null);
+    
+    // Build description including variant attributes
     const descriptionParts = [];
     if (item.itemName) descriptionParts.push(item.itemName);
     const categoryInfo = [];
@@ -1012,8 +1091,10 @@ const POModalLayer = ({
     if (item.itemTypeName) categoryInfo.push(item.itemTypeName);
     if (categoryInfo.length > 0) descriptionParts.push(`(${categoryInfo.join(" - ")})`);
 
-    if (item.attributes && typeof item.attributes === 'object') {
-      const attributeStrings = Object.entries(item.attributes)
+    // Include variant attributes in description
+    const attrs = variant?.attributes || item.attributes;
+    if (attrs && typeof attrs === 'object') {
+      const attributeStrings = Object.entries(attrs)
         .filter(([key, value]) => value !== null && value !== undefined && value !== '')
         .map(([key, value]) => {
           const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
@@ -1022,7 +1103,7 @@ const POModalLayer = ({
       if (attributeStrings.length > 0) descriptionParts.push(`[${attributeStrings.join(', ')}]`);
     }
 
-    handleLineItemChange(lineItemId, "description", descriptionParts.join(' ') );
+    handleLineItemChange(lineItemId, "description", descriptionParts.join(' '));
     // Store master primary/secondary UOMs on the line (preserve originals)
     handleLineItemChange(lineItemId, "primaryUom", item.uomName || item.uom || "");
     handleLineItemChange(lineItemId, "primaryUomId", item.uomId !== undefined ? item.uomId : null);
@@ -1037,6 +1118,51 @@ const POModalLayer = ({
     const gst = item.gstPercent ?? item.gst ?? ((item.cgst || 0) + (item.sgst || 0));
     handleLineItemChange(lineItemId, "gstPercent", gst || 0);
     // Recalculate amount will run in existing effect
+  };
+
+  // Handle variant selection from modal
+  const handleVariantSelect = (item, variant) => {
+    if (variantModalState.pendingLineId) {
+      populateLineItemWithVariant(variantModalState.pendingLineId, item, variant);
+    }
+    // Close the modal
+    setVariantModalState({
+      show: false,
+      pendingItem: null,
+      pendingLineId: null,
+      isChange: false,
+    });
+  };
+
+  // Handle closing variant modal (cancel selection)
+  const handleVariantModalClose = () => {
+    setVariantModalState({
+      show: false,
+      pendingItem: null,
+      pendingLineId: null,
+      isChange: false,
+    });
+  };
+
+  // Handle "Change Variant" button click from POLineItemsTable
+  const handleChangeVariant = (lineId, itemId) => {
+    const item = itemsWithVariants[itemId];
+    if (!item) {
+      console.warn("Item not found in itemsWithVariants for changing variant");
+      return;
+    }
+    
+    // Find current variantId for this line
+    const lineItem = formState.lineItems.find(li => li.id === lineId);
+    const currentVariantId = lineItem?.variantId;
+    
+    setVariantModalState({
+      show: true,
+      pendingItem: item,
+      pendingLineId: lineId,
+      isChange: true,
+      currentVariantId,
+    });
   };
 
   const { subtotal, grandTotal } = calculateTotals();
@@ -1220,6 +1346,8 @@ const POModalLayer = ({
                 taxOptions={taxOptions}
                 loading={uiState.loading}
                 isIgstApplicable={isIgstApplicable}
+                onChangeVariant={handleChangeVariant}
+                itemsWithVariants={itemsWithVariants}
               />
               <POFooterSummary
                 subtotal={subtotal}
@@ -1302,29 +1430,16 @@ const POModalLayer = ({
             isIgstApplicable={isIgstApplicable}
           />
 
-          {/* Custom Toast (similar to supplier dialog) */}
-          {showToast && (
-            <div
-              className="position-fixed top-0 start-50 translate-middle-x mt-3"
-              style={{ zIndex: 2000 }}
-            >
-              <div
-                className={`toast-custom ${
-                  toastType === "error" ? "toast-error" : "toast-success"
-                }`}
-              >
-                <span>{toastMessage}</span>
-                <button
-                  type="button"
-                  className="toast-close"
-                  onClick={() => setShowToast(false)}
-                  aria-label="Close"
-                >
-                  &times;
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Variant Selection Modal */}
+          <VariantSelectionModal
+            show={variantModalState.show}
+            item={variantModalState.pendingItem}
+            onSelect={handleVariantSelect}
+            onClose={handleVariantModalClose}
+            selectedVariantId={variantModalState.isChange ? variantModalState.currentVariantId : null}
+          />
+
+          {/* GlobalToast handles toasts centrally */}
         </div>
       </div>
     </div>

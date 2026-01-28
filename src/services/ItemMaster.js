@@ -89,3 +89,25 @@ export const searchItems = async (query) => {
     throw error;
   }
 };
+
+/**
+ * Get items by array of IDs (with variants)
+ * Endpoint: /items/ids?ids=1&ids=5
+ * @param {number[]} ids - Array of item IDs
+ * @returns {Promise<Object>} Response with items and their variants
+ */
+export const getItemsByIds = async (ids) => {
+  try {
+    if (!ids || ids.length === 0) {
+      return [];
+    }
+    // Build query string with multiple ids params
+    const params = new URLSearchParams();
+    ids.forEach((id) => params.append("ids", id));
+    const response = await axiosInstance.get(`${ENDPOINTS.ITEMS}/ids?${params.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching items by IDs:", error);
+    throw error;
+  }
+};

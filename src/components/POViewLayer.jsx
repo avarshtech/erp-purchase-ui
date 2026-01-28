@@ -195,7 +195,6 @@ const POViewLayer = ({ showModal, onClose, po }) => {
           { sgst: 0, cgst: 0 }
         );
 
-  const tax = (po.tax || po.taxAmount) ?? totals.sgst + totals.cgst;
   const grandTotal = po.grandTotal || subtotal + totals.sgst + totals.cgst;
 
   // Helper for date formatting
@@ -476,7 +475,7 @@ const POViewLayer = ({ showModal, onClose, po }) => {
                                   <td className="text-center">{quantity}</td>
                                   <td className="text-center">{uomName}</td>
                                   <td className="text-center">
-                                    ₹{(item.unitPrice || 0).toFixed(2)}
+                                    ₹ {(item.unitPrice || 0).toFixed(2)}
                                   </td>
                                   <td className="text-center">
                                     {sgst}%
@@ -485,7 +484,7 @@ const POViewLayer = ({ showModal, onClose, po }) => {
                                     {cgst}%
                                   </td>
                                   <td className="text-center">
-                                    ₹{(totalAmount).toFixed(2)}
+                                    ₹ {(totalAmount).toFixed(2)}
                                   </td>
                                 </tr>
                               );
