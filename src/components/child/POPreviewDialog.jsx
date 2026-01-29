@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import OperationControl from "../OperationControl";
 import { createActivity, updateActivity, parseActivityComment } from "../../services/poActivityLog";
