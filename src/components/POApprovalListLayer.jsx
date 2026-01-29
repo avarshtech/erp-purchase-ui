@@ -305,11 +305,19 @@ const POApprovalListLayer = () => {
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case "Approved":
+      case "Completed":
         return "bg-success-focus text-success-main";
       case "Rejected":
+      case "Cancelled":
         return "bg-danger-focus text-danger-main";
       case "Draft":
         return "bg-warning-focus text-warning-main";
+      case "InProgress":
+        return "bg-warning-focus text-warning-main";
+      case "AwaitApproval":
+        return "bg-neutral-200 text-cyan-600";
+      case "ReferredBack":
+        return "bg-purple-100 text-purple-600";
       default:
         return "bg-neutral-100 text-neutral-600";
     }

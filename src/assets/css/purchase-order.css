@@ -869,9 +869,10 @@
 
 .stepper-item {
   position: relative;
-  padding-bottom: 24px;
+  padding-bottom: 12px;
   padding-left: 24px;
   border-left: 2px solid #e5e7eb;
+  margin-top: 12px;
 }
 
 .stepper-item:last-child {
@@ -952,8 +953,7 @@
 }
 
 .notes-input-area {
-  margin-top: 24px;
-  padding-top: 24px;
+  padding-top: 12px;
   border-top: 1px solid #e5e7eb;
 }
 

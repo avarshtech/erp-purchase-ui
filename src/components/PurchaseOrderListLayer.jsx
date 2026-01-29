@@ -8,7 +8,7 @@ import OperationControl from "./OperationControl";
 import "../assets/css/purchase-order.css";
 
 const TableRow = ({ po, onEdit, onDelete, onView }) => {
-  const isEditable = po.status === "Draft" || po.status === "Rejected";
+  const isEditable = po.status === "Draft" || po.status === "Rejected" || po.status === "ReferredBack";
   const isDeletable = po.status === "Draft" || po.status === "Rejected";
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -19,9 +19,14 @@ const TableRow = ({ po, onEdit, onDelete, onView }) => {
       case "Draft":
         return "bg-info-focus text-info-600";
       case "Await Approval":
+      case "AwaitApproval":
         return "bg-neutral-200 text-cyan-600";
       case "Rejected":
         return "bg-danger-focus text-danger-main";
+      case "Cancelled":
+        return "bg-danger-focus text-danger-main";
+      case "ReferredBack":
+        return "bg-purple-100 text-purple-600";
       default:
         return "bg-neutral-100 text-neutral-600";
     }
@@ -40,6 +45,10 @@ const TableRow = ({ po, onEdit, onDelete, onView }) => {
         return "mdi:clock-check-outline";
       case "Rejected":
         return "mdi:close-circle";
+      case "Cancelled":
+        return "mdi:cancel";
+      case "ReferredBack":
+        return "mdi:undo-variant";
       default:
         return "mdi:help-circle";
     }
@@ -995,6 +1004,14 @@ const PurchaseOrderListLayer = () => {
           onClose={() => setShowViewModal(false)}
           viewMode={true}
           poData={viewingPO}
+          onApprove={() => {
+            setShowViewModal(false);
+            fetchPOData();
+          }}
+          onReject={() => {
+            setShowViewModal(false);
+            fetchPOData();
+          }}
         />
       )}
 
