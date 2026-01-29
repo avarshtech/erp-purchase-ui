@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { v4 as uuidv4 } from "uuid";
 import { createPurchaseOrder, updatePurchaseOrder } from "../services/purchaseOrders";
+import { createActivity } from "../services/poActivityLog";
 import { getSuppliers } from "../services/suppliers";
 import { getItemsByIds } from "../services/ItemMaster";
 import axiosInstance from "../services/axiosInstance";
@@ -13,6 +14,7 @@ import POPreviewDialog from "./child/POPreviewDialog";
 import VariantSelectionModal from "./child/VariantSelectionModal";
 import "../assets/css/purchase-order.css";
 import GlobalToast from "../utils/globalToast";
+import { getCurrentUser } from "../utils/permissions";
 
 const POModalLayer = ({
   showModal,
@@ -700,6 +702,8 @@ const POModalLayer = ({
           // Variant fields
           variantId: item.variantId || null,
           variantAttributes: item.variantAttributes || null,
+          // Line item status - Draft for save as draft
+          status: "Draft",
         };
       });
 
@@ -734,12 +738,37 @@ const POModalLayer = ({
         remarks: formState.formData.remarks || "",
       };
 
+      // Get current user for activity logging
+      const currentUser = getCurrentUser();
+      const userName = currentUser?.name || currentUser?.username || currentUser?.email || "User";
+
       if (editingPO) {
         await updatePurchaseOrder(editingPO.id, { ...poData, poNumber: formState.formData.poNo });
+        
+        // Log activity for draft update (especially for re-saving rejected/referred back POs)
+        const previousStatus = editingPO.status;
+        if (previousStatus === "Rejected" || previousStatus === "ReferredBack") {
+          await createActivity(editingPO.id, {
+            comment: `[SYSTEM] PO saved as draft by ${userName}. Previous status: ${previousStatus}`,
+            status: "Draft",
+            isSystemGenerated: true,
+          });
+        }
+        
         setPendingSuccessToast({ message: "Purchase Order updated as draft.", type: "success" });
       } else {
         // Do not send poNumber for create
-        await createPurchaseOrder(poData);
+        const createdPO = await createPurchaseOrder(poData);
+        
+        // Log activity for new draft creation
+        if (createdPO && createdPO.id) {
+          await createActivity(createdPO.id, {
+            comment: `[SYSTEM] PO created as draft by ${userName}`,
+            status: "Draft",
+            isSystemGenerated: true,
+          });
+        }
+        
         setPendingSuccessToast({ message: "Purchase Order saved as draft.", type: "success" });
       }
 
@@ -912,6 +941,8 @@ const POModalLayer = ({
           // Variant fields
           variantId: item.variantId || null,
           variantAttributes: item.variantAttributes || null,
+          // Line item status - InProgress when submitted for approval
+          status: "InProgress",
         };
       });
 
@@ -945,13 +976,44 @@ const POModalLayer = ({
         remarks: formState.formData.remarks || "",
       };
 
+      // Get current user for activity logging
+      const currentUser = getCurrentUser();
+      const userName = currentUser?.name || currentUser?.username || currentUser?.email || "User";
+
       if (editingPO && editingPO.id) {
         // Ensure update is called for existing PO
+        const previousStatus = editingPO.status;
         await updatePurchaseOrder(editingPO.id, { ...poData, poNumber: formState.formData.poNo });
+        
+        // Log activity for re-submission
+        if (previousStatus === "Rejected" || previousStatus === "ReferredBack") {
+          await createActivity(editingPO.id, {
+            comment: `[SYSTEM] PO re-submitted for approval by ${userName}. Previous status: ${previousStatus}`,
+            status: "AwaitApproval",
+            isSystemGenerated: true,
+          });
+        } else {
+          await createActivity(editingPO.id, {
+            comment: `[SYSTEM] PO submitted for approval by ${userName}`,
+            status: "AwaitApproval",
+            isSystemGenerated: true,
+          });
+        }
+        
         GlobalToast.success("Purchase Order updated and submitted for approval.");
       } else {
         // Create new PO when not editing
-        await createPurchaseOrder(poData);
+        const createdPO = await createPurchaseOrder(poData);
+        
+        // Log activity for new submission
+        if (createdPO && createdPO.id) {
+          await createActivity(createdPO.id, {
+            comment: `[SYSTEM] PO submitted for approval by ${userName}`,
+            status: "AwaitApproval",
+            isSystemGenerated: true,
+          });
+        }
+        
         GlobalToast.success("Purchase Order submitted for approval.");
       }
 
