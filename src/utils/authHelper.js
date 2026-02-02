@@ -1,97 +1,61 @@
-import { setCurrentUser, getAdminPermissions } from "../utils/permissions";
+import { setCurrentUser } from "../utils/permissions";
 import { getRoles } from "../services/roles";
 import axiosInstance from "../services/axiosInstance";
-
 /**
- * Mock user database
- * In production, this would be replaced with actual API calls
- */
-/**
- * Authenticate user with username and password against backend
- * @param {string} username - Username
- * @param {string} password - Password
- * @returns {Object} Authentication result with success status and user data or error message
+ * Authenticate user with username and password.
+ * Expects backend to return { token: "<jwt>" }.
+ * Parses the JWT payload to extract `name`, `role`, `userId`, `email`, and `permissions`.
  */
 export const authenticateUser = async (username, password) => {
   try {
-    const response = await axiosInstance.post("/auth/login", {
-      username,
-      password,
-    });
+    const response = await axiosInstance.post("/auth/login", { username, password });
 
-    console.log(`Login Response Status: ${response.status} ${response}`);
     const { data, status } = response;
-    if (response.status !== 200) {
-      return {
-        success: false,
-        message: data || `Login failed with status: ${status}`,
-      };
+    if (status !== 200) {
+      return { success: false, message: data || `Login failed with status: ${status}` };
     }
 
-    // Backend returns: { token: "..." }
-    const { token } = data;
+    const { token } = data || {};
+    if (!token) return { success: false, message: "Invalid response from server (missing token)" };
 
-    if (!token) {
-      console.error("Missing token in response", data);
-      return {
-        success: false,
-        message: "Invalid response from server (missing token)",
-      };
-    }
-
-    // Decode JWT to get user details (simple decoder)
-    let userFromToken = {};
+    // Decode JWT payload (base64url).
+    let payload = {};
     try {
-      const base64Url = token.split(".")[1];
+      const base64Url = token.split(".")[1] || "";
       const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
       const jsonPayload = decodeURIComponent(
         window
           .atob(base64)
           .split("")
-          .map(function (c) {
-            return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-          })
+          .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
           .join("")
       );
-      userFromToken = JSON.parse(jsonPayload);
+      payload = JSON.parse(jsonPayload || "{}");
     } catch (e) {
-      console.error("Failed to decode token", e);
+      console.error("Failed to decode token payload", e);
+      payload = {};
     }
 
-    // Create user session object
-    // We default to "Admin" role for superadmin if not present in token, to ensure access
-    const role =
-      userFromToken.role ||
-      (userFromToken.sub === "superadmin" ? "Admin" : "User");
-
-    // We need to fetch the full user details to get permissions ideally, but for now we construct a session
+    // Build user session from token payload. Prefer token values, fallback to provided username.
     const userSession = {
-      username: userFromToken.sub || username,
-      name: userFromToken.name || username,
-      email: userFromToken.email || `${username}@avarsh.com`,
-      role: role,
-      permissions: role === "Admin" ? getAdminPermissions() : {}, // We need to re-import getAdminPermissions or fetch permissions
-      token
+      id: payload.userId || payload.sub || null,
+      username: payload.sub || username,
+      name: payload.name || username,
+      email: payload.email || `${username}@avarsh.com`,
+      role: payload.role || "",
+      permissions: payload.permissions || {},
+      token,
     };
 
-    // Save user session to sessionStorage
+    // Persist session and token
     setCurrentUser(userSession);
-    // Save auth token separately to sessionStorage (for compatibility)
     sessionStorage.setItem("authToken", token);
-
-    // Dispatch custom event to notify app of auth change
     window.dispatchEvent(new Event("authChange"));
 
-    return {
-      success: true,
-      user: userSession,
-    };
+    return { success: true, user: userSession };
   } catch (error) {
     console.error("Login Error Details:", error);
-    return {
-      success: false,
-      message: error.errorMessage || error.response?.data?.message || "Network error. Please try again.",
-    };
+    return { success: false, message: error.errorMessage || error.response?.data?.message || "Network error. Please try again." };
   }
 };
 
