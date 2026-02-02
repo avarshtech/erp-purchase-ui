@@ -102,6 +102,17 @@ export const getEmptyPermissions = () => {
   return permissions;
 };
 
+// Helper to determine if a role should be treated as Admin
+export const isAdminRole = (role) => {
+  if (!role) return false;
+  try {
+    const normalized = String(role).toLowerCase().replace(/\s+/g, "");
+    return normalized === "admin" || normalized === "superadmin" || normalized.includes("admin");
+  } catch (e) {
+    return false;
+  }
+};
+
 // Check if user has access to a page
 export const hasPageAccess = (permissions, pageId) => {
   if (!permissions || !permissions[pageId]) return false;
@@ -119,8 +130,8 @@ export const hasOperationPermission = (permissions, pageId, operationId) => {
 export const getCurrentUserPermissions = () => {
   const user = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
 
-  // Admin has all permissions
-  if (user.role === "Admin") {
+  // Admin-like roles (Admin, Super Admin, superadmin, etc.) have all permissions
+  if (isAdminRole(user.role)) {
     return getAdminPermissions();
   }
 

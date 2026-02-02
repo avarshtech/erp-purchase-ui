@@ -1,5 +1,5 @@
 import React from "react";
-import { getCurrentUser, hasOperationPermission } from "../utils/permissions";
+import { getCurrentUser, hasOperationPermission, isAdminRole } from "../utils/permissions";
 
 /**
  * Higher-order component that conditionally renders children based on operation permission
@@ -12,8 +12,8 @@ import { getCurrentUser, hasOperationPermission } from "../utils/permissions";
 const OperationControl = ({ pageId, operation, children, fallback = null }) => {
   const user = getCurrentUser();
 
-  // Admin always has all permissions
-  if (user.role === "Admin") {
+  // Admin-like roles always have all permissions
+  if (isAdminRole(user.role)) {
     return <>{children}</>;
   }
 
